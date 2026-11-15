@@ -1,0 +1,107 @@
+# Unity project lives at the repository root.
+/.utmp/
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Bb]uild/
+/[Bb]uilds/
+/[Mm]emory[Cc]aptures/
+/[Rr]ecordings/
+/[Cc]rashReports/
+/[Ss]ysinfo.txt
+/*.log
+/.dirstamp
+/mono_crash.*
+/tmpinst-dir.stamp
+*.stackdump
+
+# Build output accidentally written to the project root.
+/*_BackUpThisFolder_ButDontShipItWithYourGame/
+/*_BurstDebugInformation_DoNotShip/
+/*_Data/
+/MonoBleedingEdge/
+/UnityPlayer.dll
+/GameAssembly.dll
+/baselib.dll
+/WinPixEventRuntime.dll
+/D3D12/
+/*.exe
+/*.exe.manifest
+/*.app/
+/*.apk
+/*.aab
+/*.obb
+/*.unitypackage
+/*.pdb
+/*.mdb
+
+# Generated IDE projects and local IDE state.
+.vs/
+.idea/
+/.vsconfig
+.gradle/
+/.consulo/
+/ExportedObj/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.opendb
+*.VC.db
+*.tmp
+*.bak
+
+# Unity temporary scene backups.
+/Assets/_Recovery/
+/Assets/_Recovery.meta
+/Assets/__DeletedAssets/
+/Assets/__DeletedAssets.meta
+
+# Generated Unity tooling output; keep source plugins and their metadata.
+/Assets/Plugins/Editor/JetBrains*
+/UIElementsSchema/
+/Assets/[Ss]ceneDependencyCache*
+/Assets/**/*.blend1
+/Assets/**/*.blend1.meta
+/Assets/Plugins/Android/**/*.gradle.backup*
+/Assets/Plugins/Android/**/local.properties
+
+# Addressables build output, not Addressables settings/groups or source assets.
+/Assets/Addressables_Temp/
+/Assets/Addressables_Temp.meta
+/Assets/AddressableAssetsData/link.xml
+/Assets/AddressableAssetsData/link.xml.meta
+/Assets/StreamingAssets/aa/
+/Assets/StreamingAssets/aa.meta
+/ServerData/
+
+# Local tooling/account data; do not place credentials in Assets or settings.
+/.unity/
+/.codex/
+/.aws/
+.env
+.env.*
+!.env.example
+!.env.template
+.upmconfig.toml
+.npmrc
+*.keystore
+*.jks
+*.p12
+*.pfx
+
+# OS metadata.
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Keep Assets, Packages (including packages-lock.json), ProjectSettings and
+# source .meta files under version control. Never add a blanket *.meta rule.
