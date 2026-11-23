@@ -21,6 +21,9 @@
 23.11.2026. Правила осмотра и укладки — в [LOOT_AND_INVENTORY](../design/LOOT_AND_INVENTORY.md).
 Развитие, источники, вывод дела к полному вывозу и бумажный расчёт — в
 [PROGRESSION_AND_ECONOMY](../design/PROGRESSION_AND_ECONOMY.md).
+Ответы D-040 от 24.11.2026 — C-067–C-080 в DECISIONS. Правила и сценарии
+потребностей — в [SURVIVAL](../design/SURVIVAL.md). Это входные условия
+для сюжета, настроек комфорта и сохранений.
 
 ## Основание оформления
 
