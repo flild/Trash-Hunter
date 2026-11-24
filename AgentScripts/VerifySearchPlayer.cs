@@ -4,7 +4,12 @@ using Unity.Pipeline.Scripting;
 
 // Pipeline 1.0.0 does not expose additional assembly references on script eval.
 // Run the same route against Input System and VContainer in the development Player.
-var routeFile = Environment.GetCommandLineArgs().Contains("-trash-hunter-check")
+var checkArgs = Environment.GetCommandLineArgs();
+var checkIndex = Array.IndexOf(checkArgs, "-trash-hunter-check");
+var routeFile = checkIndex >= 0 && checkIndex + 1 < checkArgs.Length &&
+    checkArgs[checkIndex + 1].StartsWith("playtest-", StringComparison.Ordinal)
+    ? "AgentScripts/VerifyPlaytest.cs"
+    : checkIndex >= 0
     ? "AgentScripts/VerifyExpedition.cs"
     : typeof(TrashHunter.GameState).GetProperty("Bag") == null
     ? "AgentScripts/VerifySearchPrototype.cs"

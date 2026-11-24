@@ -7,7 +7,9 @@ namespace TrashHunter
 {
     public sealed class GameState : IDisposable
     {
+        private static readonly string[] LegacyLayout = { "crate-a", "lamp-a", "radio-a", "strip-a", "dial-a" };
         private readonly Dictionary<string, LootDefinition> catalog = new();
+        private readonly HashSet<string> layoutKeys = new();
         private RunSnapshot current;
         private SaveSlot slot;
         private BagInventory bag = new();
@@ -31,7 +33,11 @@ namespace TrashHunter
                 return true;
 
             foreach (var item in items)
+            {
                 catalog[item.Id] = item.Definition;
+                if (!item.LegacyLayoutOnly)
+                    layoutKeys.Add(item.Id);
+            }
 
             try
             {
@@ -254,7 +260,8 @@ namespace TrashHunter
             var hasHand = !string.IsNullOrEmpty(data.held);
             if (data.atHome)
                 return data.hasBag && data.world.Length == 0 && !hasHand && !data.heldRotated;
-            if (data.world.Length != catalog.Count || (!data.hasBag && (hasHand || data.player.inside)) ||
+            if ((data.world.Length != layoutKeys.Count && data.world.Length != LegacyLayout.Length) ||
+                (!data.hasBag && (hasHand || data.player.inside)) ||
                 (!hasHand && data.heldRotated))
                 return false;
 
@@ -271,7 +278,7 @@ namespace TrashHunter
                     !packed.TryPack(item.key, definition.Placement(item))))
                     return false;
             }
-            return !hasHand || keys.Contains(data.held);
+            return (keys.SetEquals(layoutKeys) || keys.SetEquals(LegacyLayout)) && (!hasHand || keys.Contains(data.held));
         }
 
         private static bool Finite(Vector3 value) =>
@@ -279,11 +286,14 @@ namespace TrashHunter
 
         private static WorldItem[] CreateLayout(SearchItem[] items, int expedition)
         {
-            var layout = new WorldItem[items.Length];
-            for (var i = 0; i < items.Length; i++)
-                layout[i] = items[i].LayoutPose(expedition % 2 == 0);
-            return layout;
+            var layout = new List<WorldItem>(items.Length);
+            foreach (var item in items)
+                if (!item.LegacyLayoutOnly)
+                    layout.Add(item.LayoutPose(LayoutIndex(expedition)));
+            return layout.ToArray();
         }
+
+        internal static int LayoutIndex(int expedition) => (expedition - 1) % 3;
 
         private static string ResolveSlotFolder()
         {

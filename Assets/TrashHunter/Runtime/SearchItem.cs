@@ -12,6 +12,10 @@ namespace TrashHunter
         [SerializeField] private int salePrice;
         [SerializeField] private string saleCondition;
         [SerializeField] private Transform alternatePose;
+        [SerializeField] private Transform thirdPose;
+        [SerializeField] private bool legacyLayoutOnly;
+        [SerializeField] private Renderer[] lampShell;
+        [SerializeField] private Material secondLayoutFinish;
 
         private Rigidbody body;
         private BoxCollider shape;
@@ -23,6 +27,7 @@ namespace TrashHunter
         public Vector3 HalfSize => shape.size * 0.5f;
         public bool IsHeld { get; private set; }
         internal LootDefinition Definition => new(displayName, salePrice, saleCondition, bagSize);
+        internal bool LegacyLayoutOnly => legacyLayoutOnly;
 
         public BagPlacement Placement(int column, int row, bool rotated) =>
             new(column, row, bagSize.x, bagSize.y, rotated);
@@ -30,9 +35,15 @@ namespace TrashHunter
         internal void CacheLayout() =>
             firstPose = new WorldItem { key = Id, position = transform.position, rotation = transform.rotation };
 
-        internal WorldItem LayoutPose(bool alternate) => alternate
-            ? new WorldItem { key = Id, position = alternatePose.position, rotation = alternatePose.rotation }
-            : firstPose;
+        internal WorldItem LayoutPose(int layout) => layout switch
+        {
+            1 => PoseAt(alternatePose),
+            2 => PoseAt(thirdPose),
+            _ => firstPose
+        };
+
+        private WorldItem PoseAt(Transform marker) =>
+            new() { key = Id, position = marker.position, rotation = marker.rotation };
 
         public void Restore(GameState state)
         {
@@ -43,6 +54,10 @@ namespace TrashHunter
                 Store();
                 return;
             }
+
+            if (secondLayoutFinish != null && GameState.LayoutIndex(state.Expedition) == 1)
+                foreach (var renderer in lampShell)
+                    renderer.sharedMaterial = secondLayoutFinish;
 
             transform.SetPositionAndRotation(pose.Position, pose.Rotation);
             body.position = pose.Position;

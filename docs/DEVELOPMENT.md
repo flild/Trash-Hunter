@@ -262,6 +262,32 @@ unity command script eval --runtime TrashHunterCycle --caller plugin --skill uni
 каталоге. Сборка, снимки, результаты и замеры — в
 [отчёте I-030](sessions/2026-11-25-i030-expedition-save.md).
 
+## Проверка итоговой сборки и укладок
+
+Итоговый Windows Player — `Builds/I-040/TrashHunterPrototype.exe`.
+Собирается одна сцена ContainerSearch без Pipeline Runtime. Отдельный
+`Builds/I-040-QA/TrashHunterPrototypeQA.exe` нужен для проверок виртуальным
+вводом. В QA-сборке временно включены Pipeline Runtime для Development и
+фоновое выполнение. Запускать с рабочей папкой проекта и изолированным
+`-trash-hunter-save-dir <абсолютный-путь>`.
+
+Маршрут [VerifyPlaytest.cs](../AgentScripts/VerifyPlaytest.cs) состоит из
+`playtest-first` и `playtest-resume`. Каждая фаза запускается в отдельном
+процессе QA Player с тем же тестовым каталогом. Передать имя фазы через
+`-trash-hunter-check`. Первая фаза заканчивается обычным закрытием Unity,
+вторая проверяет продолжение, две продажи и вход в третью укладку.
+Для `playtest-legacy` использовать отдельную копию слота I-030 с повёрнутой
+лампой и радио в руке.
+
+~~~powershell
+unity command script eval --runtime TrashHunterPrototypeQA --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/VerifySearchPlayer.cs --timeout 65
+~~~
+
+Локальные отчёты Unity BuildReport, результаты фаз, журналы и снимки
+находятся в `Logs/I-040/`. Проверки итогового exe, полный маршрут,
+управление и ограничения — в [отчёте I-040](sessions/2026-11-25-i040-windows-playtest.md).
+
+
 ## Официальные инструкции
 
 - [Unity CLI](https://docs.unity.com/en-us/unity-cli/use-unity-cli)

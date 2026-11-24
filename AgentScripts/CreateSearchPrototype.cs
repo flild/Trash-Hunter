@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using TrashHunter;
 using UnityEditor;
@@ -308,6 +309,221 @@ public static class CreateSearchPrototype
             throw new InvalidOperationException("Failed to save ContainerSearch.");
         return new { ScenePath, hudPath, alternatePositions = layout.Length, exit = exit.name };
     }
+
+    public static object AddPlaytestLayouts()
+    {
+        var scene = SceneManager.GetActiveScene();
+        if (scene.path != ScenePath || scene.isDirty || EditorApplication.isPlayingOrWillChangePlaymode)
+            throw new InvalidOperationException("Open the saved ContainerSearch scene in Edit Mode.");
+
+        var session = new SerializedObject(Object.FindAnyObjectByType<SearchSession>());
+        var references = session.FindProperty("items");
+        if (references.arraySize != 5 || session.FindProperty("exit").objectReferenceValue == null)
+            throw new InvalidOperationException("Apply the playtest layouts to the five-item expedition scene.");
+
+        var crate = (SearchItem)references.GetArrayElementAtIndex(0).objectReferenceValue;
+        var legacyLamp = (SearchItem)references.GetArrayElementAtIndex(1).objectReferenceValue;
+        var radio = (SearchItem)references.GetArrayElementAtIndex(2).objectReferenceValue;
+        var strip = (SearchItem)references.GetArrayElementAtIndex(3).objectReferenceValue;
+        var dial = (SearchItem)references.GetArrayElementAtIndex(4).objectReferenceValue;
+        var intactLamp = Object.Instantiate(legacyLamp);
+        var crackedLamp = Object.Instantiate(legacyLamp);
+        var dark = Existing("Dark_Metal");
+        var cream = Existing("Ivory");
+        var enamel = Existing("Lamp_Enamel");
+        var gold = Existing("Safety_Paint");
+        var red = Existing("Oxide");
+
+        foreach (var name in new[] { "Hinge upper fragment", "Hinge lower fragment", "Exposed hinge pin" })
+            Object.DestroyImmediate(intactLamp.transform.Find(name).gameObject);
+
+        Box(intactLamp.transform, "Intact hinge eye", new(-0.22f, 0.052f, 0.124f),
+            new(0.12f, 0.115f, 0.092f), dark);
+        Box(intactLamp.transform, "Intact hinge pin", new(-0.22f, 0.051f, 0.173f),
+            new(0.032f, 0.032f, 0.014f), cream);
+        Box(crackedLamp.transform, "Loose diffuser edge", new(0.16f, 0.023f, -0.171f),
+            new(0.235f, 0.028f, 0.022f), cream, rotation: Quaternion.Euler(0, 0, -8));
+        SetLamp(intactLamp, "lamp-intact", "Folding lamp, intact", 42, "Крепление целое, плафон держится.", enamel, gold);
+        SetLamp(crackedLamp, "lamp-cracked", "Folding lamp, cracked", 18, "Ушко треснуло, плафон болтается.", gold, enamel);
+
+        var legacy = new SerializedObject(legacyLamp);
+        legacy.FindProperty("legacyLayoutOnly").boolValue = true;
+        legacy.ApplyModifiedPropertiesWithoutUndo();
+        legacyLamp.gameObject.SetActive(false);
+
+        // The named finds keep authored positions. The peripheral pieces trade places within each side.
+        var primary = new[]
+        {
+            (crate, new Vector2(0.16f, 3.08f), new Vector2(-0.59f, 3.77f), new Vector2(0.57f, 2.70f), 4f, -20f, 24f),
+            (intactLamp, new Vector2(1.12f, 1.78f), new Vector2(0.45f, 3.83f), new Vector2(-0.67f, 3.29f), 155f, -135f, 117f),
+            (crackedLamp, new Vector2(0.22f, 3.79f), new Vector2(-0.91f, 2.37f), new Vector2(1.18f, 3.42f), 180f, 33f, 52f),
+            (radio, new Vector2(-0.94f, 2.70f), new Vector2(1.24f, 3.15f), new Vector2(-1.30f, 1.96f), 9f, 16f, 76f),
+            (strip, new Vector2(-1.49f, 3.48f), new Vector2(1.57f, 2.64f), new Vector2(-1.33f, 2.87f), 90f, 83f, 87f),
+            (dial, new Vector2(0.48f, 1.76f), new Vector2(-0.55f, 1.75f), new Vector2(0.66f, 1.81f), 0f, 78f, 140f)
+        };
+        var extra = new List<SearchItem>();
+        var plug = Find("Plug", "plug-a", "Вилка", new(0.23f, 0.105f, 0.16f), dark, 1, 1, 8, "Штыри ровные.");
+        Box(plug.transform, "Pins", new(0, 0, -0.081f), new(0.10f, 0.04f, 0.08f), cream);
+        extra.Add(plug);
+        extra.Add(Copy(plug, "plug-b", 3, "Один штырь погнут.", part: "Pins"));
+
+        var motor = Find("Motor", "motor-a", "Моторчик", new(0.36f, 0.18f, 0.24f), enamel, 2, 1, 19, "Вал цел.");
+        Box(motor.transform, "Shaft", new(0.18f, 0.02f, 0), new(0.094f, 0.06f, 0.06f), cream);
+        extra.Add(motor);
+        extra.Add(Copy(motor, "motor-b", 7, "Вал погнут.", part: "Shaft"));
+
+        var adapter = Find("Adapter", "adapter-a", "Адаптер", new(0.29f, 0.14f, 0.23f), dark, 2, 1, 22, "Разъём цел.");
+        Box(adapter.transform, "Socket", new(0, 0, -0.117f), new(0.085f, 0.056f, 0.018f), cream);
+        Box(adapter.transform, "12V plate", new(-0.06f, 0.071f, 0), new(0.09f, 0.006f, 0.057f), gold);
+        extra.Add(adapter);
+        extra.Add(Copy(adapter, "adapter-b", 8, "Разъём продавлен.", part: "Socket"));
+
+        var fuse = Find("Fuse holder", "fuse-a", "Держатель", new(0.20f, 0.11f, 0.15f), cream, 1, 1, 9, "Крышка на месте.");
+        Box(fuse.transform, "Lid", new(0, 0.06f, 0), new(0.16f, 0.02f, 0.12f), dark);
+        extra.Add(fuse);
+        extra.Add(Copy(fuse, "fuse-b", 4, "Крышки нет.", part: "Lid", remove: true));
+
+        var tin = Find("Metal tin", "tin-a", "Коробка", new(0.42f, 0.17f, 0.25f), gold, 2, 1, 10, "Крышка садится ровно.");
+        Box(tin.transform, "Rim", new(0, 0.081f, 0), new(0.407f, 0.021f, 0.24f), cream);
+        extra.Add(tin);
+        extra.Add(Copy(tin, "tin-b", 5, "Крышка перекошена.", part: "Rim"));
+
+        var bell = Find("Bell", "bell-a", "Звонок", new(0.26f, 0.14f, 0.24f), red, 1, 1, 13, "Кнопка на месте.");
+        Box(bell.transform, "Button", new(0, 0.072f, 0), new(0.09f, 0.04f, 0.09f), cream);
+        extra.Add(bell);
+        extra.Add(Copy(bell, "bell-b", 6, "Кнопки нет.", part: "Button", remove: true));
+
+        var pack = Find("Battery pack", "pack-a", "Блок питания", new(0.45f, 0.21f, 0.29f), enamel, 3, 2, 33,
+            "Клеммы сухие.");
+        Box(pack.transform, "Terminals", new(0, 0.106f, 0.06f), new(0.20f, 0.025f, 0.09f), cream);
+        extra.Add(pack);
+        var corroded = Copy(pack, "pack-b", 11, "На клеммах окисел.");
+        corroded.transform.Find("Terminals").GetComponent<Renderer>().sharedMaterial = red;
+        extra.Add(corroded);
+
+        extra.Add(Copy(radio, "radio-b", 12, "Ручки настройки нет.", part: "Dial", remove: true));
+        extra.Add(Copy(radio, "radio-c", 26, "Корпус без видимых повреждений."));
+        extra.Add(Copy(strip, "strip-b", 11, "Рейка ровная.", straighten: true));
+        extra.Add(Copy(dial, "dial-b", 4, "Ручка цела."));
+
+        var edge = new[]
+        {
+            new Vector2(-1.59f, 1.43f), new Vector2(-1.60f, 1.99f), new Vector2(-1.58f, 2.60f),
+            new Vector2(-1.55f, 4.08f), new Vector2(-1.55f, 4.62f), new Vector2(-0.82f, 4.75f),
+            new Vector2(-0.21f, 4.82f), new Vector2(-0.99f, 3.86f), new Vector2(-0.91f, 1.34f),
+            new Vector2(1.62f, 1.26f), new Vector2(1.76f, 1.82f), new Vector2(1.64f, 2.07f),
+            new Vector2(1.65f, 3.58f), new Vector2(1.56f, 4.13f), new Vector2(1.50f, 4.74f),
+            new Vector2(0.86f, 4.68f), new Vector2(0.37f, 4.86f), new Vector2(1.69f, 0.65f)
+        };
+        // Keep the widest objects away from the rim approach and the lamp/box comparison.
+        var second = new[] { 8, 9, 3, 15, 6, 11, 4, 7, 1, 2, 10, 12, 5, 14, 0, 13, 16, 17 };
+        var third = new[] { 1, 15, 14, 5, 3, 7, 0, 10, 6, 13, 11, 16, 12, 4, 9, 8, 17, 2 };
+        var secondRoot = GameObject.Find("Second Arrangement").transform;
+        var thirdRoot = new GameObject("Third Arrangement").transform;
+        foreach (var entry in primary)
+            SetPoses(entry.Item1, entry.Item2, entry.Item3, entry.Item4, entry.Item5, entry.Item6, entry.Item7);
+        for (var i = 0; i < extra.Count; i++)
+            SetPoses(extra[i], edge[i], edge[second[i]], edge[third[i]],
+                90 + (i % 3 - 1) * 11, 90 + (i % 4 - 2) * 8, 90 + (i % 5 - 2) * 9);
+
+        var pieces = primary.Select(entry => entry.Item1).Concat(extra).Append(legacyLamp).ToArray();
+        references.arraySize = pieces.Length;
+        for (var i = 0; i < pieces.Length; i++)
+            references.GetArrayElementAtIndex(i).objectReferenceValue = pieces[i];
+        session.ApplyModifiedPropertiesWithoutUndo();
+        EditorSceneManager.MarkSceneDirty(scene);
+        if (!EditorSceneManager.SaveScene(scene))
+            throw new InvalidOperationException("Failed to save the playtest scene.");
+        return new { definitions = 12, activePieces = pieces.Length - 1, layouts = 3, legacyPieces = 1 };
+
+        Material Existing(string name) => AssetDatabase.LoadAssetAtPath<Material>($"{Content}/{name}.mat");
+
+        void SetLamp(SearchItem item, string id, string name, int price, string condition, Material first, Material secondFinish)
+        {
+            item.name = name;
+            BagItem(item, "Лампа", 2, 2);
+            SetSale(item, id, price, condition);
+            var shell = new[] { item.transform.Find("Base").GetComponent<Renderer>(), item.transform.Find("Shade").GetComponent<Renderer>() };
+            var data = new SerializedObject(item);
+            var renderers = data.FindProperty("lampShell");
+            renderers.arraySize = shell.Length;
+            for (var i = 0; i < shell.Length; i++)
+            {
+                shell[i].sharedMaterial = first;
+                renderers.GetArrayElementAtIndex(i).objectReferenceValue = shell[i];
+            }
+            data.FindProperty("secondLayoutFinish").objectReferenceValue = secondFinish;
+            data.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        SearchItem Find(string name, string id, string label, Vector3 size, Material finish, int width, int height,
+            int price, string condition)
+        {
+            var item = Item(name, id, label, Vector3.zero, size);
+            Box(item.transform, "Housing", Vector3.zero, size * 0.97f, finish);
+            BagItem(item, label, width, height);
+            SetSale(item, id, price, condition);
+            return item;
+        }
+
+        SearchItem Copy(SearchItem template, string id, int price, string condition, string part = null,
+            bool remove = false, bool straighten = false)
+        {
+            var item = Object.Instantiate(template);
+            item.name = $"{template.name} ({id})";
+            SetSale(item, id, price, condition);
+            if (part != null)
+            {
+                var detail = item.transform.Find(part);
+                if (remove)
+                    Object.DestroyImmediate(detail.gameObject);
+                else
+                    detail.localRotation = Quaternion.Euler(0, 0, 27);
+            }
+            if (straighten)
+                item.transform.Find("Raised edge").GetComponent<Renderer>().sharedMaterial = cream;
+            return item;
+        }
+
+        void SetPoses(SearchItem item, Vector2 first, Vector2 secondPosition, Vector2 thirdPosition,
+            float firstAngle, float secondAngle, float thirdAngle)
+        {
+            var height = item.GetComponent<BoxCollider>().size.y / 2f + 0.025f;
+            var data = new SerializedObject(item);
+            var previousMarker = (Transform)data.FindProperty("alternatePose").objectReferenceValue;
+            var marker = previousMarker != null && previousMarker.name == item.Id
+                ? previousMarker : Marker(item.Id, Vector3.zero, Vector3.zero);
+            marker.SetParent(secondRoot);
+            SetPose(marker, secondPosition, secondAngle, height);
+            data.FindProperty("alternatePose").objectReferenceValue = marker;
+            var last = Marker(item.Id, Vector3.zero, Vector3.zero);
+            last.SetParent(thirdRoot);
+            SetPose(last, thirdPosition, thirdAngle, height);
+            data.FindProperty("thirdPose").objectReferenceValue = last;
+            data.ApplyModifiedPropertiesWithoutUndo();
+            SetPose(item.transform, first, firstAngle, height);
+        }
+
+        void SetPose(Transform target, Vector2 location, float yaw, float height)
+        {
+            var floor = Physics.RaycastAll(new Vector3(location.x, 1.40f, location.y), Vector3.down, 1.3f)
+                .Where(hit => hit.transform.root.name is "Roll-off Container" or "Fixed Scrap")
+                .Select(hit => hit.point.y)
+                .DefaultIfEmpty(0.205f)
+                .Max();
+            target.SetPositionAndRotation(new Vector3(location.x, floor + height, location.y), Quaternion.Euler(0, yaw, 0));
+        }
+    }
+
+    private static void SetSale(SearchItem item, string id, int price, string condition)
+    {
+        var data = new SerializedObject(item);
+        data.FindProperty("itemId").stringValue = id;
+        data.FindProperty("salePrice").intValue = price;
+        data.FindProperty("saleCondition").stringValue = condition;
+        data.ApplyModifiedPropertiesWithoutUndo();
+    }
+
 
     private static ExpeditionView CreateExpeditionView(Transform parent, Font font)
     {
