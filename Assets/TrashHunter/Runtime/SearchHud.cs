@@ -8,6 +8,9 @@ namespace TrashHunter
         [SerializeField] private Text prompt;
         [SerializeField] private Text controls;
         [SerializeField] private Graphic reticle;
+        [SerializeField] private BagView bag;
+
+        public BagView Bag => bag;
 
         public void Show(string action, string bindings, bool showReticle)
         {

@@ -4,7 +4,10 @@ using Unity.Pipeline.Scripting;
 
 // Pipeline 1.0.0 does not expose additional assembly references on script eval.
 // Run the same route against Input System and VContainer in the development Player.
-var source = Path.GetFullPath("AgentScripts/VerifySearchPrototype.cs");
+var routeFile = typeof(TrashHunter.GameState).GetProperty("Bag") == null
+    ? "AgentScripts/VerifySearchPrototype.cs"
+    : "AgentScripts/VerifyBagSelection.cs";
+var source = Path.GetFullPath(routeFile);
 var assembly = typeof(Wait).Assembly;
 var requestType = assembly.GetType("Unity.Pipeline.Compilation.CompilationRequest", true);
 var compiler = assembly.GetType("Unity.Pipeline.Compilation.RoslynCompilationService", true);

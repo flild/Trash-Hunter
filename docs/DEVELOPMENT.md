@@ -1,4 +1,4 @@
-﻿# Разработка Trash-Hunter
+# Разработка Trash-Hunter
 
 ## Проверенное окружение — 16 ноября 2026
 
@@ -195,8 +195,8 @@ unity command script eval @pipeline -- --file AgentScripts/VerifySearchPrototype
 Для прогона в Player нужна локальная Development-сборка с временно включённым
 Pipeline Runtime. Собирается только ContainerSearch. Запускать исполняемый файл
 с рабочей папкой проекта. [VerifySearchPlayer.cs](../AgentScripts/VerifySearchPlayer.cs)
-передаёт тому же маршруту ссылки на библиотеки ввода и DI через компилятор
-Pipeline 1.0.0:
+выбирает маршрут по версии собранной игры и передаёт ему ссылки на библиотеки
+ввода и DI через компилятор Pipeline 1.0.0. Для сборки I-010 используется команда:
 
 ```powershell
 unity command script eval --runtime TrashHunterSearch --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/VerifySearchPlayer.cs --timeout 35
@@ -205,6 +205,23 @@ unity command script eval --runtime TrashHunterSearch --caller plugin --skill un
 Для итогового Player Runtime включать только на время проверки.
 После локальной сборки вернуть исходные настройки Editor и приложить уведомление
 о лицензии рядом с исполняемым файлом.
+
+## Проверка поясной сумки
+
+[VerifyBagSelection.cs](../AgentScripts/VerifyBagSelection.cs) проходит I-020
+виртуальным вводом на свежем Play Mode. [VerifySearchPrototype.cs](../AgentScripts/VerifySearchPrototype.cs)
+учитывает подбор сумки при повторе маршрута I-010 в актуальной сцене.
+Оба скрипта находятся вне `Assets/`.
+
+~~~powershell
+$projectPath = 'F:\UnityProjects\Trash-Hunter'
+$pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
+unity command script eval @pipeline -- --file AgentScripts/VerifyBagSelection.cs --timeout 55
+unity command script eval --runtime TrashHunterBag --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/VerifySearchPlayer.cs --timeout 55
+~~~
+
+Использовать свежую сессию для каждого маршрута. Player запускать с рабочей
+папкой проекта. Управление, результаты и границы — в [отчёте I-020](sessions/2026-11-24-i020-bag-selection.md).
 
 ## Официальные инструкции
 

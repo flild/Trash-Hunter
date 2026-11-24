@@ -19,6 +19,11 @@ namespace TrashHunter
     {
         private readonly Dictionary<string, ItemPose> itemPoses = new();
 
+        public BagInventory Bag { get; } = new();
+        public bool HasBag { get; set; }
+        public string HeldItemId { get; set; }
+        public bool HeldItemRotated { get; set; }
+
         public bool TryGetPose(string id, out ItemPose pose) => itemPoses.TryGetValue(id, out pose);
 
         public void RecordPose(string id, ItemPose pose) => itemPoses[id] = pose;

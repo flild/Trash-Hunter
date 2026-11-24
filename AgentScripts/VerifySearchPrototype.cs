@@ -26,7 +26,8 @@ var mouse = InputSystem.AddDevice<Mouse>();
 keys.MakeCurrent();
 mouse.MakeCurrent();
 var prefix = Application.isEditor ? "editor" : "player";
-var captureDir = Path.GetFullPath("Logs/I-010");
+var starterBag = GameObject.Find("Starter Waist Bag");
+var captureDir = Path.GetFullPath(starterBag != null ? "Logs/I-020/search-regression" : "Logs/I-010");
 Directory.CreateDirectory(captureDir);
 try
 {
@@ -46,6 +47,12 @@ try
         text.rectTransform.rect.height > 0), "HUD text has visible layout bounds");
     if (Cursor.lockState != CursorLockMode.Locked)
         await Click();
+    if (starterBag != null)
+    {
+        await Aim(view, starterBag.transform.position);
+        await KeyTap(Key.E);
+        Require(!starterBag.activeSelf, "Starter bag unlocked the search route");
+    }
     Require(Prompt().Contains("Залезть"), "Climb prompt at the access rim");
     await Capture("entry");
     await KeyTap(Key.E);

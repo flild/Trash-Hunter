@@ -139,7 +139,207 @@ public static class CreateSearchPrototype
         var scenes = EditorBuildSettings.scenes;
         EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) }.Concat(scenes).ToArray();
         AssetDatabase.SaveAssets();
+        AddBag();
         return new { ScenePath, Player = AssetDatabase.GetAssetPath(player), Hud = AssetDatabase.GetAssetPath(hud) };
+    }
+
+    public static object AddBag()
+    {
+        var scene = SceneManager.GetActiveScene();
+        if (scene.path != ScenePath || scene.isDirty || EditorApplication.isPlayingOrWillChangePlaymode)
+            throw new InvalidOperationException("Open the saved ContainerSearch scene in Edit Mode.");
+        var session = Object.FindAnyObjectByType<SearchSession>();
+        var serialized = new SerializedObject(session);
+        if (serialized.FindProperty("starterBag").objectReferenceValue != null)
+            throw new InvalidOperationException("The scene already has a starter bag.");
+
+        var hudPath = Content + "/SearchHud.prefab";
+        var hudRoot = PrefabUtility.LoadPrefabContents(hudPath);
+        try
+        {
+            var hud = hudRoot.GetComponent<SearchHud>();
+            var font = hudRoot.GetComponentsInChildren<Text>().First().font;
+            if (hudRoot.GetComponentInChildren<BagView>(true) != null)
+                throw new InvalidOperationException("The HUD already has a bag view.");
+            Assign(hud, "bag", CreateBagView(hud.transform, font));
+            if (PrefabUtility.SaveAsPrefabAsset(hudRoot, hudPath) == null)
+                throw new InvalidOperationException("Failed to save the bag view.");
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(hudRoot);
+        }
+
+        Material Existing(string name) => AssetDatabase.LoadAssetAtPath<Material>($"{Content}/{name}.mat");
+        var dark = Existing("Dark_Metal");
+        var gold = Existing("Safety_Paint");
+        var cream = Existing("Ivory");
+        var red = Existing("Oxide");
+
+        var bag = new GameObject("Starter Waist Bag");
+        bag.transform.position = new Vector3(-0.55f, 1.42f, -0.16f);
+        var bagCollider = bag.AddComponent<BoxCollider>();
+        bagCollider.size = new Vector3(0.66f, 0.27f, 0.32f);
+        Box(bag.transform, "Canvas pouch", new(0, 0, 0), new(0.48f, 0.23f, 0.24f), red);
+        Box(bag.transform, "Front pocket", new(0, -0.02f, -0.121f), new(0.39f, 0.15f, 0.045f), red);
+        Box(bag.transform, "Zipper", new(0, 0.072f, -0.153f), new(0.394f, 0.022f, 0.024f), dark);
+        Box(bag.transform, "Pull tab", new(0.143f, 0.05f, -0.172f), new(0.032f, 0.075f, 0.014f), gold);
+        Box(bag.transform, "Waist strap", new(0, -0.062f, 0.086f), new(0.66f, 0.062f, 0.065f), dark);
+        Box(bag.transform, "Buckle", new(0.28f, -0.06f, 0.075f), new(0.074f, 0.09f, 0.091f), gold);
+
+        var strip = Item("Metal strip", "strip-a", "Металлическая рейка", new(-1.43f, 0.405f, 2.49f), new(0.75f, 0.07f, 0.13f));
+        Box(strip.transform, "Metal strip", Vector3.zero, new(0.74f, 0.055f, 0.128f), Existing("Lamp_Enamel"));
+        Box(strip.transform, "Raised edge", new(0, 0.025f, 0.05f), new(0.73f, 0.023f, 0.019f), dark);
+        var spare = Item("Spare dial", "dial-a", "Запасная ручка настройки", new(0.78f, 0.265f, 1.91f), new(0.15f, 0.12f, 0.17f));
+        var dial = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        dial.name = "Dial";
+        dial.transform.SetParent(spare.transform, false);
+        dial.transform.localScale = new Vector3(0.147f, 0.052f, 0.147f);
+        dial.GetComponent<Renderer>().sharedMaterial = dark;
+        Object.DestroyImmediate(dial.GetComponent<Collider>());
+        Box(spare.transform, "Position mark", new(0, 0.053f, -0.037f), new(0.015f, 0.007f, 0.056f), cream);
+
+        var items = serialized.FindProperty("items");
+        var crate = (SearchItem)items.GetArrayElementAtIndex(0).objectReferenceValue;
+        var lamp = (SearchItem)items.GetArrayElementAtIndex(1).objectReferenceValue;
+        var radio = (SearchItem)items.GetArrayElementAtIndex(2).objectReferenceValue;
+        BagItem(crate, "Ящик", 4, 2);
+        BagItem(lamp, "Лампа", 1, 2);
+        BagItem(radio, "Радио", 1, 1);
+        BagItem(strip, "Рейка", 1, 3);
+        BagItem(spare, "Ручка", 1, 1);
+        items.arraySize = 5;
+        items.GetArrayElementAtIndex(3).objectReferenceValue = strip;
+        items.GetArrayElementAtIndex(4).objectReferenceValue = spare;
+        serialized.FindProperty("starterBag").objectReferenceValue = bagCollider;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+
+        EditorSceneManager.MarkSceneDirty(scene);
+        if (!EditorSceneManager.SaveScene(scene))
+            throw new InvalidOperationException("Failed to save ContainerSearch.");
+        return new { ScenePath, Hud = hudPath, Bag = bag.name, Items = items.arraySize };
+    }
+
+    private static BagView CreateBagView(Transform parent, Font font)
+    {
+        var overlay = Rect(parent, "BagView", new(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+        Stretch(overlay, Vector2.zero);
+        Fill(overlay, new Color32(14, 16, 14, 140));
+        var view = overlay.gameObject.AddComponent<BagView>();
+        var panel = Rect(overlay, "BagPanel", new(0.5f, 0.5f), Vector2.zero, new(416, 402));
+        Fill(panel, ColorFromHex(0x242923));
+        var title = Text(panel, font, "BagTitle", new(0.5f, 1), new(0, -33), new(360, 32), 26);
+        title.text = "Поясная сумка";
+        title.fontStyle = FontStyle.Bold;
+
+        var gridSize = new Vector2(BagInventory.Columns * BagView.CellSize, BagInventory.Rows * BagView.CellSize);
+        var grid = Rect(panel, "BagGrid", new(0.5f, 1), new(-gridSize.x / 2, -65), gridSize);
+        grid.pivot = new Vector2(0, 1);
+        Fill(grid, ColorFromHex(0x262e28));
+        grid.gameObject.AddComponent<RectMask2D>();
+        for (var row = 0; row < BagInventory.Rows; row++)
+        {
+            for (var col = 0; col < BagInventory.Columns; col++)
+            {
+                var cell = Rect(grid, $"Cell{col}-{row}", new(0, 1),
+                    new(col * BagView.CellSize + 1, -row * BagView.CellSize - 1),
+                    Vector2.one * (BagView.CellSize - 2));
+                cell.pivot = new Vector2(0, 1);
+                Fill(cell, ColorFromHex(0x3e473e));
+            }
+        }
+
+        var tile = Rect(grid, "ItemTile", new(0, 1), Vector2.zero, Vector2.one * BagView.CellSize);
+        tile.pivot = new Vector2(0, 1);
+        Fill(tile, ColorFromHex(0x617769));
+        var label = Text(tile, font, "ItemName", new(0.5f, 0.5f), Vector2.zero, Vector2.zero, 20);
+        label.fontStyle = FontStyle.Bold;
+        Stretch(label.rectTransform, new Vector2(4, 4));
+        tile.gameObject.SetActive(false);
+        AddGridGuides(grid, tile);
+
+        var outline = Rect(grid, "FitPreview", new(0, 1), Vector2.zero, Vector2.zero);
+        outline.pivot = new Vector2(0, 1);
+        var preview = Fill(outline, Color.clear);
+        var edges = new[]
+        {
+            Edge(outline, "Top", new(0, 1), new(1, 1), new(0, -3), Vector2.zero),
+            Edge(outline, "Bottom", new(0, 0), new(1, 0), Vector2.zero, new(0, 3)),
+            Edge(outline, "Left", new(0, 0), new(0, 1), Vector2.zero, new(3, 0)),
+            Edge(outline, "Right", new(1, 0), new(1, 1), new(-3, 0), Vector2.zero)
+        };
+        outline.gameObject.SetActive(false);
+
+        var selection = Text(panel, font, "BagSelection", new(0.5f, 1), new(0, -288), new(390, 28), 21);
+        selection.fontStyle = FontStyle.Bold;
+        var feedback = Text(panel, font, "BagFeedback", new(0.5f, 1), new(0, -322), new(390, 26), 18);
+        var controls = Text(panel, font, "BagControls", new(0.5f, 1), new(0, -369), new(390, 24), 17);
+        controls.color = ColorFromHex(0xd3cdbd);
+        Assign(view, "grid", grid);
+        Assign(view, "itemTile", tile);
+        Assign(view, "preview", preview);
+        Assign(view, "selection", selection);
+        Assign(view, "feedback", feedback);
+        Assign(view, "controls", controls);
+        var serialized = new SerializedObject(view);
+        var edgeRefs = serialized.FindProperty("previewEdges");
+        edgeRefs.arraySize = edges.Length;
+        for (var i = 0; i < edges.Length; i++)
+            edgeRefs.GetArrayElementAtIndex(i).objectReferenceValue = edges[i];
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        overlay.gameObject.SetActive(false);
+        return view;
+    }
+
+    private static void AddGridGuides(RectTransform grid, RectTransform tile)
+    {
+        var itemsLayer = Rect(grid, "BagItems", Vector2.zero, Vector2.zero, Vector2.zero);
+        Stretch(itemsLayer, Vector2.zero);
+        tile.SetParent(itemsLayer, false);
+        tile.anchoredPosition = Vector2.zero;
+
+        var guide = new Color32(20, 24, 20, 115);
+        var gridWidth = BagInventory.Columns * BagView.CellSize;
+        var gridHeight = BagInventory.Rows * BagView.CellSize;
+        for (var col = 1; col < BagInventory.Columns; col++)
+            Fill(Rect(grid, $"ColumnGuide{col}", new(0, 1), new(col * BagView.CellSize, -gridHeight / 2f),
+                new(2, gridHeight)), guide);
+        for (var row = 1; row < BagInventory.Rows; row++)
+            Fill(Rect(grid, $"RowGuide{row}", new(0, 1), new(gridWidth / 2f, -row * BagView.CellSize),
+                new(gridWidth, 2)), guide);
+    }
+
+    private static Image Edge(RectTransform parent, string name, Vector2 min, Vector2 max, Vector2 low, Vector2 high)
+    {
+        var rect = Rect(parent, name, min, Vector2.zero, Vector2.zero);
+        rect.anchorMax = max;
+        rect.offsetMin = low;
+        rect.offsetMax = high;
+        return Fill(rect, Color.white);
+    }
+
+    private static Image Fill(RectTransform rect, Color color)
+    {
+        var image = rect.gameObject.AddComponent<Image>();
+        image.color = color;
+        image.raycastTarget = false;
+        return image;
+    }
+
+    private static void Stretch(RectTransform rect, Vector2 inset)
+    {
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = inset;
+        rect.offsetMax = -inset;
+    }
+
+    private static void BagItem(SearchItem item, string label, int width, int height)
+    {
+        var serialized = new SerializedObject(item);
+        serialized.FindProperty("bagLabel").stringValue = label;
+        serialized.FindProperty("bagSize").vector2IntValue = new Vector2Int(width, height);
+        serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 
     private static SearchPlayer CreatePlayer()
