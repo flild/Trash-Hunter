@@ -220,6 +220,130 @@ public static class CreateSearchPrototype
         return new { ScenePath, Hud = hudPath, Bag = bag.name, Items = items.arraySize };
     }
 
+    public static object AddExpedition()
+    {
+        var scene = SceneManager.GetActiveScene();
+        if (scene.path != ScenePath || scene.isDirty || EditorApplication.isPlayingOrWillChangePlaymode)
+            throw new InvalidOperationException("Open the saved ContainerSearch scene in Edit Mode.");
+        var session = Object.FindAnyObjectByType<SearchSession>();
+        var serialized = new SerializedObject(session);
+        if (serialized.FindProperty("starterBag").objectReferenceValue == null ||
+            serialized.FindProperty("exit").objectReferenceValue != null)
+            throw new InvalidOperationException("Apply AddExpedition once to the scene with the starter bag.");
+
+        var items = serialized.FindProperty("items");
+        var definitions = Enumerable.Range(0, items.arraySize)
+            .Select(i => (SearchItem)items.GetArrayElementAtIndex(i).objectReferenceValue)
+            .ToDictionary(item => item.Id);
+        var layout = new (string key, Vector3 position, float yaw, int price, string condition)[]
+        {
+            ("crate-a", new(-0.68f, 0.58f, 3.93f), -23, 0, ""),
+            ("lamp-a", new(1.23f, 0.44f, 2.62f), 147, 18, "Ушко треснуло, плафон болтается."),
+            ("radio-a", new(-1.35f, 0.49f, 2.2f), 28, 26, "Корпус без видимых повреждений."),
+            ("strip-a", new(0.42f, 0.32f, 3.76f), 24, 6, "Рейка погнута."),
+            ("dial-a", new(-0.37f, 0.28f, 1.94f), 92, 4, "Ручка цела.")
+        };
+        if (layout.Length != definitions.Count || layout.Any(item => !definitions.ContainsKey(item.key)))
+            throw new InvalidOperationException("Alternate layout must refer to the current five item definitions.");
+
+        var hudPath = Content + "/SearchHud.prefab";
+        var hudRoot = PrefabUtility.LoadPrefabContents(hudPath);
+        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        try
+        {
+            var hud = hudRoot.GetComponent<SearchHud>();
+            if (hudRoot.GetComponentInChildren<ExpeditionView>(true) != null)
+                throw new InvalidOperationException("The HUD already has an expedition view.");
+            Assign(hud, "expedition", CreateExpeditionView(hudRoot.transform, font));
+
+            var feedback = Text(hudRoot.transform, font, "SaveError", new(0.5f, 0), new(0, 26), new(800, 42), 18);
+            feedback.rectTransform.anchorMin = feedback.rectTransform.anchorMax = new Vector2(0.5f, 1);
+            feedback.rectTransform.anchoredPosition = new Vector2(0, -37);
+            feedback.color = ColorFromHex(0xffaa95);
+            var outline = feedback.gameObject.AddComponent<Outline>();
+            outline.effectColor = ColorFromHex(0x171b17);
+            outline.effectDistance = new Vector2(2, -2);
+            Assign(hud, "feedback", feedback);
+            if (PrefabUtility.SaveAsPrefabAsset(hudRoot, hudPath) == null)
+                throw new InvalidOperationException("Failed to save the expedition HUD.");
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(hudRoot);
+        }
+
+        var layoutRoot = new GameObject("Second Arrangement").transform;
+        foreach (var definition in layout)
+        {
+            var marker = Marker(definition.key, definition.position, new(0, definition.yaw, 0));
+            marker.SetParent(layoutRoot);
+            var item = new SerializedObject(definitions[definition.key]);
+            item.FindProperty("alternatePose").objectReferenceValue = marker;
+            item.FindProperty("salePrice").intValue = definition.price;
+            item.FindProperty("saleCondition").stringValue = definition.condition;
+            item.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        var exit = Marker("Yard Exit", new(0, 0, -3.82f), Vector3.zero);
+        Assign(session, "exit", exit);
+        var dark = AssetDatabase.LoadAssetAtPath<Material>(Content + "/Dark_Metal.mat");
+        var safety = AssetDatabase.LoadAssetAtPath<Material>(Content + "/Safety_Paint.mat");
+        Box(exit, "Exit marking", new(0, 0.006f, 0.32f), new(2.55f, 0.026f, 0.08f), safety);
+        Box(exit, "Sign post", new(1.34f, 0.57f, 0), new(0.06f, 1.14f, 0.06f), dark);
+        Box(exit, "Exit sign", new(1.34f, 1.20f, 0), new(0.78f, 0.28f, 0.052f), dark);
+        var sign = new GameObject("Yard Exit Label", typeof(RectTransform), typeof(Canvas)).GetComponent<RectTransform>();
+        sign.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+        sign.SetParent(exit, false);
+        sign.localPosition = new Vector3(1.34f, 1.20f, 0.03f);
+        sign.localRotation = Quaternion.Euler(0, 180, 0);
+        sign.localScale = Vector3.one * 0.0015f;
+        sign.sizeDelta = new Vector2(440, 150);
+        var exitLabel = Text(sign, font, "Exit", new(0.5f, 0.5f), Vector2.zero, sign.sizeDelta, 72);
+        exitLabel.fontStyle = FontStyle.Bold;
+        exitLabel.color = ColorFromHex(0xf0c776);
+        exitLabel.text = "ДОМОЙ";
+
+        EditorSceneManager.MarkSceneDirty(scene);
+        if (!EditorSceneManager.SaveScene(scene))
+            throw new InvalidOperationException("Failed to save ContainerSearch.");
+        return new { ScenePath, hudPath, alternatePositions = layout.Length, exit = exit.name };
+    }
+
+    private static ExpeditionView CreateExpeditionView(Transform parent, Font font)
+    {
+        var overlay = Rect(parent, "ExpeditionView", new(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+        Stretch(overlay, Vector2.zero);
+        Fill(overlay, new Color32(14, 16, 14, 211));
+        var view = overlay.gameObject.AddComponent<ExpeditionView>();
+        var panel = Rect(overlay, "ExpeditionPanel", new(0.5f, 0.5f), Vector2.zero, new(690, 392));
+        Fill(panel, ColorFromHex(0x262e28));
+
+        Text Row(string name, float y, float height, int size, TextAnchor alignment)
+        {
+            var label = Text(panel, font, name, new(0.5f, 1), new(0, -y), new(618, height), size);
+            label.alignment = alignment;
+            label.color = ColorFromHex(0xe8e1d0);
+            return label;
+        }
+
+        var heading = Row("Heading", 48, 42, 32, TextAnchor.MiddleLeft);
+        heading.fontStyle = FontStyle.Bold;
+        var subtitle = Row("Summary", 92, 29, 21, TextAnchor.MiddleLeft);
+        subtitle.color = ColorFromHex(0xf0c776);
+        var body = Row("Details", 193, 144, 21, TextAnchor.UpperLeft);
+        body.lineSpacing = 1.2f;
+        var feedback = Row("Feedback", 298, 53, 18, TextAnchor.MiddleLeft);
+        var actions = Row("Actions", 349, 34, 18, TextAnchor.MiddleLeft);
+        Fill(Rect(panel, "Action Divider", new(0.5f, 1), new(0, -322), new(618, 1)), ColorFromHex(0x556256));
+        Assign(view, "heading", heading);
+        Assign(view, "subtitle", subtitle);
+        Assign(view, "body", body);
+        Assign(view, "feedback", feedback);
+        Assign(view, "actions", actions);
+        overlay.gameObject.SetActive(false);
+        return view;
+    }
+
     private static BagView CreateBagView(Transform parent, Font font)
     {
         var overlay = Rect(parent, "BagView", new(0.5f, 0.5f), Vector2.zero, Vector2.zero);

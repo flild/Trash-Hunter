@@ -18,13 +18,30 @@ namespace TrashHunter
 
         private void Awake() => controller = GetComponent<CharacterController>();
 
-        public void Place(Transform marker)
+        public void Place(Transform marker) => Restore(PoseAt(marker));
+
+        internal static PlayerPose PoseAt(Transform marker) => new()
+        {
+            position = marker.position,
+            yaw = marker.eulerAngles.y,
+            pitch = Mathf.DeltaAngle(0f, marker.eulerAngles.x)
+        };
+
+        internal PlayerPose Capture(bool inside) => new()
+        {
+            position = transform.position,
+            yaw = transform.eulerAngles.y,
+            pitch = pitch,
+            inside = inside
+        };
+
+        internal void Restore(PlayerPose pose)
         {
             controller.enabled = false;
-            transform.SetPositionAndRotation(marker.position, Quaternion.Euler(0f, marker.eulerAngles.y, 0f));
+            transform.SetPositionAndRotation(pose.position, Quaternion.Euler(0f, pose.yaw, 0f));
             controller.enabled = true;
             verticalSpeed = 0f;
-            pitch = Mathf.DeltaAngle(0f, marker.eulerAngles.x);
+            pitch = pose.pitch;
             viewCamera.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
         }
 

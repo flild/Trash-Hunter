@@ -48,7 +48,7 @@ namespace TrashHunter
         {
             if (placement.Width <= 0 || placement.Height <= 0 ||
                 placement.Column < 0 || placement.Row < 0 ||
-                placement.Column + placement.Width > Columns || placement.Row + placement.Height > Rows)
+                placement.Column > Columns - placement.Width || placement.Row > Rows - placement.Height)
                 return BagFit.Outside;
 
             foreach (var item in items.Values)

@@ -4,7 +4,9 @@ using Unity.Pipeline.Scripting;
 
 // Pipeline 1.0.0 does not expose additional assembly references on script eval.
 // Run the same route against Input System and VContainer in the development Player.
-var routeFile = typeof(TrashHunter.GameState).GetProperty("Bag") == null
+var routeFile = Environment.GetCommandLineArgs().Contains("-trash-hunter-check")
+    ? "AgentScripts/VerifyExpedition.cs"
+    : typeof(TrashHunter.GameState).GetProperty("Bag") == null
     ? "AgentScripts/VerifySearchPrototype.cs"
     : "AgentScripts/VerifyBagSelection.cs";
 var source = Path.GetFullPath(routeFile);
@@ -14,7 +16,7 @@ var compiler = assembly.GetType("Unity.Pipeline.Compilation.RoslynCompilationSer
 var request = Activator.CreateInstance(requestType, nonPublic: true);
 requestType.GetProperty("SourceCode").SetValue(request, File.ReadAllText(source));
 requestType.GetProperty("AssemblyName").SetValue(request, $"SearchPlayerProbe_{Guid.NewGuid():N}");
-requestType.GetProperty("AdditionalAssemblyPrefixes").SetValue(request, new[] { "Unity.InputSystem", "VContainer" });
+requestType.GetProperty("AdditionalAssemblyPrefixes").SetValue(request, new[] { "Unity.InputSystem", "VContainer", "Newtonsoft.Json", "System" });
 requestType.GetProperty("ScriptUsings", BindingFlags.Instance | BindingFlags.NonPublic)
     .SetValue(request, new[] { "Unity.Pipeline.Scripting" });
 var result = compiler.GetMethod("Compile", new[] { requestType }).Invoke(null, new[] { request });

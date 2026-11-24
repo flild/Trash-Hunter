@@ -7,8 +7,11 @@ namespace TrashHunter
 {
     public sealed class SearchSession : MonoBehaviour
     {
+        private enum Mode { Search, Return, Home, Sale, Pause, Continue, LoadError }
+
         [SerializeField] private Transform outside;
         [SerializeField] private Transform inside;
+        [SerializeField] private Transform exit;
         [SerializeField] private SearchItem[] items;
         [SerializeField] private Collider starterBag;
         [SerializeField] private float rimReach = 1.15f;
@@ -19,26 +22,65 @@ namespace TrashHunter
         private SearchHud hud;
         private SearchItem held;
         private Quaternion inspectRotation;
+        private Mode mode;
         private bool inContainer;
         private bool inspecting;
         private bool bagOpen;
         private bool reloading;
+        private bool quitting;
         private float blockedUntil;
+        private int selection;
+        private int returnExpedition;
+        private SaleOffer offer;
+        private string receipt;
 
         public void Initialize(GameState gameState, SearchPlayer scenePlayer, SearchHud sceneHud)
         {
             state = gameState;
             player = scenePlayer;
             hud = sceneHud;
-            starterBag.gameObject.SetActive(!state.HasBag);
+            foreach (var item in items)
+                item.CacheLayout();
+            Application.wantsToQuit += SaveBeforeQuit;
+            Open();
+        }
+
+        private void Open()
+        {
+            if (!state.Open(items, SearchPlayer.PoseAt(outside), out var resuming))
+            {
+                ShowLoadError();
+                return;
+            }
+
+            ApplySnapshot();
+            if (!resuming)
+            {
+                CloseOverlay();
+                return;
+            }
+
+            mode = Mode.Continue;
+            foreach (var item in items)
+                item.FreezeWorld(true);
+            ShowOverlay("Продолжить", state.AtHome ? "Дома" : $"Вылазка {state.Expedition}", string.Empty,
+                "Enter  Продолжить     Esc  Выйти", state.RecoveryNotice);
+        }
+
+        private void ApplySnapshot()
+        {
+            held = null;
+            inContainer = state.Player.inside;
+            starterBag.gameObject.SetActive(!state.HasBag && !state.AtHome);
             foreach (var item in items)
             {
                 item.Restore(state);
                 if (item.IsHeld)
                     held = item;
             }
-            player.Place(outside);
-            LockCursor();
+            player.Restore(state.Player);
+            Physics.SyncTransforms();
+            PresentHand();
         }
 
         private void Update()
@@ -47,10 +89,19 @@ namespace TrashHunter
                 return;
 
             var keyboard = Keyboard.current;
+            if (mode != Mode.Search)
+            {
+                UpdateOverlay(keyboard);
+                return;
+            }
+
             var mouse = Mouse.current;
             if (keyboard?.f5Key.wasPressedThisFrame == true)
             {
-                Reload();
+                CaptureWorld();
+                if (state.Save())
+                    Reload();
+                UpdateError();
                 return;
             }
 
@@ -59,13 +110,10 @@ namespace TrashHunter
             if (bagOpen)
             {
                 if (cancel || toggleBag)
-                {
-                    bagOpen = false;
-                    hud.Bag.gameObject.SetActive(false);
-                    LockCursor();
-                }
+                    CloseBag();
                 else
                     UpdateBag(keyboard, mouse);
+                UpdateError();
                 return;
             }
 
@@ -74,11 +122,14 @@ namespace TrashHunter
                 if (inspecting)
                     inspecting = false;
                 else
-                    UnlockCursor();
+                {
+                    Pause();
+                    return;
+                }
             }
             if (Cursor.lockState != CursorLockMode.Locked)
             {
-                hud.Show("ЛКМ  Вернуться к поиску", string.Empty, false);
+                hud.Show("ЛКМ  Вернуться к поиску", "Esc  Пауза", false);
                 if (mouse?.leftButton.wasPressedThisFrame == true)
                     LockCursor();
                 return;
@@ -116,18 +167,32 @@ namespace TrashHunter
                 var canPickUp = AimHit().collider == starterBag;
                 if (canPickUp && actionPressed)
                 {
-                    state.HasBag = true;
-                    starterBag.gameObject.SetActive(false);
-                    hud.Show("E  Залезть", "WASD  Движение     Tab  Сумка", true);
-                    return;
+                    CaptureWorld();
+                    if (state.EquipBag())
+                    {
+                        starterBag.gameObject.SetActive(false);
+                        hud.Show("E  Залезть", "WASD  Движение     Tab  Сумка     Esc  Пауза", true);
+                        UpdateError();
+                        return;
+                    }
                 }
 
                 hud.Show(canPickUp ? "E  Подобрать поясную сумку" : "Подберите поясную сумку",
-                    "WASD  Движение", true);
+                    "WASD  Движение     Esc  Пауза", true);
+                UpdateError();
                 return;
             }
 
-            var atRim = AtRim();
+            var atExit = !inContainer && Near(exit, 1.1f);
+            if (atExit && actionPressed)
+            {
+                returnExpedition = state.Expedition;
+                mode = Mode.Return;
+                ShowReturn();
+                return;
+            }
+
+            var atRim = Near(inContainer ? inside : outside, rimReach);
             if (atRim && actionPressed)
             {
                 inContainer = !inContainer;
@@ -141,22 +206,195 @@ namespace TrashHunter
                 if (held != null)
                     TryPlace(hit);
                 else if (target != null)
-                {
-                    target.Record(state);
-                    TakeInHand(target, false);
-                }
+                    TakeInHand(target);
             }
 
             var action = held != null ? "ЛКМ  Положить     Q  Осмотреть" :
                 target != null ? $"ЛКМ  Взять  ·  {target.DisplayName}" : string.Empty;
             if (held != null && Time.unscaledTime < blockedUntil)
                 action = "Наведите на свободную поверхность";
-            if (atRim)
+            if (atExit || atRim)
             {
-                var rimAction = inContainer ? "E  Вылезти" : "E  Залезть";
-                action = action.Length == 0 ? rimAction : $"{rimAction}     {action}";
+                var interaction = atExit ? "E  Домой" : inContainer ? "E  Вылезти" : "E  Залезть";
+                action = action.Length == 0 ? interaction : $"{interaction}     {action}";
             }
-            hud.Show(action, "WASD  Движение     Tab  Сумка     F5  Перезагрузить сцену", true);
+            hud.Show(action, "WASD  Движение     Tab  Сумка     Esc  Пауза", true);
+            UpdateError();
+        }
+
+        private void UpdateOverlay(Keyboard keyboard)
+        {
+            if (keyboard == null)
+                return;
+
+            var confirm = keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame;
+            var cancel = keyboard.escapeKey.wasPressedThisFrame;
+            switch (mode)
+            {
+                case Mode.Continue:
+                    if (confirm)
+                    {
+                        foreach (var item in items)
+                            item.FreezeWorld(false);
+                        CloseOverlay();
+                    }
+                    else if (cancel)
+                        Application.Quit();
+                    break;
+                case Mode.LoadError:
+                    if (confirm)
+                        Open();
+                    else if (cancel)
+                        Application.Quit();
+                    break;
+                case Mode.Return:
+                    if (cancel)
+                        CloseOverlay();
+                    else if (confirm)
+                    {
+                        CaptureWorld();
+                        if (state.ReturnHome(returnExpedition))
+                        {
+                            receipt = null;
+                            selection = 0;
+                            ApplySnapshot();
+                            CloseOverlay();
+                        }
+                        else
+                            ShowReturn();
+                    }
+                    break;
+                case Mode.Home:
+                    if (cancel)
+                        Pause();
+                    else if (keyboard.eKey.wasPressedThisFrame)
+                    {
+                        if (state.Depart(state.Expedition, items, SearchPlayer.PoseAt(outside)))
+                            Reload();
+                        else
+                            ShowHome();
+                    }
+                    else if (state.Home.Count > 0 && (confirm || keyboard.upArrowKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame))
+                    {
+                        if (keyboard.upArrowKey.wasPressedThisFrame)
+                            selection = Mathf.Max(0, selection - 1);
+                        else if (keyboard.downArrowKey.wasPressedThisFrame)
+                            selection = Mathf.Min(state.Home.Count - 1, selection + 1);
+                        else if (confirm)
+                        {
+                            offer = state.Quote(state.Home[selection]);
+                            mode = Mode.Sale;
+                            ShowSale();
+                            break;
+                        }
+                        ShowHome();
+                    }
+                    break;
+                case Mode.Sale:
+                    if (cancel)
+                        CloseOverlay();
+                    else if (confirm)
+                    {
+                        if (state.Sell(offer))
+                        {
+                            receipt = $"{offer.Name}  +{offer.Price} ₽\n{offer.Condition}";
+                            CloseOverlay();
+                        }
+                        else
+                            ShowSale();
+                    }
+                    break;
+                case Mode.Pause:
+                    if (cancel || confirm)
+                        CloseOverlay();
+                    else if (keyboard.qKey.wasPressedThisFrame && SaveBeforeQuit())
+                        Application.Quit();
+                    break;
+            }
+        }
+
+        private void ShowReturn()
+        {
+            var warning = held == null ? "Остальные вещи будут потеряны." :
+                "Вещь в руке будет потеряна вместе с оставленными находками.";
+            ShowOverlay("Уйти домой?", $"В сумке  {state.Bag.Count}", $"Домой отправятся только вещи из сумки.\n<color=#FFAA95>{warning}</color>",
+                "Enter  Уйти домой     Esc  Продолжить поиск", state.Error, true);
+        }
+
+        private void ShowHome()
+        {
+            mode = Mode.Home;
+            hud.ShowError(null);
+            selection = Mathf.Clamp(selection, 0, Mathf.Max(0, state.Home.Count - 1));
+            hud.Show(string.Empty, string.Empty, false);
+            hud.Expedition.ShowHome(state, selection, receipt);
+            UnlockCursor();
+        }
+
+        private void ShowSale() => ShowOverlay("Продать вещь?", $"{offer.Price} ₽",
+            $"{offer.Name}\n{offer.Condition}", "Enter  Продать     Esc  Отмена", state.Error, state.Error != null);
+
+        private void ShowLoadError()
+        {
+            mode = Mode.LoadError;
+            ShowOverlay("Автосохранение недоступно", string.Empty, state.Error,
+                "Enter  Повторить чтение     Esc  Выйти", null, true);
+        }
+
+        private void Pause()
+        {
+            if (bagOpen)
+                CloseBag();
+            inspecting = false;
+            mode = Mode.Pause;
+            ShowOverlay("Пауза", string.Empty,
+                state.AtHome ? "Игра продолжится дома." : "При выходе сохранится эта вылазка.",
+                "Enter / Esc  Продолжить     Q  Выйти из игры", state.Error, state.Error != null);
+        }
+
+        private void ShowOverlay(string title, string summary, string details, string keys, string message, bool warning = false)
+        {
+            hud.Show(string.Empty, string.Empty, false);
+            hud.ShowError(null);
+            hud.Expedition.Show(title, summary, details, keys, message, warning);
+            UnlockCursor();
+        }
+
+        private void CloseOverlay()
+        {
+            if (state.AtHome)
+                ShowHome();
+            else
+            {
+                mode = Mode.Search;
+                hud.Expedition.gameObject.SetActive(false);
+                LockCursor();
+            }
+        }
+
+        private void CloseBag()
+        {
+            bagOpen = false;
+            hud.Bag.gameObject.SetActive(false);
+            LockCursor();
+        }
+
+        private void UpdateError() => hud.ShowError(state.Error);
+
+        private bool SaveBeforeQuit()
+        {
+            if (quitting || mode == Mode.LoadError || mode == Mode.Continue || reloading)
+                return true;
+
+            CaptureWorld();
+            if (!state.Save())
+            {
+                Pause();
+                return false;
+            }
+
+            quitting = true;
+            return true;
         }
 
         private void UpdateBag(Keyboard keyboard, Mouse mouse)
@@ -185,18 +423,20 @@ namespace TrashHunter
 
             if (overGrid && mouse?.leftButton.wasPressedThisFrame == true)
             {
-                if (held != null && state.Bag.TryPack(held.Id, placement))
+                if (held != null && fit == BagFit.Fits)
                 {
-                    held.Store();
-                    ClearHand();
-                    hud.Bag.ShowContents(state.Bag, items);
-                    return;
+                    CaptureWorld();
+                    if (state.Pack(placement))
+                    {
+                        held.Store();
+                        ClearHand();
+                        hud.Bag.ShowContents(state.Bag, items);
+                        return;
+                    }
                 }
 
-                if (hovered != null)
+                if (hovered != null && TakeInHand(hovered))
                 {
-                    state.Bag.Remove(hovered.Id);
-                    TakeInHand(hovered, placement.Rotated);
                     hud.Bag.ShowContents(state.Bag, items);
                     return;
                 }
@@ -208,20 +448,20 @@ namespace TrashHunter
         private BagPlacement HandPlacement(int column, int row) =>
             held == null ? default : held.Placement(column, row, state.HeldItemRotated);
 
-        private void TakeInHand(SearchItem item, bool rotated)
+        private bool TakeInHand(SearchItem item)
         {
+            CaptureWorld();
+            if (!state.Take(item.Id))
+                return false;
             item.TakeInHand();
             held = item;
-            state.HeldItemId = item.Id;
-            state.HeldItemRotated = rotated;
             blockedUntil = 0f;
+            return true;
         }
 
         private void ClearHand()
         {
             held = null;
-            state.HeldItemId = null;
-            state.HeldItemRotated = false;
             blockedUntil = 0f;
         }
 
@@ -233,13 +473,20 @@ namespace TrashHunter
             return hit;
         }
 
-        private void LateUpdate()
+        private void CaptureWorld()
         {
-            if (state == null || reloading)
+            if (state.AtHome)
                 return;
+            state.RecordPlayer(player.Capture(inContainer));
             foreach (var item in items)
                 item.Record(state);
-            if (held == null)
+        }
+
+        private void LateUpdate() => PresentHand();
+
+        private void PresentHand()
+        {
+            if (held == null || reloading)
                 return;
 
             var view = player.ViewCamera.transform;
@@ -247,12 +494,8 @@ namespace TrashHunter
             held.Present(view.TransformPoint(offset), view.rotation * (inspecting ? inspectRotation : Quaternion.identity));
         }
 
-        private bool AtRim()
-        {
-            var offset = player.transform.position - (inContainer ? inside.position : outside.position);
-            offset.y = 0f;
-            return offset.sqrMagnitude <= rimReach * rimReach;
-        }
+        private bool Near(Transform marker, float reach) =>
+            Vector3.ProjectOnPlane(player.transform.position - marker.position, Vector3.up).sqrMagnitude <= reach * reach;
 
         private void TryPlace(RaycastHit hit)
         {
@@ -266,9 +509,12 @@ namespace TrashHunter
                     HasClearance(position, (inContainer ? inside : outside).position, clearance) &&
                     !Physics.CheckBox(position, halfSize, rotation, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
                 {
-                    held.Place(position, rotation);
-                    held.Record(state);
-                    ClearHand();
+                    CaptureWorld();
+                    if (state.Place(position, rotation))
+                    {
+                        held.Place(position, rotation);
+                        ClearHand();
+                    }
                     return;
                 }
             }
@@ -305,6 +551,7 @@ namespace TrashHunter
 
         private void OnDestroy()
         {
+            Application.wantsToQuit -= SaveBeforeQuit;
             if (state != null)
                 UnlockCursor();
         }

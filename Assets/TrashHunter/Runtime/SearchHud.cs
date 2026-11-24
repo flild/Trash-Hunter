@@ -9,8 +9,12 @@ namespace TrashHunter
         [SerializeField] private Text controls;
         [SerializeField] private Graphic reticle;
         [SerializeField] private BagView bag;
+        [SerializeField] private ExpeditionView expedition;
+        [SerializeField] private Text feedback;
 
         public BagView Bag => bag;
+        public ExpeditionView Expedition => expedition;
+        public void ShowError(string error) => feedback.text = error ?? string.Empty;
 
         public void Show(string action, string bindings, bool showReticle)
         {

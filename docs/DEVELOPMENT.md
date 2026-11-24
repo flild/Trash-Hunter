@@ -223,6 +223,45 @@ unity command script eval --runtime TrashHunterBag --caller plugin --skill unity
 Использовать свежую сессию для каждого маршрута. Player запускать с рабочей
 папкой проекта. Управление, результаты и границы — в [отчёте I-020](sessions/2026-11-24-i020-bag-selection.md).
 
+## Проверка автослота и продажи
+
+В I-030 [ContainerSearch](../Assets/TrashHunter/Scenes/ContainerSearch.unity)
+получила отдельный выход со двора и вторую укладку. Экран дома, предложение,
+пауза и продолжение находятся в [SearchHud](../Assets/TrashHunter/Content/Search/SearchHud.prefab).
+Сцена и префаб сохранены через `CreateSearchPrototype.AddExpedition`.
+Подробный маршрут сохраняет [VerifyExpedition.cs](../AgentScripts/VerifyExpedition.cs).
+
+Обычный Windows Player хранит один слот в `prototype/` внутри
+`Application.persistentDataPath`. В Editor используется `prototype-editor/`.
+`slot.json` — последняя опубликованная запись, `slot.backup.json` —
+предыдущая проверенная, `slot.pending` — временный файл перед публикацией.
+`slot.lock` удерживается открытой игрой. Повреждённый основной файл
+архивируется под именем `slot.damaged-*.json` перед его заменой.
+
+Для тестов в Editor перед Play Mode задать переменные **в процессе Unity**
+через `script eval`: `TRASH_HUNTER_EDITOR_SAVE_DIR` с абсолютным путём под
+`Logs/I-030/` и `TRASH_HUNTER_CHECK` со значением `prepare` или `resume`.
+Запустить `script eval -- --file AgentScripts/VerifyExpedition.cs --timeout 55`
+с флагами проекта и Pipeline из предыдущего раздела. Между фазами выйти из
+Play Mode и начать новый. После теста снять переменные. Для регрессии сумки
+использовать свежий слот и `VerifyBagSelection.cs`.
+
+Для независимой проверки в Windows запустить локальную Development-сборку
+`Builds/I-030/TrashHunterCycle.exe` с рабочей папкой проекта. Флаги
+`-trash-hunter-save-dir <абсолютный-путь>` и `-trash-hunter-check <фаза>`
+задают изолированный слот и маршрут. Фазы `prepare`, `resume` и `home`
+используют тот же тестовый каталог и каждый раз новый процесс.
+
+~~~powershell
+unity command script eval --runtime TrashHunterCycle --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/VerifySearchPlayer.cs --timeout 55
+~~~
+
+Фаза `recovery` читает ранее подготовленную копию при пропавшем или
+повреждённом основном файле. Фаза `invalid` проверяет отказ загрузки и
+повтор чтения. Менять файлы для таких проверок только в отдельном тестовом
+каталоге. Сборка, снимки, результаты и замеры — в
+[отчёте I-030](sessions/2026-11-25-i030-expedition-save.md).
+
 ## Официальные инструкции
 
 - [Unity CLI](https://docs.unity.com/en-us/unity-cli/use-unity-cli)

@@ -162,6 +162,8 @@ try
     await Tap(Key.Tab);
 
     await Take(camera, radio);
+    var savedPosition = player.transform.position;
+    var savedLook = camera.transform.rotation;
     await Tap(Key.F5);
     await Wait.Until(() => scope == null && Object.FindAnyObjectByType<SearchSceneScope>() != null);
     await Frames();
@@ -183,7 +185,9 @@ try
         Object.FindObjectsByType<BagView>(FindObjectsInactive.Include).Length == 1,
         "Reload preserves five unique item IDs and one inventory view");
 
-    await Tap(Key.E);
+    Require(Vector3.Distance(player.transform.position, savedPosition) < 0.15f &&
+        Quaternion.Angle(savedLook, camera.transform.rotation) < 0.2f,
+        "F5 keeps the player inside with the same viewpoint");
     await Drop(camera, radio, new Vector3(-0.68f, 0.205f, 3.2f));
     await TakePacked(bag, lamp, 1, 0);
     Require(state.HeldItemRotated, "Taking the lamp by its second cell retains its orientation");

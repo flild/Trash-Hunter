@@ -9,42 +9,56 @@ namespace TrashHunter
         [SerializeField] private string displayName;
         [SerializeField] private string bagLabel;
         [SerializeField] private Vector2Int bagSize;
+        [SerializeField] private int salePrice;
+        [SerializeField] private string saleCondition;
+        [SerializeField] private Transform alternatePose;
 
         private Rigidbody body;
         private BoxCollider shape;
+        private WorldItem firstPose;
 
         public string Id => itemId;
         public string DisplayName => displayName;
         public string BagLabel => bagLabel;
         public Vector3 HalfSize => shape.size * 0.5f;
         public bool IsHeld { get; private set; }
+        internal LootDefinition Definition => new(displayName, salePrice, saleCondition, bagSize);
 
         public BagPlacement Placement(int column, int row, bool rotated) =>
             new(column, row, bagSize.x, bagSize.y, rotated);
+
+        internal void CacheLayout() =>
+            firstPose = new WorldItem { key = Id, position = transform.position, rotation = transform.rotation };
+
+        internal WorldItem LayoutPose(bool alternate) => alternate
+            ? new WorldItem { key = Id, position = alternatePose.position, rotation = alternatePose.rotation }
+            : firstPose;
 
         public void Restore(GameState state)
         {
             body = GetComponent<Rigidbody>();
             shape = GetComponent<BoxCollider>();
-            if (state.TryGetPose(Id, out var pose))
+            if (!state.TryGetPose(Id, out var pose))
             {
-                body.position = new Vector3(pose.Position.X, pose.Position.Y, pose.Position.Z);
-                body.rotation = new Quaternion(pose.Rotation.X, pose.Rotation.Y, pose.Rotation.Z, pose.Rotation.W);
+                Store();
+                return;
             }
 
+            transform.SetPositionAndRotation(pose.Position, pose.Rotation);
+            body.position = pose.Position;
+            body.rotation = pose.Rotation;
             if (state.Bag.TryGetPlacement(Id, out _))
                 Store();
             else if (state.HeldItemId == Id)
                 TakeInHand();
+            else
+                Place(pose.Position, pose.Rotation);
         }
 
         public void Record(GameState state)
         {
-            if (IsHeld || !gameObject.activeSelf)
-                return;
-            var p = body.position;
-            var r = body.rotation;
-            state.RecordPose(Id, new ItemPose(new(p.x, p.y, p.z), new(r.x, r.y, r.z, r.w)));
+            if (!IsHeld && gameObject.activeSelf)
+                state.RecordPose(Id, body.position, body.rotation);
         }
 
         public void TakeInHand()
@@ -59,6 +73,12 @@ namespace TrashHunter
             IsHeld = false;
             RemoveFromPhysics();
             gameObject.SetActive(false);
+        }
+
+        internal void FreezeWorld(bool frozen)
+        {
+            if (!IsHeld && gameObject.activeSelf)
+                body.isKinematic = frozen;
         }
 
         private void RemoveFromPhysics()
@@ -76,8 +96,11 @@ namespace TrashHunter
 
         public void Place(Vector3 position, Quaternion rotation)
         {
-            transform.SetPositionAndRotation(position, rotation);
             IsHeld = false;
+            gameObject.SetActive(true);
+            body.position = position;
+            body.rotation = rotation;
+            transform.SetPositionAndRotation(position, rotation);
             shape.enabled = true;
             body.isKinematic = false;
             body.WakeUp();
