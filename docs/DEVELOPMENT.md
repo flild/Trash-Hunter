@@ -173,6 +173,39 @@ git check-ignore -v Library/ Temp/ Logs/ UserSettings/ Builds/
 git diff --check
 ```
 
+## Проверка сцены поиска
+
+Сцена — [ContainerSearch.unity](../Assets/TrashHunter/Scenes/ContainerSearch.unity).
+Её, префабы и материалы создал Editor из [CreateSearchPrototype.cs](../AgentScripts/CreateSearchPrototype.cs).
+Повторный запуск Create для существующей сцены не требуется. VContainer 1.19.0
+зафиксирован в manifest и lock по ревизии. Уведомление для Player —
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+[VerifySearchPrototype.cs](../AgentScripts/VerifySearchPrototype.cs) проходит
+маршрут виртуальными клавиатурой и мышью через Input System. Запускать на
+свежем Play Mode или в только что открытом Windows Player с исходной укладкой.
+Скрипт находится вне `Assets/` и не компилируется в игру.
+
+```powershell
+$projectPath = 'F:\UnityProjects\Trash-Hunter'
+$pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
+unity command script eval @pipeline -- --file AgentScripts/VerifySearchPrototype.cs --timeout 35
+```
+
+Для прогона в Player нужна локальная Development-сборка с временно включённым
+Pipeline Runtime. Собирается только ContainerSearch. Запускать исполняемый файл
+с рабочей папкой проекта. [VerifySearchPlayer.cs](../AgentScripts/VerifySearchPlayer.cs)
+передаёт тому же маршруту ссылки на библиотеки ввода и DI через компилятор
+Pipeline 1.0.0:
+
+```powershell
+unity command script eval --runtime TrashHunterSearch --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/VerifySearchPlayer.cs --timeout 35
+```
+
+Для итогового Player Runtime включать только на время проверки.
+После локальной сборки вернуть исходные настройки Editor и приложить уведомление
+о лицензии рядом с исполняемым файлом.
+
 ## Официальные инструкции
 
 - [Unity CLI](https://docs.unity.com/en-us/unity-cli/use-unity-cli)
