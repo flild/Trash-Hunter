@@ -11,8 +11,8 @@ Unity 6000.6.9f1. Запускать из папки сборки вместе �
 `THIRD_PARTY_NOTICES.md` с лицензией VContainer. Pipeline Runtime в этом
 Player отключён.
 
-Для инструментальной проверки отдельно собран
-`Builds/I-040-QA/TrashHunterPrototypeQA.exe` с Pipeline Runtime.
+Для инструментальной проверки отдельно собран `TrashHunterPrototypeQA.exe`
+с Pipeline Runtime. QA-сборка удалена при закрытии эстафеты.
 Обе сборки содержат актуальную сцену ContainerSearch. Release
 `build_5eb3039318d3` и Development `build_fe98b455a23a` завершились с
 0 ошибок и 0 предупреждений сборки.
@@ -46,16 +46,14 @@ Player отключён.
 | Итоговый Windows x64 Release | Дважды запущен с изолированным слотом и штатно закрыт через окно Windows. Первый запуск записал вылазку №1 с 24 экземплярами, второй захватил тот же слот и сохранил его хеш при закрытии. Полный маршрут выполнен в Development Player. |
 
 Маршрут воспроизводит [VerifyPlaytest.cs](../../AgentScripts/VerifyPlaytest.cs).
-Команды, JSON и снимки перечислены в [DEVELOPMENT](../DEVELOPMENT.md#проверка-итоговой-сборки-и-укладок)
-и в локальной папке `Logs/I-040/`. На снимках проверены закрытый шарнир,
+Команды повторного прогона указаны в [DEVELOPMENT](../DEVELOPMENT.md#проверка-итоговой-сборки-и-укладок).
+На снимках проверены закрытый шарнир,
 маркировка и вид обеих пластин шарнира, а также строка чека. Блокирующих
 игровых дефектов в пройденном маршруте не осталось. Внеэкранный рендер
 сообщает о снятых шейдерах глубины резкости и Panini Projection. Эти
 эффекты в сцене не используются.
 
-После проверки возвращены исходные настройки Editor. Служебный каталог
-Unity `TrashHunterPrototype_BackUpThisFolder_ButDontShipItWithYourGame`
-остаётся рядом с итоговым exe.
+После проверки возвращены исходные настройки Editor.
 
 ## Плейтест с игроками
 
@@ -81,4 +79,4 @@ Unity `TrashHunterPrototype_BackUpThisFolder_ButDontShipItWithYourGame`
    Для чистой пробы в новой папке можно задать
    `-trash-hunter-save-dir <абсолютный-путь>`.
 
-Итоговая передача — в [HANDOFF](../relay/HANDOFF.md).
+Состав сохранённого Player и результаты уборки описаны в [отчёте о закрытии](2026-11-25-prototype-relay-closure.md).

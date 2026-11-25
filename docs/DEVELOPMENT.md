@@ -192,8 +192,9 @@ $pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$p
 unity command script eval @pipeline -- --file AgentScripts/VerifySearchPrototype.cs --timeout 35
 ```
 
-Для прогона в Player нужна локальная Development-сборка с временно включённым
-Pipeline Runtime. Собирается только ContainerSearch. Запускать исполняемый файл
+Проверочные Development-сборки I-010–I-040 удалены при закрытии эстафеты.
+Для нового прогона в Player собрать ContainerSearch с временно включённым
+Pipeline Runtime. Запускать исполняемый файл
 с рабочей папкой проекта. [VerifySearchPlayer.cs](../AgentScripts/VerifySearchPlayer.cs)
 выбирает маршрут по версии собранной игры и передаёт ему ссылки на библиотеки
 ввода и DI через компилятор Pipeline 1.0.0. Для сборки I-010 используется команда:
@@ -202,9 +203,9 @@ Pipeline Runtime. Собирается только ContainerSearch. Запус�
 unity command script eval --runtime TrashHunterSearch --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/VerifySearchPlayer.cs --timeout 35
 ```
 
-Для итогового Player Runtime включать только на время проверки.
-После локальной сборки вернуть исходные настройки Editor и приложить уведомление
-о лицензии рядом с исполняемым файлом.
+Итоговый Player собирать с выключенным Pipeline Runtime. После локальной
+сборки вернуть исходные настройки Editor и приложить уведомление о лицензии
+рядом с исполняемым файлом.
 
 ## Проверка поясной сумки
 
@@ -239,15 +240,15 @@ unity command script eval --runtime TrashHunterBag --caller plugin --skill unity
 архивируется под именем `slot.damaged-*.json` перед его заменой.
 
 Для тестов в Editor перед Play Mode задать переменные **в процессе Unity**
-через `script eval`: `TRASH_HUNTER_EDITOR_SAVE_DIR` с абсолютным путём под
-`Logs/I-030/` и `TRASH_HUNTER_CHECK` со значением `prepare` или `resume`.
+через `script eval`: абсолютный путь нового тестового каталога в
+`TRASH_HUNTER_EDITOR_SAVE_DIR` и фазу `prepare` или `resume` в `TRASH_HUNTER_CHECK`.
 Запустить `script eval -- --file AgentScripts/VerifyExpedition.cs --timeout 55`
 с флагами проекта и Pipeline из предыдущего раздела. Между фазами выйти из
 Play Mode и начать новый. После теста снять переменные. Для регрессии сумки
 использовать свежий слот и `VerifyBagSelection.cs`.
 
-Для независимой проверки в Windows запустить локальную Development-сборку
-`Builds/I-030/TrashHunterCycle.exe` с рабочей папкой проекта. Флаги
+При повторе исторических проверок I-030 на соответствующей ревизии собрать
+Development Player `TrashHunterCycle.exe` и запустить с рабочей папкой проекта. Флаги
 `-trash-hunter-save-dir <абсолютный-путь>` и `-trash-hunter-check <фаза>`
 задают изолированный слот и маршрут. Фазы `prepare`, `resume` и `home`
 используют тот же тестовый каталог и каждый раз новый процесс.
@@ -264,11 +265,11 @@ unity command script eval --runtime TrashHunterCycle --caller plugin --skill uni
 
 ## Проверка итоговой сборки и укладок
 
-Итоговый Windows Player — `Builds/I-040/TrashHunterPrototype.exe`.
-Собирается одна сцена ContainerSearch без Pipeline Runtime. Отдельный
-`Builds/I-040-QA/TrashHunterPrototypeQA.exe` нужен для проверок виртуальным
-вводом. В QA-сборке временно включены Pipeline Runtime для Development и
-фоновое выполнение. Запускать с рабочей папкой проекта и изолированным
+Итоговый Windows Player сохранён в `Builds/I-040/TrashHunterPrototype.exe`.
+Он содержит одну сцену ContainerSearch, Pipeline Runtime выключен.
+Для повторения проверки виртуальным вводом собрать Development Player
+`TrashHunterPrototypeQA.exe`, временно включив Pipeline Runtime и фоновое
+выполнение. Запускать QA Player с рабочей папкой проекта и изолированным
 `-trash-hunter-save-dir <абсолютный-путь>`.
 
 Маршрут [VerifyPlaytest.cs](../AgentScripts/VerifyPlaytest.cs) состоит из
@@ -283,9 +284,8 @@ unity command script eval --runtime TrashHunterCycle --caller plugin --skill uni
 unity command script eval --runtime TrashHunterPrototypeQA --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/VerifySearchPlayer.cs --timeout 65
 ~~~
 
-Локальные отчёты Unity BuildReport, результаты фаз, журналы и снимки
-находятся в `Logs/I-040/`. Проверки итогового exe, полный маршрут,
-управление и ограничения — в [отчёте I-040](sessions/2026-11-25-i040-windows-playtest.md).
+Результаты сборок и фаз, полный маршрут, управление и ограничения сохранены
+в [отчёте I-040](sessions/2026-11-25-i040-windows-playtest.md).
 
 
 ## Официальные инструкции
