@@ -44,16 +44,16 @@ namespace TrashHunter
         public int Count => items.Count;
         public bool TryGetPlacement(string id, out BagPlacement placement) => items.TryGetValue(id, out placement);
 
-        public BagFit Check(BagPlacement placement)
+        public BagFit Check(BagPlacement placement, string ignoredId = null)
         {
             if (placement.Width <= 0 || placement.Height <= 0 ||
                 placement.Column < 0 || placement.Row < 0 ||
                 placement.Column > Columns - placement.Width || placement.Row > Rows - placement.Height)
                 return BagFit.Outside;
 
-            foreach (var item in items.Values)
+            foreach (var item in items)
             {
-                if (placement.Overlaps(item))
+                if (item.Key != ignoredId && placement.Overlaps(item.Value))
                     return BagFit.Occupied;
             }
 

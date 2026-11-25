@@ -21,6 +21,9 @@ namespace TrashHunter
         private SearchPlayer player;
         private SearchHud hud;
         private SearchItem held;
+        private SearchItem movingInBag;
+        private bool moveRotated;
+        private UiStrings strings;
         private Quaternion inspectRotation;
         private Mode mode;
         private bool inContainer;
@@ -39,6 +42,8 @@ namespace TrashHunter
             state = gameState;
             player = scenePlayer;
             hud = sceneHud;
+            strings = new UiStrings();
+            hud.Bag.SetStrings(strings);
             foreach (var item in items)
                 item.CacheLayout();
             Application.wantsToQuit += SaveBeforeQuit;
@@ -109,8 +114,10 @@ namespace TrashHunter
             var toggleBag = keyboard?.tabKey.wasPressedThisFrame == true;
             if (bagOpen)
             {
-                if (cancel || toggleBag)
+                if (toggleBag || (cancel && movingInBag == null))
                     CloseBag();
+                else if (cancel)
+                    CancelBagMove();
                 else
                     UpdateBag(keyboard, mouse);
                 UpdateError();
@@ -141,7 +148,7 @@ namespace TrashHunter
                 hud.Show(string.Empty, string.Empty, false);
                 hud.Bag.gameObject.SetActive(true);
                 hud.Bag.ShowContents(state.Bag, items);
-                hud.Bag.ShowSelection(held, null, HandPlacement(-1, -1), BagFit.Fits, false, state.Bag.Count == 0);
+                hud.Bag.ShowSelection(held, null, null, HandPlacement(-1, -1), BagFit.Fits, false, state.Bag.Count == 0);
                 UnlockCursor();
                 return;
             }
@@ -171,14 +178,14 @@ namespace TrashHunter
                     if (state.EquipBag())
                     {
                         starterBag.gameObject.SetActive(false);
-                        hud.Show("E  Залезть", "WASD  Движение     Tab  Сумка     Esc  Пауза", true);
+                        hud.Show("E  Залезть", strings.Get("search.controlsWithBag"), true);
                         UpdateError();
                         return;
                     }
                 }
 
-                hud.Show(canPickUp ? "E  Подобрать поясную сумку" : "Подберите поясную сумку",
-                    "WASD  Движение     Esc  Пауза", true);
+                hud.Show(strings.Get(canPickUp ? "search.pickUpBag" : "search.findBag"),
+                    strings.Get("search.controlsWithoutBag"), true);
                 UpdateError();
                 return;
             }
@@ -218,7 +225,7 @@ namespace TrashHunter
                 var interaction = atExit ? "E  Домой" : inContainer ? "E  Вылезти" : "E  Залезть";
                 action = action.Length == 0 ? interaction : $"{interaction}     {action}";
             }
-            hud.Show(action, "WASD  Движение     Tab  Сумка     Esc  Пауза", true);
+            hud.Show(action, strings.Get("search.controlsWithBag"), true);
             UpdateError();
         }
 
@@ -375,8 +382,15 @@ namespace TrashHunter
         private void CloseBag()
         {
             bagOpen = false;
+            movingInBag = null;
             hud.Bag.gameObject.SetActive(false);
             LockCursor();
+        }
+
+        private void CancelBagMove()
+        {
+            movingInBag = null;
+            hud.Bag.ShowContents(state.Bag, items);
         }
 
         private void UpdateError() => hud.ShowError(state.Error);
@@ -399,31 +413,69 @@ namespace TrashHunter
 
         private void UpdateBag(Keyboard keyboard, Mouse mouse)
         {
-            if (held != null && keyboard?.rKey.wasPressedThisFrame == true)
-                state.HeldItemRotated = !state.HeldItemRotated;
-
             var cell = mouse == null ? new Vector2Int(-1, -1) : hud.Bag.CellAt(mouse.position.ReadValue());
             var overGrid = cell.x >= 0 && cell.y >= 0;
-            var placement = HandPlacement(cell.x, cell.y);
-            var fit = held != null ? state.Bag.Check(placement) : BagFit.Fits;
+            var hoveredPlacement = default(BagPlacement);
             SearchItem hovered = null;
-
-            if (overGrid && held == null)
+            if (overGrid)
             {
                 foreach (var item in items)
                 {
                     if (state.Bag.TryGetPlacement(item.Id, out var packed) && packed.Contains(cell.x, cell.y))
                     {
                         hovered = item;
-                        placement = packed;
+                        hoveredPlacement = packed;
                         break;
                     }
                 }
             }
 
-            if (overGrid && mouse?.leftButton.wasPressedThisFrame == true)
+            var rightClick = mouse?.rightButton.wasPressedThisFrame == true;
+            if (rightClick)
             {
-                if (held != null && fit == BagFit.Fits)
+                if (movingInBag != null)
+                    CancelBagMove();
+                else if (hovered != null)
+                {
+                    movingInBag = hovered;
+                    moveRotated = hoveredPlacement.Rotated;
+                    hud.Bag.ShowContents(state.Bag, items, movingInBag);
+                }
+            }
+
+            if (keyboard?.rKey.wasPressedThisFrame == true)
+            {
+                if (movingInBag != null)
+                    moveRotated = !moveRotated;
+                else if (held != null)
+                    state.HeldItemRotated = !state.HeldItemRotated;
+            }
+
+            var placement = hoveredPlacement;
+            var fit = BagFit.Fits;
+            if (movingInBag != null)
+            {
+                placement = movingInBag.Placement(cell.x, cell.y, moveRotated);
+                fit = state.Bag.Check(placement, movingInBag.Id);
+            }
+            else if (held != null)
+            {
+                placement = HandPlacement(cell.x, cell.y);
+                fit = state.Bag.Check(placement);
+            }
+
+            if (overGrid && !rightClick && fit == BagFit.Fits && mouse?.leftButton.wasPressedThisFrame == true)
+            {
+                if (movingInBag != null)
+                {
+                    CaptureWorld();
+                    if (state.MovePacked(movingInBag.Id, placement))
+                    {
+                        CancelBagMove();
+                        return;
+                    }
+                }
+                else if (held != null)
                 {
                     CaptureWorld();
                     if (state.Pack(placement))
@@ -434,15 +486,14 @@ namespace TrashHunter
                         return;
                     }
                 }
-
-                if (hovered != null && TakeInHand(hovered))
+                else if (hovered != null && TakeInHand(hovered))
                 {
                     hud.Bag.ShowContents(state.Bag, items);
                     return;
                 }
             }
 
-            hud.Bag.ShowSelection(held, hovered, placement, fit, overGrid, state.Bag.Count == 0);
+            hud.Bag.ShowSelection(held, hovered, movingInBag, placement, fit, overGrid, state.Bag.Count == 0);
         }
 
         private BagPlacement HandPlacement(int column, int row) =>

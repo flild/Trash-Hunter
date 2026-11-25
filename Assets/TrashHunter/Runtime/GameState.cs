@@ -131,6 +131,25 @@ namespace TrashHunter
             return Publish(next);
         }
 
+        internal bool MovePacked(string id, BagPlacement placement)
+        {
+            var index = FindWorldItem(id);
+            if (index < 0 || !current.world[index].packed)
+                return false;
+
+            var item = current.world[index];
+            item.column = placement.Column;
+            item.row = placement.Row;
+            item.rotated = placement.Rotated;
+            if (bag.Check(catalog[id].Placement(item), id) != BagFit.Fits)
+                return false;
+
+            var next = current.Copy();
+            next.world[index] = item;
+            next.heldRotated = HeldItemRotated;
+            return Publish(next);
+        }
+
         internal bool Place(Vector3 position, Quaternion rotation)
         {
             var index = FindWorldItem(HeldItemId);

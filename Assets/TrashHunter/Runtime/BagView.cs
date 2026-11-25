@@ -11,6 +11,7 @@ namespace TrashHunter
         [SerializeField] private RectTransform itemTile;
         [SerializeField] private Image preview;
         [SerializeField] private Image[] previewEdges;
+        [SerializeField] private Text title;
         [SerializeField] private Text selection;
         [SerializeField] private Text feedback;
         [SerializeField] private Text controls;
@@ -19,6 +20,7 @@ namespace TrashHunter
         private static readonly Color Error = new Color32(255, 170, 149, 255);
         private static readonly Color Neutral = new Color32(232, 225, 208, 255);
         private RectTransform[] tiles;
+        private UiStrings strings;
 
         private void Awake()
         {
@@ -26,6 +28,12 @@ namespace TrashHunter
             for (var i = 0; i < tiles.Length; i++)
                 tiles[i] = Instantiate(itemTile, itemTile.transform.parent);
             preview.transform.SetAsLastSibling();
+        }
+
+        internal void SetStrings(UiStrings uiStrings)
+        {
+            strings = uiStrings;
+            title.text = strings.Get("bag.title");
         }
 
         public Vector2Int CellAt(Vector2 screenPosition)
@@ -40,9 +48,11 @@ namespace TrashHunter
                 : new Vector2Int(-1, -1);
         }
 
-        public void ShowContents(BagInventory bag, SearchItem[] items)
+        public void ShowContents(BagInventory bag, SearchItem[] items, SearchItem moving = null)
         {
             var used = 0;
+            var tileColor = itemTile.GetComponent<Image>().color;
+            var sourceColor = new Color(tileColor.r, tileColor.g, tileColor.b, 0.45f);
             foreach (var item in items)
             {
                 if (!bag.TryGetPlacement(item.Id, out var placement))
@@ -50,7 +60,9 @@ namespace TrashHunter
 
                 var tile = tiles[used++];
                 Position(tile, placement, 3);
-                tile.GetComponentInChildren<Text>(true).text = item.BagLabel;
+                var selected = item == moving;
+                tile.GetComponent<Image>().color = selected ? sourceColor : tileColor;
+                tile.GetComponentInChildren<Text>(true).text = selected ? string.Empty : BagLabel(item);
                 tile.gameObject.SetActive(true);
             }
 
@@ -58,10 +70,12 @@ namespace TrashHunter
                 tiles[i].gameObject.SetActive(false);
         }
 
-        public void ShowSelection(SearchItem held, SearchItem hovered, BagPlacement placement, BagFit fit, bool overGrid, bool empty)
+        public void ShowSelection(SearchItem held, SearchItem hovered, SearchItem moving, BagPlacement placement,
+            BagFit fit, bool overGrid, bool empty)
         {
-            preview.gameObject.SetActive(overGrid && (held != null || hovered != null));
-            if (overGrid && (held != null || hovered != null))
+            var showPreview = overGrid && (held != null || hovered != null || moving != null);
+            preview.gameObject.SetActive(showPreview);
+            if (showPreview)
             {
                 var tint = fit == BagFit.Fits ? Accent : Error;
                 Position(preview.rectTransform, placement, 2);
@@ -70,25 +84,32 @@ namespace TrashHunter
                     edge.color = tint;
             }
 
-            if (held == null)
+            var activeItem = moving != null ? moving : held;
+            if (activeItem == null)
             {
-                selection.text = hovered != null ? hovered.DisplayName : empty ? "Сумка пуста" : "В руке пусто";
-                feedback.text = hovered != null ? "ЛКМ  Достать" : string.Empty;
+                selection.text = hovered != null
+                    ? strings.Get($"item.{hovered.Id}.name", strings.Get($"item.{hovered.Id}", hovered.DisplayName))
+                    : strings.Get(empty ? "bag.empty" : "bag.emptyHand");
+                feedback.text = hovered != null ? strings.Get("bag.take") : string.Empty;
                 feedback.color = Neutral;
-                controls.text = "Tab / Esc  Закрыть";
+                controls.text = strings.Get(empty ? "bag.closeControls" : "bag.idleControls");
                 return;
             }
 
-            selection.text = $"{held.BagLabel} в руке   ·   {placement.Width} × {placement.Height}";
-            feedback.text = !overGrid ? "Выберите ячейку" : fit switch
+            selection.text = string.Format(strings.Get(moving != null ? "bag.moving" : "bag.held"),
+                BagLabel(activeItem), placement.Width, placement.Height);
+            feedback.text = strings.Get(!overGrid ? "bag.chooseCell" : fit switch
             {
-                BagFit.Outside => "Вещь выходит за край",
-                BagFit.Occupied => "Эти ячейки заняты",
-                _ => "ЛКМ  Уложить"
-            };
+                BagFit.Outside => "bag.outside",
+                BagFit.Occupied => "bag.occupied",
+                _ => moving != null ? "bag.move" : "bag.pack"
+            });
             feedback.color = !overGrid ? Neutral : fit == BagFit.Fits ? Accent : Error;
-            controls.text = "R  Повернуть     Tab / Esc  Закрыть";
+            controls.text = strings.Get(moving != null ? "bag.moveControls" :
+                empty ? "bag.packControls" : "bag.fullControls");
         }
+
+        private string BagLabel(SearchItem item) => strings.Get($"item.{item.Id}", item.BagLabel);
 
         private static void Position(RectTransform rect, BagPlacement placement, float inset)
         {

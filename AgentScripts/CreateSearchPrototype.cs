@@ -618,6 +618,7 @@ public static class CreateSearchPrototype
         Assign(view, "grid", grid);
         Assign(view, "itemTile", tile);
         Assign(view, "preview", preview);
+        Assign(view, "title", title);
         Assign(view, "selection", selection);
         Assign(view, "feedback", feedback);
         Assign(view, "controls", controls);

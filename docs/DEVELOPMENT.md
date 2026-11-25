@@ -288,6 +288,39 @@ unity command script eval --runtime TrashHunterPrototypeQA --caller plugin --ski
 в [отчёте I-040](sessions/2026-11-25-i040-windows-playtest.md).
 
 
+## Проверка переноса в сумке и локалей
+
+[UiStrings](../Assets/TrashHunter/Runtime/UiStrings.cs) загружает ключи из
+[таблиц RU и EN](../Assets/TrashHunter/Resources/Localization). Для новых
+строк добавлять один ключ в обе таблицы. Подстановки в переводах задаются
+как {0}, {1} и далее. Русские строки служат исходными и запасными.
+При запуске Player `-trash-hunter-locale en` включает английский текст
+сумки. В процессе Editor тот же выбор задаёт `TRASH_HUNTER_LOCALE=en`.
+Для русской локали можно указать `ru` или использовать исходный выбор.
+
+[VerifyBagRearrangement.cs](../AgentScripts/VerifyBagRearrangement.cs) работает
+через тот же ввод сцены и пишет снимки в `Logs/I-060/`. Для каждой локали
+указать новый абсолютный каталог автослота через
+`TRASH_HUNTER_EDITOR_SAVE_DIR` в процессе Unity. Последовательно задать
+`TRASH_HUNTER_CHECK` и выполнить скрипт в соответствующем режиме.
+
+| Фаза | Режим и действие |
+|---|---|
+| `bag-seed` | Edit Mode. Создаёт старую тестовую раскладку в пустом каталоге. |
+| `bag-move` | Play Mode. Подбирает рейку, проверяет отказы и отмену, переносит лампу и укладывает рейку. |
+| `bag-resume` | Новый Play Mode с тем же автослотом. Проверяет раскладку и извлечение. |
+
+~~~powershell
+$projectPath = 'F:\UnityProjects\Trash-Hunter'
+$pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
+unity command script eval @pipeline -- --file AgentScripts/VerifyBagRearrangement.cs --timeout 50
+~~~
+
+После проверки восстановить прежние значения переменных и временные настройки
+Editor. [Отчёт I-060](sessions/2026-11-25-i060-bag-rearrangement.md) содержит
+результаты и снимки.
+
+
 ## Официальные инструкции
 
 - [Unity CLI](https://docs.unity.com/en-us/unity-cli/use-unity-cli)
