@@ -11,6 +11,7 @@ namespace TrashHunter
         private static readonly string[] LegacyLayout = { "crate-a", "lamp-a", "radio-a", "strip-a", "dial-a" };
         private readonly Dictionary<string, LootDefinition> catalog = new();
         private readonly HashSet<string> layoutKeys = new();
+        private SearchPile pile;
         private RunSnapshot current;
         private SaveSlot slot;
         private BagInventory bag = new();
@@ -28,7 +29,7 @@ namespace TrashHunter
         public string RecoveryNotice => slot?.RecoveryNotice;
         internal PlayerPose Player => current.player;
 
-        internal bool Open(SearchItem[] items, PlayerPose spawn, out bool resuming)
+        internal bool Open(SearchItem[] items, Bounds floor, Vector3 entry, PlayerPose spawn, out bool resuming)
         {
             resuming = false;
             if (current != null)
@@ -43,18 +44,21 @@ namespace TrashHunter
 
             try
             {
+                pile ??= new SearchPile(items, floor, entry);
                 slot = new SaveSlot(ResolveSlotFolder(), Validate);
                 var loaded = slot.Load();
                 resuming = loaded != null;
-                current = loaded ?? new RunSnapshot
+                var snapshot = loaded ?? new RunSnapshot
                 {
                     format = RunSnapshot.CurrentFormat,
                     runId = Guid.NewGuid().ToString("N"),
                     expedition = 1,
                     player = spawn,
-                    world = CreateLayout(items, 1),
                     home = Array.Empty<HomeItem>()
                 };
+                if (!resuming)
+                    GeneratePile(snapshot);
+                current = snapshot;
                 RestoreBag();
                 Error = null;
                 return true;
@@ -212,7 +216,7 @@ namespace TrashHunter
             return Publish(next);
         }
 
-        internal bool Depart(int previousExpedition, SearchItem[] items, PlayerPose spawn)
+        internal bool Depart(int previousExpedition, PlayerPose spawn)
         {
             if (!AtHome || Expedition != previousExpedition || Expedition == int.MaxValue)
                 return false;
@@ -220,7 +224,15 @@ namespace TrashHunter
             var next = current.Copy();
             next.expedition++;
             next.atHome = false;
-            next.world = CreateLayout(items, next.expedition);
+            try
+            {
+                GeneratePile(next);
+            }
+            catch (InvalidDataException exception)
+            {
+                Error = exception.Message;
+                return false;
+            }
             next.player = spawn;
             return Publish(next);
         }
@@ -314,13 +326,13 @@ namespace TrashHunter
         private static bool Finite(Vector3 value) =>
             float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
 
-        private static WorldItem[] CreateLayout(SearchItem[] items, int expedition)
+        private void GeneratePile(RunSnapshot snapshot)
         {
-            var layout = new List<WorldItem>(items.Length);
-            foreach (var item in items)
-                if (!item.LegacyLayoutOnly)
-                    layout.Add(item.LayoutPose(LayoutIndex(expedition)));
-            return layout.ToArray();
+            // A failed write and retry for the same expedition must produce the same pile.
+            var runSeed = BitConverter.ToInt32(Guid.ParseExact(snapshot.runId, "N").ToByteArray(), 0);
+            snapshot.pileSeed = unchecked(runSeed + snapshot.expedition * 1009);
+            snapshot.pileGeneratorVersion = SearchPile.GeneratorVersion;
+            snapshot.world = pile.Generate(snapshot.pileSeed);
         }
 
         internal static int LayoutIndex(int expedition) => (expedition - 1) % 3;

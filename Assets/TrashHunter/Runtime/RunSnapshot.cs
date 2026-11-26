@@ -13,6 +13,8 @@ namespace TrashHunter
         public long revision;
         public long utcTicks;
         public int expedition;
+        public int pileSeed;
+        public int pileGeneratorVersion;
         public bool atHome;
         public bool hasBag;
         public WorldItem[] world;

@@ -59,7 +59,7 @@ namespace TrashHunter
 
         private void Open()
         {
-            if (!state.Open(items, SearchPlayer.PoseAt(outside), out var resuming))
+            if (!state.Open(items, containerFloor.bounds, inside.position, SearchPlayer.PoseAt(outside), out var resuming))
             {
                 ShowLoadError();
                 return;
@@ -320,7 +320,7 @@ namespace TrashHunter
                         Pause();
                     else if (keyboard.eKey.wasPressedThisFrame)
                     {
-                        if (state.Depart(state.Expedition, items, SearchPlayer.PoseAt(outside)))
+                        if (state.Depart(state.Expedition, SearchPlayer.PoseAt(outside)))
                             Reload();
                         else
                             ShowHome();

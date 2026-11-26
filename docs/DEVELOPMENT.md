@@ -359,6 +359,29 @@ unity command script eval @pipeline -- --file AgentScripts/VerifyJumpAndAim.cs -
 шаги ручной проверки сохранены в [отчёте I-080](sessions/2026-11-26-i080-jump-and-aim.md).
 
 
+## Проверка генерации навала
+
+Открыть ContainerSearch. В процессе Editor задать изолированный каталог
+`TRASH_HUNTER_EDITOR_SAVE_DIR` и фазу `TRASH_HUNTER_CHECK`. Начинать новый
+Play Mode после смены фазы. [VerifySearchPile.cs](../AgentScripts/VerifySearchPile.cs)
+использует виртуальную клавиатуру и мышь.
+
+| Фаза | Слот и ожидаемый результат |
+|---|---|
+| `pile` | Пустой каталог. Подбор сумки, три вылазки, извлечение шкафа и разбор кучи, выход через борт и сохранение сдвинутых предметов. |
+| `pile-resume` | Слот фазы `pile` в новом Play Mode. Сверка 25 ID и поз до возобновления физики. Шкаф остаётся снаружи. |
+| `pile-legacy` | Копия слота из сохранённого Player I-040 в отдельном каталоге. Загрузка 24 ID и поз, продолжение и переход через борт. |
+
+~~~powershell
+$projectPath = 'F:\UnityProjects\Trash-Hunter'
+$pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
+unity command script eval @pipeline -- --file AgentScripts/VerifySearchPile.cs --timeout 48
+~~~
+
+После прогона остановить тестовый Play Mode и восстановить переменные.
+[Отчёт I-090](sessions/2026-11-27-i090-pile-generation.md) содержит результаты,
+проверку геометрии и ручной сценарий.
+
 ## Официальные инструкции
 
 - [Unity CLI](https://docs.unity.com/en-us/unity-cli/use-unity-cli)
