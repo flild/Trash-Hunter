@@ -57,6 +57,9 @@ namespace TrashHunter
             highlightRenderers ??= GetComponentsInChildren<MeshRenderer>(true);
             foreach (var renderer in highlightRenderers)
             {
+                if (!renderer.enabled)
+                    continue;
+
                 if (!highlighted)
                 {
                     renderer.SetPropertyBlock(null);

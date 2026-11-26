@@ -409,6 +409,28 @@ unity command script eval @pipeline -- --file AgentScripts/VerifyLootPackages.cs
 переменные и настройки Editor. Шаги, результаты и ограничения перечислены
 в [отчёте I-100](sessions/2026-11-27-i100-loot-packages.md).
 
+## Замер навала в Editor
+
+[MeasureSearchPile.cs](../AgentScripts/MeasureSearchPile.cs) измеряет три
+отрезка на копии одного автослота с 23 активными телами и закрытыми
+упаковками. В I-110 использован слот seed 706296053. Исходная копия лежит
+в `Logs/I-110/fixture.json`, в каждом новом каталоге прогона её имя
+`slot.json`. Установить `TRASH_HUNTER_EDITOR_SAVE_DIR` на этот каталог
+в процессе Editor и начать Play Mode в ContainerSearch.
+
+~~~powershell
+$projectPath = 'F:\UnityProjects\Trash-Hunter'
+$pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
+unity command script eval @pipeline -- --file AgentScripts/MeasureSearchPile.cs --timeout 45
+~~~
+
+Запись содержит размеры Game View, профиль, конфигурацию ПК, p50 и p95
+времени кадра, число вызовов отрисовки и число бодрствующих тел. Скрипт
+штатным вводом перетаскивает шкаф за борт и снимает кадры трёх состояний.
+Для нового прогона снова копировать исходный слот. После проверки
+остановить тестовый Play Mode и восстановить переменные Editor.
+[Результаты I-110](sessions/2026-11-27-i110-pile-look.md#сравнение-кадров).
+
 ## Официальные инструкции
 
 - [Unity CLI](https://docs.unity.com/en-us/unity-cli/use-unity-cli)

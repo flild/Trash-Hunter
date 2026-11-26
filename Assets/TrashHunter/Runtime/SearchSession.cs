@@ -32,6 +32,7 @@ namespace TrashHunter
         private SearchItem movingInBag;
         private SearchItem browsingPackage;
         private readonly List<SearchItem> remainingContents = new();
+        private readonly Dictionary<SearchItem, (string Action, string CheckContents)> aimLabels = new();
         private int packageSelection;
         private bool knowsLootTiers;
         private bool moveRotated;
@@ -59,7 +60,13 @@ namespace TrashHunter
             knowsLootTiers = HasRecognitionForPrototype();
             hud.Bag.SetStrings(strings);
             foreach (var item in items)
+            {
                 item.CacheLayout();
+                var name = ItemName(item);
+                aimLabels.Add(item, item.IsPackage
+                    ? (string.Format(strings.Get("package.openAim"), name), string.Format(strings.Get("package.checkAim"), name))
+                    : (string.Format(strings.Get("search.take"), name), null));
+            }
             Application.wantsToQuit += SaveBeforeQuit;
             Open();
         }
@@ -158,7 +165,7 @@ namespace TrashHunter
             }
             if (Cursor.lockState != CursorLockMode.Locked)
             {
-                hud.Show("ЛКМ  Вернуться к поиску", "Esc  Пауза", false);
+                hud.Show(strings.Get("search.returnFocus"), strings.Get("search.pauseControls"), false);
                 if (mouse?.leftButton.wasPressedThisFrame == true)
                     LockCursor();
                 return;
@@ -206,7 +213,7 @@ namespace TrashHunter
                     if (state.EquipBag())
                     {
                         starterBag.gameObject.SetActive(false);
-                        hud.Show("E  Залезть", strings.Get("search.controlsWithBag"), true);
+                        hud.Show(strings.Get("search.climbIn"), strings.Get("search.controlsWithBag"), true);
                         UpdateError();
                         return;
                     }
@@ -266,12 +273,15 @@ namespace TrashHunter
                 target != null ? AimLabel(target) : string.Empty;
             if (held != null && Time.unscaledTime < blockedUntil)
                 action = strings.Get("search.blockedPlacement");
-            if (atExit || atRim)
+            var nearby = atExit ? strings.Get("search.goHome") : atRim
+                ? strings.Get(inContainer ? "search.climbOut" : "search.climbIn") : string.Empty;
+            if (action.Length == 0)
             {
-                var interaction = atExit ? "E  Домой" : inContainer ? "E  Вылезти" : "E  Залезть";
-                action = action.Length == 0 ? interaction : $"{interaction}     {action}";
+                action = nearby;
+                nearby = string.Empty;
             }
-            hud.Show(action, strings.Get(held == null ? "search.controlsWithBag" : "search.holdControls"), true);
+            hud.Show(action, strings.Get(held == null ? "search.controlsWithBag" : "search.holdControls"),
+                true, aimedItem, nearby);
             UpdateError();
         }
 
@@ -288,10 +298,8 @@ namespace TrashHunter
 
         private string AimLabel(SearchItem item)
         {
-            if (!item.IsPackage)
-                return string.Format(strings.Get("search.take"), ItemName(item));
-            var key = state.IsPackageOpen(item.Id) ? "package.checkAim" : "package.openAim";
-            return string.Format(strings.Get(key), ItemName(item));
+            var labels = aimLabels[item];
+            return item.IsPackage && state.IsPackageOpen(item.Id) ? labels.CheckContents : labels.Action;
         }
 
         private string InspectionLabel(SearchItem item)
@@ -336,13 +344,13 @@ namespace TrashHunter
             for (var i = 0; i < remainingContents.Count; i++)
             {
                 var name = ItemName(remainingContents[i]);
-                rows.AppendLine(i == packageSelection ? $"<color=#F0C776>›  {name}</color>" : $"    {name}");
+                rows.AppendLine(i == packageSelection ? $"<color=#F0C776><b>›  {name}</b></color>" : $"    {name}");
             }
 
             var empty = remainingContents.Count == 0;
             ShowOverlay(ItemName(browsingPackage), string.Empty,
                 empty ? strings.Get("package.empty") : rows.ToString().TrimEnd(),
-                strings.Get(empty ? "package.close" : "package.controls"), state.Error, state.Error != null);
+                strings.Get(empty ? "package.close" : "package.controls"), state.Error, state.Error != null, package: true);
         }
 
         private void UpdatePackage(Keyboard keyboard, bool confirm, bool cancel)
@@ -502,11 +510,12 @@ namespace TrashHunter
                 "Enter / Esc  Продолжить     Q  Выйти из игры", state.Error, state.Error != null);
         }
 
-        private void ShowOverlay(string title, string summary, string details, string keys, string message, bool warning = false)
+        private void ShowOverlay(string title, string summary, string details, string keys, string message,
+            bool warning = false, bool package = false)
         {
             hud.Show(string.Empty, string.Empty, false);
             hud.ShowError(null);
-            hud.Expedition.Show(title, summary, details, keys, message, warning);
+            hud.Expedition.Show(title, summary, details, keys, message, warning, package);
             UnlockCursor();
         }
 

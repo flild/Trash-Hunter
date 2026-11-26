@@ -79,7 +79,7 @@ namespace TrashHunter
             {
                 var tint = fit == BagFit.Fits ? Accent : Error;
                 Position(preview.rectTransform, placement, 2);
-                preview.color = new Color(tint.r, tint.g, tint.b, 0.10f);
+                preview.color = new Color(tint.r, tint.g, tint.b, fit == BagFit.Fits ? 0.22f : 0.30f);
                 foreach (var edge in previewEdges)
                     edge.color = tint;
             }

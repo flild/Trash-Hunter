@@ -43,6 +43,9 @@ try
     var player = Object.FindAnyObjectByType<SearchPlayer>();
     var hud = Object.FindAnyObjectByType<SearchHud>();
     var prompt = hud.transform.Find("Prompt").GetComponent<Text>();
+    var promptBacking = hud.transform.Find("Prompt backing").gameObject;
+    var packageReticle = hud.transform.Find("Package reticle").gameObject;
+    var ordinaryReticle = hud.transform.Find("Aim").GetComponent<Graphic>();
     var overlay = hud.Expedition.transform.Find("ExpeditionPanel");
     var details = overlay.Find("Details").GetComponent<Text>();
     var actions = overlay.Find("Actions").GetComponent<Text>();
@@ -105,6 +108,8 @@ try
         }
         await Open("sack-a", false);
         CheckDetails("Вилка", "Моторчик", "Plug", "Motor");
+        ScreenCapture.CaptureScreenshot(Path.Combine(folder, "sack-contents.png"));
+        await Frames();
         await KeyInput(Key.DownArrow);
         Check(details.text.Contains(english ? "›  Motor" : "›  Моторчик"), "The second row can be chosen");
         using (new FileStream(pending, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
@@ -122,6 +127,8 @@ try
         await KeyInput(Key.Escape);
         await Open("parcel-a", false);
         CheckDetails("Держатель", "Адаптер", "Holder", "Adapter");
+        ScreenCapture.CaptureScreenshot(Path.Combine(folder, "box-contents.png"));
+        await Frames();
         await KeyInput(Key.Escape);
         var saved = ReadSlot();
         Check((bool)Row(saved, "sack-a")["opened"] && (bool)Row(saved, "parcel-a")["opened"] &&
@@ -201,6 +208,13 @@ try
         var expected = opened ? (english ? "Look inside" : "Заглянуть") : (english ? "Open" : "Открыть");
         Check(prompt.text.Contains(expected) && !HasTier(prompt.text) && Fits(prompt),
             $"The aim prompt identifies the interaction for {id}");
+        Check(packageReticle.activeSelf && !ordinaryReticle.enabled && promptBacking.activeSelf &&
+            prompt.rectTransform.anchorMin.y == 0.5f, "The package has brackets and a readable action below the aim point");
+        if (!opened && state.Error == null)
+        {
+            ScreenCapture.CaptureScreenshot(Path.Combine(folder, id + "-target.png"));
+            await Frames();
+        }
         var trace = new MaterialPropertyBlock();
         Check(items[id].GetComponentsInChildren<MeshRenderer>().Any(renderer =>
         {
@@ -213,7 +227,9 @@ try
     {
         await AimPackage(id, opened);
         await Click(1);
-        Check(hud.Expedition.gameObject.activeSelf && state.HeldItemId == null && Fits(actions),
+        Check(hud.Expedition.gameObject.activeSelf && state.HeldItemId == null && Fits(actions) &&
+            overlay.Find("Package list backing").gameObject.activeSelf && !packageReticle.activeSelf &&
+            !promptBacking.activeSelf && ((RectTransform)overlay).rect.height < 350,
             $"Clicking {id} shows its contents without taking the packaging");
     }
 
@@ -246,6 +262,13 @@ try
         Canvas.ForceUpdateCanvases();
         var pointer = RectTransformUtility.WorldToScreenPoint(null, grid.TransformPoint(
             new Vector3((column + 0.5f) * BagView.CellSize, -(row + 0.5f) * BagView.CellSize)));
+        InputSystem.QueueStateEvent(mouse, new MouseState { position = pointer });
+        await Frames();
+        var preview = grid.Find("FitPreview").GetComponent<Image>();
+        Check(preview.gameObject.activeSelf && preview.color.a >= 0.2f,
+            "The proposed placement is visible above the cell grid");
+        ScreenCapture.CaptureScreenshot(Path.Combine(folder, $"pack-{id}.png"));
+        await Frames();
         await Click(1, pointer);
         Check(state.HeldItemId == null && state.Bag.TryGetPlacement(id, out var placed) &&
             placed.Column == column && placed.Row == row, $"The selected instance {id} fits into the chosen cell");

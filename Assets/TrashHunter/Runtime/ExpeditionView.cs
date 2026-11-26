@@ -11,13 +11,31 @@ namespace TrashHunter
         [SerializeField] private Text body;
         [SerializeField] private Text feedback;
         [SerializeField] private Text actions;
+        [SerializeField] private GameObject packageListBacking;
+        [SerializeField] private RectTransform panel;
+
+        private Vector2 defaultBodyPosition;
+        private Vector2 defaultBodySize;
+        private Vector2 defaultPanelSize;
+
+        private void Awake()
+        {
+            defaultPanelSize = panel.sizeDelta;
+            defaultBodyPosition = body.rectTransform.anchoredPosition;
+            defaultBodySize = body.rectTransform.sizeDelta;
+        }
 
         private static readonly Color Neutral = new Color32(232, 225, 208, 255);
         private static readonly Color Warning = new Color32(255, 170, 149, 255);
 
-        public void Show(string title, string summary, string details, string keys, string message = null, bool isWarning = false)
+        public void Show(string title, string summary, string details, string keys,
+            string message = null, bool isWarning = false, bool package = false)
         {
             gameObject.SetActive(true);
+            packageListBacking.SetActive(package);
+            panel.sizeDelta = package ? new Vector2(defaultPanelSize.x, 314f) : defaultPanelSize;
+            body.rectTransform.anchoredPosition = package ? new Vector2(0f, -150f) : defaultBodyPosition;
+            body.rectTransform.sizeDelta = package ? new Vector2(580f, 78f) : defaultBodySize;
             heading.text = title;
             subtitle.text = summary;
             body.text = details;
