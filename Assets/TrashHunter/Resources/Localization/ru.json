@@ -1,5 +1,17 @@
 {
   "entries": [
+    {"key": "package.openAim", "value": "ЛКМ  Открыть  ·  {0}"},
+    {"key": "package.checkAim", "value": "ЛКМ  Заглянуть  ·  {0}"},
+    {"key": "package.empty", "value": "Пусто"},
+    {"key": "package.close", "value": "Esc  Закрыть"},
+    {"key": "package.controls", "value": "↑ / ↓  Выбрать     Enter  Взять     Esc  Закрыть"},
+    {"key": "search.inspectedTier", "value": "{0}  ·  Тир {1}"},
+    {"key": "item.sack-a", "value": "Мешок"},
+    {"key": "item.parcel-a", "value": "Картонная коробка"},
+    {"key": "item.plug-a.condition", "value": "Штыри ровные"},
+    {"key": "item.motor-b.condition", "value": "Вал погнут"},
+    {"key": "item.fuse-a.condition", "value": "Крышка на месте"},
+    {"key": "item.adapter-a.condition", "value": "Разъём цел"},
     {"key": "bag.title", "value": "Поясная сумка"},
     {"key": "bag.empty", "value": "Сумка пуста"},
     {"key": "bag.emptyHand", "value": "В руке пусто"},

@@ -11,6 +11,8 @@ namespace TrashHunter
         private static readonly string[] LegacyLayout = { "crate-a", "lamp-a", "radio-a", "strip-a", "dial-a" };
         private readonly Dictionary<string, LootDefinition> catalog = new();
         private readonly HashSet<string> layoutKeys = new();
+        private readonly HashSet<string> packageKeys = new();
+        private readonly Dictionary<string, string> initialPackages = new();
         private SearchPile pile;
         private RunSnapshot current;
         private SaveSlot slot;
@@ -38,7 +40,13 @@ namespace TrashHunter
             foreach (var item in items)
             {
                 catalog[item.Id] = item.Definition;
-                if (!item.LegacyLayoutOnly)
+                if (item.IsPackage)
+                {
+                    packageKeys.Add(item.Id);
+                    foreach (var content in item.InitialContents)
+                        initialPackages[content.Id] = item.Id;
+                }
+                else if (!item.LegacyLayoutOnly)
                     layoutKeys.Add(item.Id);
             }
 
@@ -108,16 +116,47 @@ namespace TrashHunter
             return Publish(next);
         }
 
+        internal bool IsPackageOpen(string id)
+        {
+            var index = FindWorldItem(id);
+            return index >= 0 && current.world[index].opened;
+        }
+
+        internal bool IsInPackage(string id)
+        {
+            var index = FindWorldItem(id);
+            return index >= 0 && !string.IsNullOrEmpty(current.world[index].package);
+        }
+
+        internal bool OpenPackage(string id)
+        {
+            var index = FindWorldItem(id);
+            if (!HasBag || HeldItemId != null || index < 0 || !packageKeys.Contains(id))
+                return false;
+            if (current.world[index].opened)
+                return true;
+
+            var next = current.Copy();
+            next.world[index].opened = true;
+            return Publish(next);
+        }
+
         internal bool Take(string id)
         {
             var index = FindWorldItem(id);
-            if (!HasBag || HeldItemId != null || index < 0)
+            if (!HasBag || HeldItemId != null || index < 0 || packageKeys.Contains(id))
+                return false;
+
+            var package = current.world[index].package;
+            var nested = !string.IsNullOrEmpty(package);
+            if (nested && !IsPackageOpen(package))
                 return false;
 
             var next = current.Copy();
             next.held = id;
             next.heldRotated = next.world[index].rotated;
-            next.heldInWorld = !next.world[index].packed;
+            next.heldInWorld = !nested && !next.world[index].packed;
+            next.world[index].package = null;
             next.world[index].packed = false;
             next.world[index].rotated = false;
             return Publish(next);
@@ -282,6 +321,7 @@ namespace TrashHunter
             if (data.format != RunSnapshot.CurrentFormat || !Guid.TryParseExact(data.runId, "N", out _) ||
                 data.revision <= 0 || data.utcTicks <= 0 || data.utcTicks > DateTime.MaxValue.Ticks ||
                 data.expedition < 1 || data.cash < 0 || data.home == null || data.world == null ||
+                data.pileGeneratorVersion is < 0 or > SearchPile.GeneratorVersion ||
                 !Finite(data.player.position) || !float.IsFinite(data.player.yaw) ||
                 !float.IsFinite(data.player.pitch) || Mathf.Abs(data.player.pitch) > 82f)
                 return false;
@@ -298,12 +338,14 @@ namespace TrashHunter
             var hasHand = !string.IsNullOrEmpty(data.held);
             if (data.atHome)
                 return data.hasBag && data.world.Length == 0 && !hasHand && !data.heldRotated && !data.heldInWorld;
-            if ((data.world.Length != layoutKeys.Count && data.world.Length != layoutKeys.Count - 1 &&
-                data.world.Length != LegacyLayout.Length) || (!data.hasBag && (hasHand || data.player.inside)) ||
+            if ((!data.hasBag && (hasHand || data.player.inside)) ||
                 (!hasHand && (data.heldRotated || data.heldInWorld)))
                 return false;
 
+            var hasPackages = data.pileGeneratorVersion >= 2;
             var keys = new HashSet<string>();
+            var opened = new HashSet<string>();
+            var extracted = new HashSet<string>();
             var packed = new BagInventory();
             foreach (var item in data.world)
             {
@@ -312,15 +354,36 @@ namespace TrashHunter
                     !keys.Add(item.key) || !Finite(item.position) || !float.IsFinite(Quaternion.Dot(r, r)) ||
                     Mathf.Abs(Quaternion.Dot(r, r) - 1f) > 0.02f)
                     return false;
+                var isPackage = packageKeys.Contains(item.key);
+                var nested = !string.IsNullOrEmpty(item.package);
+                if (isPackage && (item.key == data.held || item.packed || nested) ||
+                    item.opened && (!isPackage || !data.hasBag))
+                    return false;
+                if (item.opened)
+                    opened.Add(item.key);
+                if (nested && (!hasPackages || item.packed || item.key == data.held ||
+                    !initialPackages.TryGetValue(item.key, out var owner) || item.package != owner))
+                    return false;
+                if (hasPackages && !nested && initialPackages.TryGetValue(item.key, out var originalPackage))
+                    extracted.Add(originalPackage);
                 if (item.packed && (!data.hasBag || item.key == data.held || definition.Price <= 0 ||
                     !packed.TryPack(item.key, definition.Placement(item))))
                     return false;
             }
+            if (hasHand && !keys.Contains(data.held))
+                return false;
+            if (hasPackages)
+            {
+                if (!extracted.IsSubsetOf(opened) || !packageKeys.IsSubsetOf(keys))
+                    return false;
+                keys.ExceptWith(packageKeys);
+                return keys.SetEquals(layoutKeys);
+            }
+
             // I-040 expeditions predate the cabinet. Preserve their exact set of finds.
             var beforeCabinet = keys.Count + 1 == layoutKeys.Count && layoutKeys.Contains(CabinetId) &&
                 !keys.Contains(CabinetId) && keys.IsSubsetOf(layoutKeys);
-            return (keys.SetEquals(layoutKeys) || keys.SetEquals(LegacyLayout) || beforeCabinet) &&
-                (!hasHand || keys.Contains(data.held));
+            return keys.SetEquals(layoutKeys) || keys.SetEquals(LegacyLayout) || beforeCabinet;
         }
 
         private static bool Finite(Vector3 value) =>

@@ -8,7 +8,7 @@ namespace TrashHunter
 {
     internal sealed class SearchPile
     {
-        public const int GeneratorVersion = 1;
+        public const int GeneratorVersion = 2;
         private const float GridStep = 0.10f;
         private const float Clearance = 0.02f;
         private const float SupportSearchHeight = 0.24f;
@@ -16,6 +16,7 @@ namespace TrashHunter
         private readonly Vector3 cabinetSize;
         private readonly (string Id, Vector3 Size) crate;
         private readonly WorldItem cabinetStart;
+        private readonly (string Id, Vector3 Size, string[] Contents)[] packages;
         private readonly (string Id, Vector3 Size)[] looseFinds;
         private readonly Rect pileArea;
         private readonly float floorHeight;
@@ -28,7 +29,12 @@ namespace TrashHunter
             var cabinet = items.Single(item => item.Id == "cabinet-a");
             cabinetStart = cabinet.LayoutPose(0);
             cabinetSize = cabinet.GetComponent<BoxCollider>().size;
-            var finds = items.Where(item => !item.LegacyLayoutOnly && item != cabinet)
+            packages = items.Where(item => item.IsPackage)
+                .Select(item => (item.Id, item.GetComponent<BoxCollider>().size,
+                    item.InitialContents.Select(content => content.Id).ToArray())).ToArray();
+            var nested = packages.SelectMany(package => package.Contents).ToHashSet();
+            var finds = items.Where(item => !item.LegacyLayoutOnly && item != cabinet && !item.IsPackage &&
+                    !nested.Contains(item.Id))
                 .Select(item => (item.Id, Size: item.GetComponent<BoxCollider>().size)).ToArray();
             crate = finds.Single(find => find.Id == "crate-a");
             looseFinds = finds.Where(find => find.Id != crate.Id).ToArray();
@@ -44,7 +50,7 @@ namespace TrashHunter
             // System.Random starts opposite signed seeds in the same state.
             if (seed < 0)
                 random.Next();
-            var placed = new List<Placement>(looseFinds.Length + 2);
+            var placed = new List<Placement>(looseFinds.Length + packages.Length + 2);
             var cabinetPose = cabinetStart;
             cabinetPose.position += new Vector3(Between(random, -0.08f, 0.08f), 0, Between(random, -0.07f, 0.07f));
             cabinetPose.rotation *= Quaternion.Euler(0, Between(random, -12, 12), 0);
@@ -55,6 +61,22 @@ namespace TrashHunter
                 pileArea.center.y + Between(random, -0.50f, 0.50f));
             var cratePlacement = PlaceOnFloor(crate.Id, crate.Size, focus, random, placed);
             placed.Add(cratePlacement);
+
+            var contents = new List<WorldItem>();
+            for (var i = 0; i < packages.Length; i++)
+            {
+                var package = packages[i];
+                var approach = new Vector2(pileArea.xMin + 0.45f + i * 1.1f, pileArea.yMin + 0.45f);
+                var placement = PlaceOnFloor(package.Id, package.Size, approach, random, placed);
+                placed.Add(placement);
+                foreach (var id in package.Contents)
+                {
+                    var nested = placement.Pose;
+                    nested.key = id;
+                    nested.package = package.Id;
+                    contents.Add(nested);
+                }
+            }
 
             var top = cratePlacement.Area;
             // Use the inscribed rectangle of the slightly rotated crate for reliable support.
@@ -77,7 +99,7 @@ namespace TrashHunter
                     placed.Add(PlaceOnFloor(find.Id, find.Size, focus, random, placed));
                 }
             }
-            return placed.Select(placement => placement.Pose).ToArray();
+            return placed.Select(placement => placement.Pose).Concat(contents).ToArray();
         }
 
         private Placement PlaceOnFloor(string id, Vector3 size, Vector2 focus, Random random, List<Placement> placed)

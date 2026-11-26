@@ -281,7 +281,7 @@ public static class CreateSearchPrototype
             marker.SetParent(layoutRoot);
             var item = new SerializedObject(definitions[definition.key]);
             item.FindProperty("alternatePose").objectReferenceValue = marker;
-            item.FindProperty("salePrice").intValue = definition.price;
+            item.FindProperty("baseValue").intValue = definition.price;
             item.FindProperty("saleCondition").stringValue = definition.condition;
             item.ApplyModifiedPropertiesWithoutUndo();
         }
@@ -516,11 +516,129 @@ public static class CreateSearchPrototype
         }
     }
 
+    public static object AddLootPackages()
+    {
+        var scene = SceneManager.GetActiveScene();
+        if (scene.path != ScenePath || scene.isDirty || EditorApplication.isPlayingOrWillChangePlaymode)
+            throw new InvalidOperationException("Open the saved ContainerSearch scene in Edit Mode.");
+
+        var session = new SerializedObject(Object.FindAnyObjectByType<SearchSession>());
+        var references = session.FindProperty("items");
+        var existing = Enumerable.Range(0, references.arraySize)
+            .Select(i => (SearchItem)references.GetArrayElementAtIndex(i).objectReferenceValue)
+            .ToDictionary(item => item.Id);
+        if (existing.Count != 26 || !existing.ContainsKey("cabinet-a"))
+            throw new InvalidOperationException("Apply loot packages to the 26-definition search scene.");
+
+        foreach (var item in existing.Values)
+        {
+            var data = new SerializedObject(item);
+            var baseValue = data.FindProperty("baseValue");
+            if (baseValue.intValue == 0)
+                continue;
+
+            var model = item.Id[..item.Id.LastIndexOf('-')];
+            var (tier, intactValue) = model switch
+            {
+                "dial" => (1, 4),
+                "plug" => (1, 8),
+                "fuse" => (1, 9),
+                "tin" => (1, 10),
+                "strip" => (1, 11),
+                "bell" => (1, 13),
+                "motor" => (2, 19),
+                "adapter" => (2, 22),
+                "radio" => (2, 26),
+                "pack" => (2, 33),
+                "lamp" => (3, 42),
+                _ => throw new InvalidOperationException($"Missing base value for {item.Id}.")
+            };
+            data.FindProperty("tier").intValue = tier;
+            data.FindProperty("conditionDiscount").intValue = intactValue - baseValue.intValue;
+            baseValue.intValue = intactValue;
+            data.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        var dark = Existing("Dark_Metal");
+        var green = Existing("Container_Paint");
+        var timber = Existing("Weathered_Timber");
+        var cream = Existing("Ivory");
+        var sackSize = new Vector3(0.48f, 0.32f, 0.39f);
+        var sack = Item("Search sack", "sack-a", "Мешок", new(-0.24f, 0.45f, 1.98f), sackSize);
+        var tied = Part(sack, "Tied mouth");
+        Box(tied.transform, "Gathered neck", new(0.04f, 0.105f, 0), new(0.23f, 0.11f, 0.24f), green,
+            rotation: Quaternion.Euler(0, 22, 11));
+        Box(tied.transform, "Tie", new(0.06f, 0.141f, 0), new(0.16f, 0.028f, 0.17f), cream,
+            rotation: Quaternion.Euler(0, 22, 11));
+        var sackOpen = Part(sack, "Open mouth");
+        Box(sackOpen.transform, "Folded lip left", new(-0.151f, 0.092f, 0), new(0.13f, 0.042f, 0.29f), green,
+            rotation: Quaternion.Euler(0, -8, -15));
+        Box(sackOpen.transform, "Folded lip right", new(0.152f, 0.092f, 0), new(0.12f, 0.039f, 0.28f), green,
+            rotation: Quaternion.Euler(0, 9, 13));
+        Box(sackOpen.transform, "Interior", new(0.003f, 0.061f, 0), new(0.20f, 0.019f, 0.25f), dark);
+        var cloth = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        cloth.name = "Slumped cloth";
+        cloth.transform.SetParent(sack.transform, false);
+        cloth.transform.localPosition = new Vector3(0, -0.042f, 0);
+        cloth.transform.localScale = new Vector3(sackSize.x, 0.23f, sackSize.z);
+        cloth.GetComponent<Renderer>().sharedMaterial = green;
+        Object.DestroyImmediate(cloth.GetComponent<Collider>());
+        Configure(sack, tied, sackOpen, "plug-a", "motor-b");
+
+        var boxSize = new Vector3(0.55f, 0.29f, 0.41f);
+        var box = Item("Search cardboard box", "parcel-a", "Картонная коробка", new(0.63f, 0.45f, 2.18f), boxSize);
+        Box(box.transform, "Base", new(0, -0.129f, 0), new(0.54f, 0.03f, 0.40f), timber);
+        foreach (var side in new[] { -1, 1 })
+        {
+            Box(box.transform, $"Side {side}", new(side * 0.255f, -0.015f, 0), new(0.028f, 0.24f, 0.40f), timber);
+            Box(box.transform, $"End {side}", new(0, -0.015f, side * 0.184f), new(0.49f, 0.24f, 0.03f), timber);
+        }
+        var taped = Part(box, "Taped lid");
+        Box(taped.transform, "Lid", new(0, 0.114f, 0), new(0.54f, 0.026f, 0.40f), timber);
+        Box(taped.transform, "Tape", new(0, 0.130f, 0), new(0.065f, 0.009f, 0.402f), cream);
+        var boxOpen = Part(box, "Open flaps");
+        foreach (var side in new[] { -1, 1 })
+            Box(boxOpen.transform, $"Flap {side}", new(side * 0.197f, 0.124f, 0), new(0.139f, 0.022f, 0.40f), timber,
+                rotation: Quaternion.Euler(0, 0, -side * 16));
+        Configure(box, taped, boxOpen, "fuse-a", "adapter-a");
+
+        references.arraySize += 2;
+        references.GetArrayElementAtIndex(references.arraySize - 2).objectReferenceValue = sack;
+        references.GetArrayElementAtIndex(references.arraySize - 1).objectReferenceValue = box;
+        session.ApplyModifiedPropertiesWithoutUndo();
+        EditorSceneManager.MarkSceneDirty(scene);
+        if (!EditorSceneManager.SaveScene(scene))
+            throw new InvalidOperationException("Failed to save the search packages.");
+        return new { scene = scene.path, packages = 2, nestedItems = 4 };
+
+        Material Existing(string name) => AssetDatabase.LoadAssetAtPath<Material>($"{Content}/{name}.mat");
+
+        GameObject Part(SearchItem item, string name)
+        {
+            var part = new GameObject(name);
+            part.transform.SetParent(item.transform, false);
+            return part;
+        }
+
+        void Configure(SearchItem item, GameObject closed, GameObject opened, params string[] ids)
+        {
+            var data = new SerializedObject(item);
+            data.FindProperty("packageClosure").objectReferenceValue = closed;
+            data.FindProperty("packageInterior").objectReferenceValue = opened;
+            var contents = data.FindProperty("packageContents");
+            contents.arraySize = ids.Length;
+            for (var i = 0; i < ids.Length; i++)
+                contents.GetArrayElementAtIndex(i).objectReferenceValue = existing[ids[i]];
+            data.ApplyModifiedPropertiesWithoutUndo();
+            opened.SetActive(false);
+        }
+    }
+
     private static void SetSale(SearchItem item, string id, int price, string condition)
     {
         var data = new SerializedObject(item);
         data.FindProperty("itemId").stringValue = id;
-        data.FindProperty("salePrice").intValue = price;
+        data.FindProperty("baseValue").intValue = price;
         data.FindProperty("saleCondition").stringValue = condition;
         data.ApplyModifiedPropertiesWithoutUndo();
     }

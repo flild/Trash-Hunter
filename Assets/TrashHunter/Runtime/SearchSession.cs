@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -7,7 +9,7 @@ namespace TrashHunter
 {
     public sealed class SearchSession : MonoBehaviour
     {
-        private enum Mode { Search, Return, Home, Sale, Pause, Continue, LoadError }
+        private enum Mode { Search, Return, Home, Sale, Pause, Continue, LoadError, Package }
 
         [SerializeField] private Transform outside;
         [SerializeField] private Transform inside;
@@ -28,6 +30,10 @@ namespace TrashHunter
         private SearchItem highlightedItem;
         private MaterialPropertyBlock aimProperties;
         private SearchItem movingInBag;
+        private SearchItem browsingPackage;
+        private readonly List<SearchItem> remainingContents = new();
+        private int packageSelection;
+        private bool knowsLootTiers;
         private bool moveRotated;
         private UiStrings strings;
         private Quaternion inspectRotation;
@@ -50,6 +56,7 @@ namespace TrashHunter
             hud = sceneHud;
             aimProperties = new MaterialPropertyBlock();
             strings = new UiStrings();
+            knowsLootTiers = HasRecognitionForPrototype();
             hud.Bag.SetStrings(strings);
             foreach (var item in items)
                 item.CacheLayout();
@@ -184,7 +191,7 @@ namespace TrashHunter
             if (inspecting)
             {
                 inspectRotation = Quaternion.Euler(delta.y * 0.55f, -delta.x * 0.55f, 0f) * inspectRotation;
-                hud.Show(ItemName(held), strings.Get("search.inspectControls"), false);
+                hud.Show(InspectionLabel(held), strings.Get("search.inspectControls"), false);
                 return;
             }
 
@@ -229,8 +236,9 @@ namespace TrashHunter
             }
 
             var hit = AimHit();
-            var target = held == null && hit.collider != null && !player.IsSupportedBy(hit.collider)
-                ? hit.collider.GetComponent<SearchItem>() : null;
+            var target = held == null && hit.collider != null ? hit.collider.GetComponent<SearchItem>() : null;
+            if (target != null && !target.IsPackage && player.IsSupportedBy(hit.collider))
+                target = null;
             if (held != null && mouse != null)
             {
                 var scroll = mouse.scroll.ReadValue().y;
@@ -242,6 +250,11 @@ namespace TrashHunter
             {
                 if (held != null)
                     TryPlace(hit);
+                else if (target != null && target.IsPackage)
+                {
+                    if (BrowsePackage(target))
+                        return;
+                }
                 else if (target != null)
                     TakeInHand(target);
             }
@@ -250,7 +263,7 @@ namespace TrashHunter
 
             aimedItem = held == null ? target : null;
             var action = held != null ? strings.Get("search.holdActions") :
-                target != null ? string.Format(strings.Get("search.take"), ItemName(target)) : string.Empty;
+                target != null ? AimLabel(target) : string.Empty;
             if (held != null && Time.unscaledTime < blockedUntil)
                 action = strings.Get("search.blockedPlacement");
             if (atExit || atRim)
@@ -273,6 +286,89 @@ namespace TrashHunter
         private string ItemName(SearchItem item) =>
             strings.Get($"item.{item.Id}.name", strings.Get($"item.{item.Id}", item.DisplayName));
 
+        private string AimLabel(SearchItem item)
+        {
+            if (!item.IsPackage)
+                return string.Format(strings.Get("search.take"), ItemName(item));
+            var key = state.IsPackageOpen(item.Id) ? "package.checkAim" : "package.openAim";
+            return string.Format(strings.Get(key), ItemName(item));
+        }
+
+        private string InspectionLabel(SearchItem item)
+        {
+            var label = ItemName(item);
+            if (knowsLootTiers && item.Definition.Tier > 0)
+                label = string.Format(strings.Get("search.inspectedTier"), label, item.Definition.Tier);
+            var condition = strings.Get($"item.{item.Id}.condition", string.Empty);
+            return condition.Length == 0 ? label : $"{label}  ·  {condition}";
+        }
+
+        private static bool HasRecognitionForPrototype()
+        {
+#if UNITY_EDITOR
+            if (Environment.GetEnvironmentVariable("TRASH_HUNTER_RECOGNITION") == "1")
+                return true;
+#endif
+            return Array.IndexOf(Environment.GetCommandLineArgs(), "-trash-hunter-recognition") >= 0;
+        }
+
+        private bool BrowsePackage(SearchItem package)
+        {
+            CaptureWorld();
+            if (!state.OpenPackage(package.Id))
+                return false;
+
+            package.ShowPackageOpened(true);
+            browsingPackage = package;
+            remainingContents.Clear();
+            foreach (var item in package.InitialContents)
+                if (state.IsInPackage(item.Id))
+                    remainingContents.Add(item);
+            packageSelection = 0;
+            mode = Mode.Package;
+            ShowPackage();
+            return true;
+        }
+
+        private void ShowPackage()
+        {
+            var rows = new StringBuilder();
+            for (var i = 0; i < remainingContents.Count; i++)
+            {
+                var name = ItemName(remainingContents[i]);
+                rows.AppendLine(i == packageSelection ? $"<color=#F0C776>›  {name}</color>" : $"    {name}");
+            }
+
+            var empty = remainingContents.Count == 0;
+            ShowOverlay(ItemName(browsingPackage), string.Empty,
+                empty ? strings.Get("package.empty") : rows.ToString().TrimEnd(),
+                strings.Get(empty ? "package.close" : "package.controls"), state.Error, state.Error != null);
+        }
+
+        private void UpdatePackage(Keyboard keyboard, bool confirm, bool cancel)
+        {
+            if (cancel)
+            {
+                CloseOverlay();
+                return;
+            }
+            if (remainingContents.Count == 0)
+                return;
+
+            if (keyboard.upArrowKey.wasPressedThisFrame)
+                packageSelection = Mathf.Max(0, packageSelection - 1);
+            else if (keyboard.downArrowKey.wasPressedThisFrame)
+                packageSelection = Mathf.Min(remainingContents.Count - 1, packageSelection + 1);
+            else if (confirm && TakeInHand(remainingContents[packageSelection]))
+            {
+                CloseOverlay();
+                return;
+            }
+            else if (!confirm)
+                return;
+            ShowPackage();
+        }
+
         private void UpdateOverlay(Keyboard keyboard)
         {
             if (keyboard == null)
@@ -282,6 +378,9 @@ namespace TrashHunter
             var cancel = keyboard.escapeKey.wasPressedThisFrame;
             switch (mode)
             {
+                case Mode.Package:
+                    UpdatePackage(keyboard, confirm, cancel);
+                    break;
                 case Mode.Continue:
                     if (confirm)
                     {

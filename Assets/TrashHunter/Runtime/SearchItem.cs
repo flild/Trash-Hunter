@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TrashHunter
 {
@@ -14,7 +15,13 @@ namespace TrashHunter
         [SerializeField] private string displayName;
         [SerializeField] private string bagLabel;
         [SerializeField] private Vector2Int bagSize;
-        [SerializeField] private int salePrice;
+        [FormerlySerializedAs("salePrice")]
+        [SerializeField, Min(0)] private int baseValue;
+        [SerializeField, Min(0)] private int conditionDiscount;
+        [SerializeField, Min(0)] private int tier;
+        [SerializeField] private SearchItem[] packageContents;
+        [SerializeField] private GameObject packageClosure;
+        [SerializeField] private GameObject packageInterior;
         [SerializeField] private string saleCondition;
         [SerializeField] private Transform alternatePose;
         [SerializeField] private Transform thirdPose;
@@ -40,12 +47,14 @@ namespace TrashHunter
         internal Vector3 BodyPosition => body.position;
         internal Quaternion BodyRotation => body.rotation;
         internal float MinimumHoldDistance => 0.85f + new Vector2(HalfSize.x, HalfSize.z).magnitude;
-        internal LootDefinition Definition => new(displayName, salePrice, saleCondition, bagSize);
+        internal LootDefinition Definition => new(displayName, tier, baseValue, conditionDiscount, saleCondition, bagSize);
+        internal bool IsPackage => packageContents is { Length: > 0 };
+        internal SearchItem[] InitialContents => packageContents;
         internal bool LegacyLayoutOnly => legacyLayoutOnly;
 
         internal void SetAimHighlight(bool highlighted, MaterialPropertyBlock properties)
         {
-            highlightRenderers ??= GetComponentsInChildren<MeshRenderer>();
+            highlightRenderers ??= GetComponentsInChildren<MeshRenderer>(true);
             foreach (var renderer in highlightRenderers)
             {
                 if (!highlighted)
@@ -82,11 +91,14 @@ namespace TrashHunter
         {
             body = GetComponent<Rigidbody>();
             shape = GetComponent<BoxCollider>();
-            if (!state.TryGetPose(Id, out var pose))
+            if (!state.TryGetPose(Id, out var pose) || state.IsInPackage(Id))
             {
                 Store();
                 return;
             }
+
+            if (IsPackage)
+                ShowPackageOpened(state.IsPackageOpen(Id));
 
             if (secondLayoutFinish != null && GameState.LayoutIndex(state.Expedition) == 1)
                 foreach (var renderer in lampShell)
@@ -101,6 +113,12 @@ namespace TrashHunter
                 TakeInHand(state.HeldInWorld);
             else
                 Place(pose.Position, pose.Rotation);
+        }
+
+        internal void ShowPackageOpened(bool opened)
+        {
+            packageClosure.SetActive(!opened);
+            packageInterior.SetActive(opened);
         }
 
         public void Record(GameState state)

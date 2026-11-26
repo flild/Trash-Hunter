@@ -361,7 +361,9 @@ unity command script eval @pipeline -- --file AgentScripts/VerifyJumpAndAim.cs -
 
 ## Проверка генерации навала
 
-Открыть ContainerSearch. В процессе Editor задать изолированный каталог
+Для маршрута `pile` открыть ContainerSearch на ревизии I-090 (`dd71e0f`).
+На текущей ревизии проверка новой вылазки описана в следующем разделе.
+Для остальных фаз этого маршрута брать соответствующий старый слот. В процессе Editor задать изолированный каталог
 `TRASH_HUNTER_EDITOR_SAVE_DIR` и фазу `TRASH_HUNTER_CHECK`. Начинать новый
 Play Mode после смены фазы. [VerifySearchPile.cs](../AgentScripts/VerifySearchPile.cs)
 использует виртуальную клавиатуру и мышь.
@@ -381,6 +383,31 @@ unity command script eval @pipeline -- --file AgentScripts/VerifySearchPile.cs -
 После прогона остановить тестовый Play Mode и восстановить переменные.
 [Отчёт I-090](sessions/2026-11-27-i090-pile-generation.md) содержит результаты,
 проверку геометрии и ручной сценарий.
+
+## Проверка упаковок и тиров
+
+[VerifyLootPackages.cs](../AgentScripts/VerifyLootPackages.cs) проверяет
+упаковки виртуальным вводом в ContainerSearch. Перед каждой фазой начать
+новый Play Mode. Задать переменные в процессе Editor.
+
+| Переменная | Значение |
+|---|---|
+| `TRASH_HUNTER_EDITOR_SAVE_DIR` | Абсолютный путь изолированного тестового каталога |
+| `TRASH_HUNTER_CHECK` | `packages` для пустого слота, `packages-resume` для его продолжения, `packages-legacy` для копии слота I-040 или I-090 |
+| `TRASH_HUNTER_LOCALE` | `ru` или `en` |
+| `TRASH_HUNTER_RECOGNITION` | `1` для прогона с навыком, пусто или `0` для прогона без навыка |
+
+~~~powershell
+$projectPath = 'F:\UnityProjects\Trash-Hunter'
+$pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
+unity command script eval @pipeline -- --file AgentScripts/VerifyLootPackages.cs --timeout 40
+~~~
+
+У Windows Player для теста навыка предусмотрен флаг
+`-trash-hunter-recognition`. Тестовый режим распознавания начинается при
+запуске, а обучение относится к прогрессии у контактов. После теста вернуть
+переменные и настройки Editor. Шаги, результаты и ограничения перечислены
+в [отчёте I-100](sessions/2026-11-27-i100-loot-packages.md).
 
 ## Официальные инструкции
 

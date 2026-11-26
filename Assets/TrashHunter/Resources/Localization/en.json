@@ -1,5 +1,17 @@
 {
   "entries": [
+    {"key": "package.openAim", "value": "LMB  Open  ·  {0}"},
+    {"key": "package.checkAim", "value": "LMB  Look inside  ·  {0}"},
+    {"key": "package.empty", "value": "Empty"},
+    {"key": "package.close", "value": "Esc  Close"},
+    {"key": "package.controls", "value": "↑ / ↓  Select     Enter  Take     Esc  Close"},
+    {"key": "search.inspectedTier", "value": "{0}  ·  Tier {1}"},
+    {"key": "item.sack-a", "value": "Sack"},
+    {"key": "item.parcel-a", "value": "Cardboard box"},
+    {"key": "item.plug-a.condition", "value": "Pins are straight"},
+    {"key": "item.motor-b.condition", "value": "Shaft is bent"},
+    {"key": "item.fuse-a.condition", "value": "Cover is in place"},
+    {"key": "item.adapter-a.condition", "value": "Socket is intact"},
     {"key": "bag.title", "value": "Waist bag"},
     {"key": "bag.empty", "value": "Bag is empty"},
     {"key": "bag.emptyHand", "value": "Empty hand"},

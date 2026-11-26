@@ -39,6 +39,8 @@ namespace TrashHunter
         public string key;
         public Vector3 position;
         public Quaternion rotation;
+        public string package;
+        public bool opened;
         public bool packed;
         public int column;
         public int row;
@@ -84,14 +86,18 @@ namespace TrashHunter
     internal readonly struct LootDefinition
     {
         public string Name { get; }
+        public int Tier { get; }
+        public int BaseValue { get; }
         public int Price { get; }
         public string Condition { get; }
         public Vector2Int Size { get; }
 
-        public LootDefinition(string name, int price, string condition, Vector2Int size)
+        public LootDefinition(string name, int tier, int baseValue, int conditionDiscount, string condition, Vector2Int size)
         {
             Name = name;
-            Price = price;
+            Tier = tier;
+            BaseValue = baseValue;
+            Price = Mathf.Max(0, baseValue - conditionDiscount);
             Condition = condition;
             Size = size;
         }
