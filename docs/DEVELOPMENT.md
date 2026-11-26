@@ -320,6 +320,25 @@ unity command script eval @pipeline -- --file AgentScripts/VerifyBagRearrangemen
 Editor. [Отчёт I-060](sessions/2026-11-25-i060-bag-rearrangement.md) содержит
 результаты и снимки.
 
+## Проверка перетаскивания с весом
+
+[VerifyWeightedDrag.cs](../AgentScripts/VerifyWeightedDrag.cs) использует
+виртуальную клавиатуру и мышь в сцене ContainerSearch. Выбрать пустой
+каталог автослота через `TRASH_HUNTER_EDITOR_SAVE_DIR` и указать локаль
+`TRASH_HUNTER_LOCALE` в процессе Editor. В фазе `drag` проверяются
+контакты, разница в перемещении, выкладка, бросок, осмотр и перенос шкафа
+за борт. Маршрут пишет позицию удерживаемого шкафа через F5. С тем же
+автослотом начать новый Play Mode с фазой `drag-resume` и проверить
+продолжение и освобождение шкафа.
+
+~~~powershell
+$projectPath = 'F:\UnityProjects\Trash-Hunter'
+$pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
+unity command script eval @pipeline -- --file AgentScripts/VerifyWeightedDrag.cs --timeout 48
+~~~
+
+Восстановить значения переменных и временные настройки Editor после прогона.
+
 
 ## Официальные инструкции
 

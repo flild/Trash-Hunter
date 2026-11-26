@@ -18,6 +18,7 @@ namespace TrashHunter
         public WorldItem[] world;
         public string held;
         public bool heldRotated;
+        public bool heldInWorld;
         public PlayerPose player;
         public HomeItem[] home;
         public long cash;

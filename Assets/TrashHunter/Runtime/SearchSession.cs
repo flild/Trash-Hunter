@@ -17,6 +17,8 @@ namespace TrashHunter
         [SerializeField] private float rimReach = 1.15f;
         [SerializeField] private float itemReach = 3f;
 
+        private readonly RaycastHit[] aimHits = new RaycastHit[12];
+        private readonly Collider[] placementHits = new Collider[2];
         private GameState state;
         private SearchPlayer player;
         private SearchHud hud;
@@ -32,6 +34,7 @@ namespace TrashHunter
         private bool reloading;
         private bool quitting;
         private float blockedUntil;
+        private float holdDistance;
         private int selection;
         private int returnExpedition;
         private SaleOffer offer;
@@ -84,6 +87,14 @@ namespace TrashHunter
                     held = item;
             }
             player.Restore(state.Player);
+            if (held != null)
+            {
+                var view = player.ViewCamera.transform;
+                var savedDepth = Vector3.Dot(held.BodyPosition - view.position, view.forward);
+                holdDistance = held.HeldInWorld
+                    ? Mathf.Clamp(savedDepth, held.MinimumHoldDistance, itemReach)
+                    : held.MinimumHoldDistance;
+            }
             Physics.SyncTransforms();
             PresentHand();
         }
@@ -127,7 +138,7 @@ namespace TrashHunter
             if (cancel)
             {
                 if (inspecting)
-                    inspecting = false;
+                    EndInspection();
                 else
                 {
                     Pause();
@@ -156,14 +167,20 @@ namespace TrashHunter
             Vector2 delta = mouse == null ? Vector2.zero : mouse.delta.ReadValue();
             if (keyboard?.qKey.wasPressedThisFrame == true && held != null)
             {
-                inspecting = !inspecting;
-                inspectRotation = Quaternion.identity;
+                if (inspecting)
+                    EndInspection();
+                else
+                {
+                    inspecting = true;
+                    inspectRotation = Quaternion.identity;
+                    held.BeginInspection();
+                }
                 delta = Vector2.zero;
             }
             if (inspecting)
             {
                 inspectRotation = Quaternion.Euler(delta.y * 0.55f, -delta.x * 0.55f, 0f) * inspectRotation;
-                hud.Show(held.DisplayName, "Мышь  Повернуть     Q / Esc  Закончить осмотр", false);
+                hud.Show(ItemName(held), strings.Get("search.inspectControls"), false);
                 return;
             }
 
@@ -208,6 +225,13 @@ namespace TrashHunter
 
             var hit = AimHit();
             var target = hit.collider != null ? hit.collider.GetComponent<SearchItem>() : null;
+            if (held != null && mouse != null)
+            {
+                var scroll = mouse.scroll.ReadValue().y;
+                if (scroll != 0f)
+                    holdDistance = Mathf.Clamp(holdDistance + Mathf.Sign(scroll) * 0.35f,
+                        held.MinimumHoldDistance, itemReach);
+            }
             if (mouse?.leftButton.wasPressedThisFrame == true)
             {
                 if (held != null)
@@ -215,19 +239,32 @@ namespace TrashHunter
                 else if (target != null)
                     TakeInHand(target);
             }
+            else if (held != null && mouse?.rightButton.wasPressedThisFrame == true)
+                TryThrow();
 
-            var action = held != null ? "ЛКМ  Положить     Q  Осмотреть" :
-                target != null ? $"ЛКМ  Взять  ·  {target.DisplayName}" : string.Empty;
+            var action = held != null ? strings.Get("search.holdActions") :
+                target != null ? string.Format(strings.Get("search.take"), ItemName(target)) : string.Empty;
             if (held != null && Time.unscaledTime < blockedUntil)
-                action = "Наведите на свободную поверхность";
+                action = strings.Get("search.blockedPlacement");
             if (atExit || atRim)
             {
                 var interaction = atExit ? "E  Домой" : inContainer ? "E  Вылезти" : "E  Залезть";
                 action = action.Length == 0 ? interaction : $"{interaction}     {action}";
             }
-            hud.Show(action, strings.Get("search.controlsWithBag"), true);
+            hud.Show(action, strings.Get(held == null ? "search.controlsWithBag" : "search.holdControls"), true);
             UpdateError();
         }
+
+        private void EndInspection()
+        {
+            if (!inspecting)
+                return;
+            inspecting = false;
+            held.EndInspection();
+        }
+
+        private string ItemName(SearchItem item) =>
+            strings.Get($"item.{item.Id}.name", strings.Get($"item.{item.Id}", item.DisplayName));
 
         private void UpdateOverlay(Keyboard keyboard)
         {
@@ -352,7 +389,7 @@ namespace TrashHunter
         {
             if (bagOpen)
                 CloseBag();
-            inspecting = false;
+            EndInspection();
             mode = Mode.Pause;
             ShowOverlay("Пауза", string.Empty,
                 state.AtHome ? "Игра продолжится дома." : "При выходе сохранится эта вылазка.",
@@ -504,8 +541,9 @@ namespace TrashHunter
             CaptureWorld();
             if (!state.Take(item.Id))
                 return false;
-            item.TakeInHand();
+            item.TakeInHand(state.HeldInWorld);
             held = item;
+            holdDistance = item.MinimumHoldDistance;
             blockedUntil = 0f;
             return true;
         }
@@ -521,7 +559,29 @@ namespace TrashHunter
             var view = player.ViewCamera.transform;
             Physics.Raycast(view.position, view.forward, out var hit, itemReach,
                 Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
-            return hit;
+            if (held == null || hit.collider != held.Shape)
+                return hit;
+
+            var hits = aimHits;
+            var count = Physics.RaycastNonAlloc(view.position, view.forward, hits, itemReach,
+                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            if (count == hits.Length)
+            {
+                hits = Physics.RaycastAll(view.position, view.forward, itemReach,
+                    Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+                count = hits.Length;
+            }
+
+            var nearest = default(RaycastHit);
+            var distance = float.PositiveInfinity;
+            for (var i = 0; i < count; i++)
+            {
+                if (hits[i].collider == held.Shape || hits[i].distance >= distance)
+                    continue;
+                nearest = hits[i];
+                distance = nearest.distance;
+            }
+            return nearest;
         }
 
         private void CaptureWorld()
@@ -529,19 +589,50 @@ namespace TrashHunter
             if (state.AtHome)
                 return;
             state.RecordPlayer(player.Capture(inContainer));
+            state.RecordHeldInWorld(held != null && held.HeldInWorld);
             foreach (var item in items)
                 item.Record(state);
+        }
+
+        private void FixedUpdate()
+        {
+            if (held == null || mode != Mode.Search || inspecting || bagOpen || reloading ||
+                Cursor.lockState != CursorLockMode.Locked)
+                return;
+
+            var view = player.ViewCamera.transform;
+            var target = HoldTarget(view);
+            if (TryMaterializeHand(view, target))
+                held.PullTo(target);
+        }
+
+        private Vector3 HoldTarget(Transform view) => view.TransformPoint(new Vector3(0.24f, -0.12f, holdDistance));
+
+        private bool TryMaterializeHand(Transform view, Vector3 position)
+        {
+            if (held.HeldInWorld)
+                return true;
+
+            // A bag extraction or older save has no physical hand pose yet.
+            var offset = position - view.position;
+            if (Physics.Raycast(view.position, offset.normalized, offset.magnitude, Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore) || !HasRoom(position, view.rotation))
+                return false;
+
+            held.MaterializeHand(position, view.rotation);
+            return true;
         }
 
         private void LateUpdate() => PresentHand();
 
         private void PresentHand()
         {
-            if (held == null || reloading)
+            if (held == null || reloading || (held.HeldInWorld && !inspecting))
                 return;
 
             var view = player.ViewCamera.transform;
-            var offset = inspecting ? new Vector3(0f, -0.035f, 0.88f) : new Vector3(0.37f, -0.27f, 0.82f);
+            var offset = inspecting ? new Vector3(0f, -0.035f, Mathf.Max(0.88f, 2f * held.HalfSize.magnitude)) :
+                new Vector3(0.37f, -0.27f, 0.82f);
             held.Present(view.TransformPoint(offset), view.rotation * (inspecting ? inspectRotation : Quaternion.identity));
         }
 
@@ -558,7 +649,7 @@ namespace TrashHunter
                 var clearance = 0.36f + new Vector2(halfSize.x, halfSize.z).magnitude;
                 if (HasClearance(position, player.transform.position, clearance) &&
                     HasClearance(position, (inContainer ? inside : outside).position, clearance) &&
-                    !Physics.CheckBox(position, halfSize, rotation, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                    HasRoom(position, rotation))
                 {
                     CaptureWorld();
                     if (state.Place(position, rotation))
@@ -570,6 +661,30 @@ namespace TrashHunter
                 }
             }
             blockedUntil = Time.unscaledTime + 1.25f;
+        }
+
+        private bool HasRoom(Vector3 position, Quaternion rotation)
+        {
+            var count = Physics.OverlapBoxNonAlloc(position, held.HalfSize, placementHits, rotation,
+                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            return count == 0 || (count == 1 && placementHits[0] == held.Shape);
+        }
+
+        private void TryThrow()
+        {
+            var view = player.ViewCamera.transform;
+            if (!TryMaterializeHand(view, HoldTarget(view)))
+            {
+                blockedUntil = Time.unscaledTime + 1.25f;
+                return;
+            }
+
+            CaptureWorld();
+            if (state.Place(held.BodyPosition, held.BodyRotation))
+            {
+                held.Throw(view.forward);
+                ClearHand();
+            }
         }
 
         private static bool HasClearance(Vector3 position, Vector3 reserved, float clearance)

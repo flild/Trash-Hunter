@@ -7,6 +7,7 @@ namespace TrashHunter
 {
     public sealed class GameState : IDisposable
     {
+        private const string CabinetId = "cabinet-a";
         private static readonly string[] LegacyLayout = { "crate-a", "lamp-a", "radio-a", "strip-a", "dial-a" };
         private readonly Dictionary<string, LootDefinition> catalog = new();
         private readonly HashSet<string> layoutKeys = new();
@@ -17,6 +18,7 @@ namespace TrashHunter
         public BagInventory Bag => bag;
         public bool HasBag => current.hasBag;
         public string HeldItemId => string.IsNullOrEmpty(current.held) ? null : current.held;
+        internal bool HeldInWorld => current.heldInWorld;
         public bool HeldItemRotated { get; set; }
         public int Expedition => current.expedition;
         public bool AtHome => current.atHome;
@@ -90,6 +92,7 @@ namespace TrashHunter
         }
 
         internal void RecordPlayer(PlayerPose pose) => current.player = pose;
+        internal void RecordHeldInWorld(bool inWorld) => current.heldInWorld = inWorld;
 
         internal bool EquipBag()
         {
@@ -110,6 +113,7 @@ namespace TrashHunter
             var next = current.Copy();
             next.held = id;
             next.heldRotated = next.world[index].rotated;
+            next.heldInWorld = !next.world[index].packed;
             next.world[index].packed = false;
             next.world[index].rotated = false;
             return Publish(next);
@@ -128,6 +132,7 @@ namespace TrashHunter
             next.world[index].rotated = placement.Rotated;
             next.held = null;
             next.heldRotated = false;
+            next.heldInWorld = false;
             return Publish(next);
         }
 
@@ -161,6 +166,7 @@ namespace TrashHunter
             next.world[index].rotation = rotation;
             next.held = null;
             next.heldRotated = false;
+            next.heldInWorld = false;
             return Publish(next);
         }
 
@@ -181,6 +187,7 @@ namespace TrashHunter
             next.world = Array.Empty<WorldItem>();
             next.held = null;
             next.heldRotated = false;
+            next.heldInWorld = false;
             next.atHome = true;
             return Publish(next);
         }
@@ -278,10 +285,10 @@ namespace TrashHunter
 
             var hasHand = !string.IsNullOrEmpty(data.held);
             if (data.atHome)
-                return data.hasBag && data.world.Length == 0 && !hasHand && !data.heldRotated;
-            if ((data.world.Length != layoutKeys.Count && data.world.Length != LegacyLayout.Length) ||
-                (!data.hasBag && (hasHand || data.player.inside)) ||
-                (!hasHand && data.heldRotated))
+                return data.hasBag && data.world.Length == 0 && !hasHand && !data.heldRotated && !data.heldInWorld;
+            if ((data.world.Length != layoutKeys.Count && data.world.Length != layoutKeys.Count - 1 &&
+                data.world.Length != LegacyLayout.Length) || (!data.hasBag && (hasHand || data.player.inside)) ||
+                (!hasHand && (data.heldRotated || data.heldInWorld)))
                 return false;
 
             var keys = new HashSet<string>();
@@ -297,7 +304,11 @@ namespace TrashHunter
                     !packed.TryPack(item.key, definition.Placement(item))))
                     return false;
             }
-            return (keys.SetEquals(layoutKeys) || keys.SetEquals(LegacyLayout)) && (!hasHand || keys.Contains(data.held));
+            // I-040 expeditions predate the cabinet. Preserve their exact set of finds.
+            var beforeCabinet = keys.Count + 1 == layoutKeys.Count && layoutKeys.Contains(CabinetId) &&
+                !keys.Contains(CabinetId) && keys.IsSubsetOf(layoutKeys);
+            return (keys.SetEquals(layoutKeys) || keys.SetEquals(LegacyLayout) || beforeCabinet) &&
+                (!hasHand || keys.Contains(data.held));
         }
 
         private static bool Finite(Vector3 value) =>

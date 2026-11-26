@@ -212,7 +212,8 @@ try
         placement.Column == column && placement.Row == row && placement.Rotated == rotated;
 
     bool HoldingStrip(bool rotated) => state.HeldItemId == strip && stripItem.IsHeld &&
-        state.HeldItemRotated == rotated && !stripItem.GetComponent<Collider>().enabled;
+        state.HeldItemRotated == rotated &&
+        stripItem.GetComponent<Collider>().enabled == (phase != "bag-before");
 
     bool OriginalLayout() => state.Bag.Count == 2 && At(lamp, 1, 0) && At(radio, 2, 0) && HoldingStrip(true);
 

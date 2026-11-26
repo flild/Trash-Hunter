@@ -5,6 +5,9 @@ namespace TrashHunter
     [RequireComponent(typeof(Rigidbody), typeof(BoxCollider))]
     public sealed class SearchItem : MonoBehaviour
     {
+        private const float MaximumPullForce = 450f;
+        private const float MaximumThrowImpulse = 9f;
+
         [SerializeField] private string itemId;
         [SerializeField] private string displayName;
         [SerializeField] private string bagLabel;
@@ -20,12 +23,20 @@ namespace TrashHunter
         private Rigidbody body;
         private BoxCollider shape;
         private WorldItem firstPose;
+        private bool showingInspection;
+        private Vector3 inspectionPosition;
+        private Quaternion inspectionRotation;
 
         public string Id => itemId;
         public string DisplayName => displayName;
         public string BagLabel => bagLabel;
         public Vector3 HalfSize => shape.size * 0.5f;
         public bool IsHeld { get; private set; }
+        internal bool HeldInWorld { get; private set; }
+        internal Collider Shape => shape;
+        internal Vector3 BodyPosition => body.position;
+        internal Quaternion BodyRotation => body.rotation;
+        internal float MinimumHoldDistance => 0.85f + new Vector2(HalfSize.x, HalfSize.z).magnitude;
         internal LootDefinition Definition => new(displayName, salePrice, saleCondition, bagSize);
         internal bool LegacyLayoutOnly => legacyLayoutOnly;
 
@@ -65,34 +76,72 @@ namespace TrashHunter
             if (state.Bag.TryGetPlacement(Id, out _))
                 Store();
             else if (state.HeldItemId == Id)
-                TakeInHand();
+                TakeInHand(state.HeldInWorld);
             else
                 Place(pose.Position, pose.Rotation);
         }
 
         public void Record(GameState state)
         {
-            if (!IsHeld && gameObject.activeSelf)
-                state.RecordPose(Id, body.position, body.rotation);
+            if (gameObject.activeSelf && (!IsHeld || HeldInWorld))
+                state.RecordPose(Id, showingInspection ? inspectionPosition : body.position,
+                    showingInspection ? inspectionRotation : body.rotation);
         }
 
-        public void TakeInHand()
+        internal void TakeInHand(bool inWorld)
         {
             IsHeld = true;
-            RemoveFromPhysics();
+            HeldInWorld = inWorld;
+            showingInspection = false;
+            if (!inWorld)
+                RemoveFromPhysics();
             gameObject.SetActive(true);
+        }
+
+        internal void MaterializeHand(Vector3 position, Quaternion rotation)
+        {
+            SetWorldPose(position, rotation);
+            HeldInWorld = true;
+        }
+
+        internal void PullTo(Vector3 target)
+        {
+            var speed = Mathf.Clamp(5f / Mathf.Sqrt(body.mass), 0.75f, 5f);
+            var desiredVelocity = Vector3.ClampMagnitude((target - body.worldCenterOfMass) * 7f, speed);
+            var force = body.mass * ((desiredVelocity - body.linearVelocity) * 12f - Physics.gravity);
+            body.AddForce(Vector3.ClampMagnitude(force, MaximumPullForce), ForceMode.Force);
+        }
+
+        internal void BeginInspection()
+        {
+            if (!HeldInWorld)
+                return;
+            inspectionPosition = body.position;
+            inspectionRotation = body.rotation;
+            showingInspection = true;
+            RemoveFromPhysics();
+        }
+
+        internal void EndInspection()
+        {
+            if (!showingInspection)
+                return;
+            showingInspection = false;
+            SetWorldPose(inspectionPosition, inspectionRotation);
         }
 
         public void Store()
         {
             IsHeld = false;
+            HeldInWorld = false;
+            showingInspection = false;
             RemoveFromPhysics();
             gameObject.SetActive(false);
         }
 
         internal void FreezeWorld(bool frozen)
         {
-            if (!IsHeld && gameObject.activeSelf)
+            if (gameObject.activeSelf && shape.enabled)
                 body.isKinematic = frozen;
         }
 
@@ -111,13 +160,34 @@ namespace TrashHunter
 
         public void Place(Vector3 position, Quaternion rotation)
         {
+            Release();
+            SetWorldPose(position, rotation);
+        }
+
+        internal void Throw(Vector3 direction)
+        {
+            Release();
+            body.linearVelocity = Vector3.zero;
+            body.AddForce(direction * Mathf.Min(MaximumThrowImpulse, body.mass * 8f), ForceMode.Impulse);
+        }
+
+        private void Release()
+        {
             IsHeld = false;
+            HeldInWorld = false;
+            showingInspection = false;
+        }
+
+        private void SetWorldPose(Vector3 position, Quaternion rotation)
+        {
             gameObject.SetActive(true);
             body.position = position;
             body.rotation = rotation;
             transform.SetPositionAndRotation(position, rotation);
             shape.enabled = true;
             body.isKinematic = false;
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
             body.WakeUp();
         }
     }
