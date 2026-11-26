@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,10 +7,14 @@ namespace TrashHunter
     [RequireComponent(typeof(CharacterController))]
     public sealed class SearchPlayer : MonoBehaviour
     {
+        private const float JumpHeight = 0.95f;
+        private const float GroundSpeed = -2f;
+
         [SerializeField] private Camera viewCamera;
         [SerializeField] private float moveSpeed = 3.2f;
         [SerializeField] private float mouseSensitivity = 0.11f;
 
+        private readonly List<Collider> supports = new();
         private CharacterController controller;
         private float pitch;
         private float verticalSpeed;
@@ -40,6 +45,7 @@ namespace TrashHunter
             controller.enabled = false;
             transform.SetPositionAndRotation(pose.position, Quaternion.Euler(0f, pose.yaw, 0f));
             controller.enabled = true;
+            supports.Clear();
             verticalSpeed = 0f;
             pitch = pose.pitch;
             viewCamera.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
@@ -58,10 +64,27 @@ namespace TrashHunter
                 input.y = Axis(keys.wKey.isPressed, keys.sKey.isPressed);
             }
             input = Vector2.ClampMagnitude(input, 1f);
-            verticalSpeed = controller.isGrounded ? -2f : verticalSpeed + Physics.gravity.y * Time.deltaTime;
+            var grounded = controller.isGrounded && verticalSpeed <= 0f;
+            if (grounded && keys?.spaceKey.wasPressedThisFrame == true)
+                verticalSpeed = Mathf.Sqrt(-2f * Physics.gravity.y * JumpHeight);
+            else
+                verticalSpeed = grounded ? GroundSpeed : verticalSpeed + Physics.gravity.y * Time.deltaTime;
+
             var velocity = (transform.right * input.x + transform.forward * input.y) * moveSpeed;
             velocity.y = verticalSpeed;
-            controller.Move(velocity * Time.deltaTime);
+            supports.Clear();
+            var contacts = controller.Move(velocity * Time.deltaTime);
+            if ((contacts & CollisionFlags.Above) != 0 && verticalSpeed > 0f)
+                verticalSpeed = 0f;
+        }
+
+        internal bool IsSupportedBy(Collider shape) => controller.isGrounded && supports.Contains(shape);
+
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            if (hit.rigidbody != null && hit.moveDirection.y < 0f &&
+                hit.normal.y >= Mathf.Cos(controller.slopeLimit * Mathf.Deg2Rad))
+                supports.Add(hit.collider);
         }
 
         private static float Axis(bool positive, bool negative) => (positive ? 1 : 0) - (negative ? 1 : 0);

@@ -11,6 +11,7 @@ namespace TrashHunter
 
         [SerializeField] private Transform outside;
         [SerializeField] private Transform inside;
+        [SerializeField] private BoxCollider containerFloor;
         [SerializeField] private Transform exit;
         [SerializeField] private SearchItem[] items;
         [SerializeField] private Collider starterBag;
@@ -23,12 +24,14 @@ namespace TrashHunter
         private SearchPlayer player;
         private SearchHud hud;
         private SearchItem held;
+        private SearchItem aimedItem;
+        private SearchItem highlightedItem;
+        private MaterialPropertyBlock aimProperties;
         private SearchItem movingInBag;
         private bool moveRotated;
         private UiStrings strings;
         private Quaternion inspectRotation;
         private Mode mode;
-        private bool inContainer;
         private bool inspecting;
         private bool bagOpen;
         private bool reloading;
@@ -45,6 +48,7 @@ namespace TrashHunter
             state = gameState;
             player = scenePlayer;
             hud = sceneHud;
+            aimProperties = new MaterialPropertyBlock();
             strings = new UiStrings();
             hud.Bag.SetStrings(strings);
             foreach (var item in items)
@@ -78,7 +82,6 @@ namespace TrashHunter
         private void ApplySnapshot()
         {
             held = null;
-            inContainer = state.Player.inside;
             starterBag.gameObject.SetActive(!state.HasBag && !state.AtHome);
             foreach (var item in items)
             {
@@ -101,6 +104,7 @@ namespace TrashHunter
 
         private void Update()
         {
+            aimedItem = null;
             if (player == null || reloading)
                 return;
 
@@ -207,6 +211,7 @@ namespace TrashHunter
                 return;
             }
 
+            var inContainer = IsInContainer();
             var atExit = !inContainer && Near(exit, 1.1f);
             if (atExit && actionPressed)
             {
@@ -224,7 +229,8 @@ namespace TrashHunter
             }
 
             var hit = AimHit();
-            var target = hit.collider != null ? hit.collider.GetComponent<SearchItem>() : null;
+            var target = held == null && hit.collider != null && !player.IsSupportedBy(hit.collider)
+                ? hit.collider.GetComponent<SearchItem>() : null;
             if (held != null && mouse != null)
             {
                 var scroll = mouse.scroll.ReadValue().y;
@@ -242,6 +248,7 @@ namespace TrashHunter
             else if (held != null && mouse?.rightButton.wasPressedThisFrame == true)
                 TryThrow();
 
+            aimedItem = held == null ? target : null;
             var action = held != null ? strings.Get("search.holdActions") :
                 target != null ? string.Format(strings.Get("search.take"), ItemName(target)) : string.Empty;
             if (held != null && Time.unscaledTime < blockedUntil)
@@ -588,7 +595,7 @@ namespace TrashHunter
         {
             if (state.AtHome)
                 return;
-            state.RecordPlayer(player.Capture(inContainer));
+            state.RecordPlayer(player.Capture(IsInContainer()));
             state.RecordHeldInWorld(held != null && held.HeldInWorld);
             foreach (var item in items)
                 item.Record(state);
@@ -602,7 +609,7 @@ namespace TrashHunter
 
             var view = player.ViewCamera.transform;
             var target = HoldTarget(view);
-            if (TryMaterializeHand(view, target))
+            if (TryMaterializeHand(view, target) && !player.IsSupportedBy(held.Shape))
                 held.PullTo(target);
         }
 
@@ -623,7 +630,25 @@ namespace TrashHunter
             return true;
         }
 
-        private void LateUpdate() => PresentHand();
+        private void LateUpdate()
+        {
+            SetAimHighlight(aimedItem);
+            PresentHand();
+        }
+
+        private void SetAimHighlight(SearchItem item)
+        {
+            if (highlightedItem == item)
+                return;
+
+            if (highlightedItem != null)
+                highlightedItem.SetAimHighlight(false, aimProperties);
+            highlightedItem = item;
+            if (highlightedItem != null)
+                highlightedItem.SetAimHighlight(true, aimProperties);
+        }
+
+        private void OnDisable() => SetAimHighlight(null);
 
         private void PresentHand()
         {
@@ -639,6 +664,14 @@ namespace TrashHunter
         private bool Near(Transform marker, float reach) =>
             Vector3.ProjectOnPlane(player.transform.position - marker.position, Vector3.up).sqrMagnitude <= reach * reach;
 
+        private bool IsInContainer()
+        {
+            var bounds = containerFloor.bounds;
+            var feet = player.transform.position;
+            feet.y = bounds.center.y;
+            return bounds.Contains(feet);
+        }
+
         private void TryPlace(RaycastHit hit)
         {
             if (hit.collider != null && hit.normal.y > 0.85f)
@@ -648,7 +681,7 @@ namespace TrashHunter
                 var position = hit.point + Vector3.up * (halfSize.y + 0.045f);
                 var clearance = 0.36f + new Vector2(halfSize.x, halfSize.z).magnitude;
                 if (HasClearance(position, player.transform.position, clearance) &&
-                    HasClearance(position, (inContainer ? inside : outside).position, clearance) &&
+                    HasClearance(position, (IsInContainer() ? inside : outside).position, clearance) &&
                     HasRoom(position, rotation))
                 {
                     CaptureWorld();

@@ -15820,6 +15820,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchSession
   outside: {fileID: 1259579435}
   inside: {fileID: 1824465492}
+  containerFloor: {fileID: 955275021}
   exit: {fileID: 485850116}
   items:
   - {fileID: 489827480}

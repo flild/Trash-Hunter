@@ -116,6 +116,7 @@ public static class CreateSearchPrototype
         var scope = root.AddComponent<SearchSceneScope>();
         Assign(session, "outside", outside);
         Assign(session, "inside", inside);
+        Assign(session, "containerFloor", container.Find("Floor").GetComponent<BoxCollider>());
         var serialized = new SerializedObject(session);
         var items = serialized.FindProperty("items");
         items.arraySize = 3;

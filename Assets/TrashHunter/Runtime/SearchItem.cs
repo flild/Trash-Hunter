@@ -7,6 +7,8 @@ namespace TrashHunter
     {
         private const float MaximumPullForce = 450f;
         private const float MaximumThrowImpulse = 9f;
+        private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+        private static readonly Color AimTint = new(1f, 0.84f, 0.46f);
 
         [SerializeField] private string itemId;
         [SerializeField] private string displayName;
@@ -26,6 +28,7 @@ namespace TrashHunter
         private bool showingInspection;
         private Vector3 inspectionPosition;
         private Quaternion inspectionRotation;
+        private MeshRenderer[] highlightRenderers;
 
         public string Id => itemId;
         public string DisplayName => displayName;
@@ -39,6 +42,25 @@ namespace TrashHunter
         internal float MinimumHoldDistance => 0.85f + new Vector2(HalfSize.x, HalfSize.z).magnitude;
         internal LootDefinition Definition => new(displayName, salePrice, saleCondition, bagSize);
         internal bool LegacyLayoutOnly => legacyLayoutOnly;
+
+        internal void SetAimHighlight(bool highlighted, MaterialPropertyBlock properties)
+        {
+            highlightRenderers ??= GetComponentsInChildren<MeshRenderer>();
+            foreach (var renderer in highlightRenderers)
+            {
+                if (!highlighted)
+                {
+                    renderer.SetPropertyBlock(null);
+                    continue;
+                }
+
+                var material = renderer.sharedMaterial;
+                if (material == null || !material.HasProperty(BaseColor))
+                    continue;
+                properties.SetColor(BaseColor, Color.Lerp(material.GetColor(BaseColor), AimTint, 0.55f));
+                renderer.SetPropertyBlock(properties);
+            }
+        }
 
         public BagPlacement Placement(int column, int row, bool rotated) =>
             new(column, row, bagSize.x, bagSize.y, rotated);

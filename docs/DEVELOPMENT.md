@@ -339,6 +339,25 @@ unity command script eval @pipeline -- --file AgentScripts/VerifyWeightedDrag.cs
 
 Восстановить значения переменных и временные настройки Editor после прогона.
 
+## Проверка прыжка и наведения
+
+Для [VerifyJumpAndAim.cs](../AgentScripts/VerifyJumpAndAim.cs) открыть
+ContainerSearch и задать пустой абсолютный каталог автослота через
+`TRASH_HUNTER_EDITOR_SAVE_DIR` в процессе Editor. Задать
+`TRASH_HUNTER_LOCALE` и начать новый Play Mode для каждой локали.
+Скрипт проверяет подсказки, прыжки с пола и ящика, захват опоры, наведение,
+перемещение шкафа, прыжок через борт и выход со двора. Снимки сохраняются
+рядом с тестовым слотом.
+
+~~~powershell
+$projectPath = 'F:\UnityProjects\Trash-Hunter'
+$pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
+unity command script eval @pipeline -- --file AgentScripts/VerifyJumpAndAim.cs --timeout 48
+~~~
+
+Завершить тестовый Play Mode и восстановить переменные. Результат и
+шаги ручной проверки сохранены в [отчёте I-080](sessions/2026-11-26-i080-jump-and-aim.md).
+
 
 ## Официальные инструкции
 
