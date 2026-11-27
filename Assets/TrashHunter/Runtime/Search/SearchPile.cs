@@ -9,7 +9,8 @@ namespace TrashHunter
 {
     internal sealed class SearchPile
     {
-        public const int GeneratorVersion = 2;
+        public const int BaseGeneratorVersion = 2;
+        public const int GeneratorVersion = 3;
         private const float GridStep = 0.10f;
         private const float Clearance = 0.02f;
         private const float SupportSearchHeight = 0.24f;
@@ -19,6 +20,7 @@ namespace TrashHunter
         private readonly WorldItem cabinetStart;
         private readonly (string Id, Vector3 Size, string[] Contents)[] packages;
         private readonly (string Id, Vector3 Size)[] looseFinds;
+        private readonly Dictionary<string, Vector3> optionalFinds;
         private readonly Scene scene;
         private readonly Rect pileArea;
         private readonly float floorHeight;
@@ -35,9 +37,11 @@ namespace TrashHunter
                 .Select(item => (item.Id, item.GetComponent<BoxCollider>().size,
                     item.InitialContents.Select(content => content.Id).ToArray())).ToArray();
             var nested = packages.SelectMany(package => package.Contents).ToHashSet();
-            var finds = items.Where(item => !item.LegacyLayoutOnly && item != cabinet && !item.IsPackage &&
+            var finds = items.Where(item => !item.LegacyLayoutOnly && item != cabinet && !item.IsPackage && !item.OptionalLayout &&
                     !nested.Contains(item.Id))
                 .Select(item => (item.Id, Size: item.GetComponent<BoxCollider>().size)).ToArray();
+            optionalFinds = items.Where(item => item.OptionalLayout)
+                .ToDictionary(item => item.Id, item => item.GetComponent<BoxCollider>().size);
             crate = finds.Single(find => find.Id == "crate-a");
             looseFinds = finds.Where(find => find.Id != crate.Id).ToArray();
             scene = floorCollider.gameObject.scene;
@@ -48,7 +52,7 @@ namespace TrashHunter
             pileArea = Rect.MinMaxRect(entry.x - 0.62f, entry.z + 0.55f, floor.max.x - 0.30f, floor.max.z - 0.55f);
         }
 
-        public WorldItem[] Generate(int seed)
+        public WorldItem[] Generate(int seed, string optionalFind = null)
         {
             var random = new Random(seed);
             // System.Random starts opposite signed seeds in the same state.
@@ -81,6 +85,9 @@ namespace TrashHunter
                     contents.Add(nested);
                 }
             }
+
+            if (optionalFind != null)
+                placed.Add(PlaceOnFloor(optionalFind, optionalFinds[optionalFind], focus, random, placed));
 
             var top = cratePlacement.Area;
             // Use the inscribed rectangle of the slightly rotated crate for reliable support.

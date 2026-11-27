@@ -1,3 +1,13 @@
 {
-  "quests": []
+  "quests": [
+    {
+      "id": "trader-turntable",
+      "requiresSale": true,
+      "steps": [
+        { "id": "show-turntable", "action": 2, "items": ["turntable-rp07"] }
+      ],
+      "contact": "repairer",
+      "searchItem": "turntable-rp07"
+    }
+  ]
 }

@@ -8,6 +8,7 @@ namespace TrashHunter
     {
         public string id;
         public string step;
+        public int acceptedExpedition;
     }
 
     public sealed class QuestJournal
@@ -43,10 +44,37 @@ namespace TrashHunter
             var next = state.Snapshot.Copy();
             var progress = new List<QuestProgress>(next.quests)
             {
-                new() { id = id, step = quest.steps[0].id }
+                new() { id = id, step = quest.steps[0].id, acceptedExpedition = next.expedition }
             };
             next.quests = progress.ToArray();
             return state.Publish(next);
+        }
+
+        internal bool IsActive(string id) =>
+            TryGetProgress(id, out var step) && !string.IsNullOrEmpty(step);
+
+        internal bool TryGetPresentationStep(string id, HomeItem item, out string step)
+        {
+            TryGetProgress(id, out step);
+            return Match(new QuestProgress { id = id, step = step }, QuestAction.Present, item.key, out _, out _);
+        }
+
+        internal string ExpeditionFind(RunSnapshot next)
+        {
+            var index = Find(next, QuestCatalog.TraderTurntable);
+            if (index < 0 || !catalog.TryGet(QuestCatalog.TraderTurntable, out var quest) ||
+                string.IsNullOrEmpty(quest.searchItem))
+                return null;
+
+            var progress = next.quests[index];
+            var attempt = next.expedition - progress.acceptedExpedition;
+            if (string.IsNullOrEmpty(progress.step) || attempt <= 0 ||
+                Array.Exists(next.home, item => item.key == quest.searchItem))
+                return null;
+
+            // Use a separate seeded roll so eligibility does not depend on placement.
+            return attempt >= 3 || new Random(next.pileSeed ^ 0x4DA33B51).Next(3) == 0
+                ? quest.searchItem : null;
         }
 
         internal bool HasInspectionStep(string item) =>
@@ -106,7 +134,9 @@ namespace TrashHunter
             foreach (var progress in snapshot.quests)
             {
                 if (!catalog.TryGet(progress.id, out var quest) || !ids.Add(progress.id) ||
-                    (quest.requiresSale && !snapshot.hasSold))
+                    (quest.requiresSale && !snapshot.hasSold) || progress.acceptedExpedition < 0 ||
+                    progress.acceptedExpedition > snapshot.expedition ||
+                    (!string.IsNullOrEmpty(quest.searchItem) && progress.acceptedExpedition == 0))
                     return false;
                 if (string.IsNullOrEmpty(progress.step))
                 {

@@ -365,6 +365,17 @@
       "contents": []
     },
     {
+      "id": "turntable-rp07",
+      "name": "Проигрыватель РП-07",
+      "tier": 3,
+      "baseValue": 120,
+      "conditionDiscount": 90,
+      "condition": "Диск не вращается.",
+      "size": { "x": 2, "y": 2 },
+      "optionalLayout": true,
+      "contents": []
+    },
+    {
       "id": "sack-a",
       "name": "Мешок",
       "tier": 0,

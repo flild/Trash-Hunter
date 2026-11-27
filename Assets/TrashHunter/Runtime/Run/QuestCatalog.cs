@@ -25,10 +25,13 @@ namespace TrashHunter
         public QuestStep[] steps;
         public string contact;
         public int reward;
+        public string searchItem;
     }
 
     internal sealed class QuestCatalog
     {
+        internal const string TraderTurntable = "trader-turntable";
+
         [Serializable]
         private sealed class Data
         {
@@ -44,6 +47,9 @@ namespace TrashHunter
                 if (string.IsNullOrWhiteSpace(quest?.id) || quest.reward < 0 ||
                     quest.steps is not { Length: > 0 } || !definitions.TryAdd(quest.id, quest))
                     throw new InvalidOperationException("Invalid or duplicate quest definition.");
+
+                if (!string.IsNullOrEmpty(quest.searchItem) && !loot.OptionalLayoutKeys.Contains(quest.searchItem))
+                    throw new InvalidOperationException($"Invalid search item in quest '{quest.id}'.");
 
                 var stepIds = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var step in quest.steps)

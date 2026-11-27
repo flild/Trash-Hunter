@@ -395,6 +395,8 @@ namespace TrashHunter
                 if (!extracted.IsSubsetOf(opened) || !catalog.PackageKeys.IsSubsetOf(keys))
                     return false;
                 keys.ExceptWith(catalog.PackageKeys);
+                if (data.pileGeneratorVersion >= 3)
+                    keys.ExceptWith(catalog.OptionalLayoutKeys);
                 return keys.SetEquals(catalog.LayoutKeys);
             }
 
@@ -413,10 +415,11 @@ namespace TrashHunter
             // A failed write and retry for the same expedition must produce the same pile.
             var runSeed = BitConverter.ToInt32(Guid.ParseExact(snapshot.runId, "N").ToByteArray(), 0);
             snapshot.pileSeed = unchecked(runSeed + snapshot.expedition * 1009);
-            snapshot.pileGeneratorVersion = SearchPile.GeneratorVersion;
+            var optionalFind = Quests.ExpeditionFind(snapshot);
+            snapshot.pileGeneratorVersion = optionalFind == null ? SearchPile.BaseGeneratorVersion : SearchPile.GeneratorVersion;
             try
             {
-                snapshot.world = pile.Generate(snapshot.pileSeed);
+                snapshot.world = pile.Generate(snapshot.pileSeed, optionalFind);
                 Error = null;
                 return true;
             }

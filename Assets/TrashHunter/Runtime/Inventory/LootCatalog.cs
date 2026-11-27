@@ -17,6 +17,7 @@ namespace TrashHunter
             public string condition;
             public Vector2Int size;
             public bool legacyLayoutOnly;
+            public bool optionalLayout;
             public string[] contents = Array.Empty<string>();
 
             public LootDefinition Definition => new(name, tier, baseValue, conditionDiscount, condition, size);
@@ -31,6 +32,7 @@ namespace TrashHunter
         private readonly Dictionary<string, Entry> entries = new(StringComparer.Ordinal);
 
         public HashSet<string> LayoutKeys { get; } = new(StringComparer.Ordinal);
+        public HashSet<string> OptionalLayoutKeys { get; } = new(StringComparer.Ordinal);
         public HashSet<string> PackageKeys { get; } = new(StringComparer.Ordinal);
         public Dictionary<string, string> InitialPackages { get; } = new(StringComparer.Ordinal);
 
@@ -45,6 +47,8 @@ namespace TrashHunter
                     foreach (var id in item.contents)
                         InitialPackages.Add(id, item.id);
                 }
+                else if (item.optionalLayout)
+                    OptionalLayoutKeys.Add(item.id);
                 else if (!item.legacyLayoutOnly)
                     LayoutKeys.Add(item.id);
             }

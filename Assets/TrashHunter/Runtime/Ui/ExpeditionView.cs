@@ -16,10 +16,12 @@ namespace TrashHunter
         private Vector2 defaultBodyPosition;
         private Vector2 defaultBodySize;
         private Vector2 defaultPanelSize;
+        private Vector2 defaultActionsSize;
 
         private void Awake()
         {
             defaultPanelSize = panel.sizeDelta;
+            defaultActionsSize = actions.rectTransform.sizeDelta;
             defaultBodyPosition = body.rectTransform.anchoredPosition;
             defaultBodySize = body.rectTransform.sizeDelta;
         }
@@ -38,6 +40,8 @@ namespace TrashHunter
             heading.text = title;
             subtitle.text = summary;
             body.text = details;
+            actions.rectTransform.sizeDelta = keys.Contains('\n')
+                ? new Vector2(defaultActionsSize.x, 52f) : defaultActionsSize;
             actions.text = keys;
             feedback.text = message ?? string.Empty;
             feedback.color = isWarning ? Warning : Neutral;

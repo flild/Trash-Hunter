@@ -530,6 +530,16 @@ $pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$p
 unity command script eval @pipeline -- --file AgentScripts/Verification/VerifyQuestJournal.cs --timeout 30
 ~~~
 
+### Игровой маршрут поручения старьёвщика
+
+`VerifyTraderTurntable.cs` запускается через `script eval` в Play Mode на
+изолированном слоте. Прогнать `offer` или `offer-early` из слота у старьёвщика
+до первой продажи, `resume` после перезапуска из сохранённой четвёртой попытки
+и `finished` после перезапуска из слота с завершённым квестом. Фаза выбирается
+переменной `TRASH_HUNTER_CHECK`. Для `offer` подготовить seed с двумя пропусками,
+для `offer-early` — с двумя появлениями. Команды, подготовка и результаты
+даны в [отчёте I-180](sessions/2026-11-27-i180-trader-turntable.md).
+
 ## Структура проекта
 
 | Путь от корня | Содержание |

@@ -9,7 +9,7 @@ namespace TrashHunter
 {
     public sealed class SearchSession : MonoBehaviour
     {
-        private enum Mode { Search, Return, Pause, Continue, LoadError, Package }
+        private enum Mode { Search, Return, Pause, Continue, LoadError, Package, Quest }
 
         [SerializeField] private Transform outside;
         [SerializeField] private Transform inside;
@@ -93,7 +93,7 @@ namespace TrashHunter
                 var name = ItemName(item);
                 aimLabels.Add(item, item.IsPackage
                     ? (string.Format(strings.Get("package.openAim"), name), string.Format(strings.Get("package.checkAim"), name))
-                    : (string.Format(strings.Get("search.take"), name), null));
+                    : (string.Format(strings.Get("search.take"), strings.Get($"item.{item.Id}.aim", name)), null));
             }
             player.Restore(entryPose);
             Application.wantsToQuit += SaveBeforeQuit;
@@ -191,6 +191,12 @@ namespace TrashHunter
                 else
                     UpdateBag(keyboard, mouse);
                 UpdateError();
+                return;
+            }
+
+            if (keyboard?.jKey.wasPressedThisFrame == true && state.Quests.IsActive(QuestCatalog.TraderTurntable))
+            {
+                ShowQuest();
                 return;
             }
 
@@ -469,13 +475,27 @@ namespace TrashHunter
                             ShowReturn();
                     }
                     break;
+                case Mode.Quest:
+                    if (cancel)
+                        CloseOverlay();
+                    break;
                 case Mode.Pause:
-                    if (cancel || confirm)
+                    if (keyboard.jKey.wasPressedThisFrame && state.Quests.IsActive(QuestCatalog.TraderTurntable))
+                        ShowQuest();
+                    else if (cancel || confirm)
                         CloseOverlay();
                     else if (keyboard.qKey.wasPressedThisFrame && SaveBeforeQuit())
                         Application.Quit();
                     break;
             }
+        }
+
+        private void ShowQuest()
+        {
+            EndInspection();
+            mode = Mode.Quest;
+            ShowOverlay(strings.Get("quest.title"), strings.Get("quest.trader"), strings.Get("quest.condition"),
+                strings.Get("quest.closeActions"), null);
         }
 
         private void ShowReturn()
@@ -499,9 +519,11 @@ namespace TrashHunter
                 CloseBag();
             EndInspection();
             mode = Mode.Pause;
+            var actions = strings.Get("pause.actions");
+            if (state.Quests.IsActive(QuestCatalog.TraderTurntable))
+                actions = $"{actions}\n{strings.Get("quest.view")}";
             ShowOverlay(strings.Get("pause.title"), string.Empty,
-                strings.Get("pause.expedition"),
-                strings.Get("pause.actions"), state.Error, state.Error != null);
+                strings.Get("pause.expedition"), actions, state.Error, state.Error != null);
         }
 
         private void ShowOverlay(string title, string summary, string details, string keys, string message,

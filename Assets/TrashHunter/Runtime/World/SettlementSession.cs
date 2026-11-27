@@ -7,7 +7,8 @@ namespace TrashHunter
     public sealed class SettlementSession : MonoBehaviour
     {
         private const int VisibleRows = 5;
-        private enum Mode { Home, Trader, Sale, Pause, Continue }
+        private const string QuestId = QuestCatalog.TraderTurntable;
+        private enum Mode { Home, Trader, Sale, Pause, Continue, Quest, Present }
 
         private GameState state;
         private LootCatalog catalog;
@@ -18,6 +19,8 @@ namespace TrashHunter
         private Mode mode;
         private int selection;
         private SaleOffer offer;
+        private HomeItem presentedItem;
+        private string presentationStep;
         private string receipt;
         private bool quitting;
 
@@ -74,6 +77,26 @@ namespace TrashHunter
                     else if (keyboard.qKey.wasPressedThisFrame && SaveBeforeQuit())
                         Application.Quit();
                     break;
+                case Mode.Quest:
+                    if (cancel)
+                        ShowStock();
+                    else if (confirm && AtTrader && state.Quests.IsAvailable(QuestId))
+                    {
+                        state.Quests.Accept(QuestId);
+                        ShowQuest();
+                    }
+                    break;
+                case Mode.Present:
+                    if (cancel)
+                        ShowStock();
+                    else if (confirm)
+                    {
+                        if (state.Trade.Present(QuestId, presentationStep, presentedItem))
+                            ShowQuest();
+                        else
+                            ShowPresentation();
+                    }
+                    break;
                 case Mode.Sale:
                     if (cancel)
                         ShowStock();
@@ -103,6 +126,14 @@ namespace TrashHunter
                 if (!scenes.SaveAndTravel(state.Save))
                     ShowStock();
             }
+            else if (keyboard.jKey.wasPressedThisFrame && CanViewQuest)
+                ShowQuest();
+            else if (AtTrader && keyboard.pKey.wasPressedThisFrame && state.Home.Count > 0 &&
+                state.Quests.TryGetPresentationStep(QuestId, state.Home[selection], out presentationStep))
+            {
+                presentedItem = state.Home[selection];
+                ShowPresentation();
+            }
             else if (AtTrader && keyboard.eKey.wasPressedThisFrame)
                 Travel(RunLocation.Home);
             else if (!AtTrader && keyboard.tKey.wasPressedThisFrame)
@@ -129,6 +160,28 @@ namespace TrashHunter
             }
         }
 
+        private bool CanViewQuest => AtTrader
+            ? state.Quests.IsAvailable(QuestId) || state.Quests.TryGetProgress(QuestId, out _)
+            : state.Quests.IsActive(QuestId);
+
+        private void ShowQuest()
+        {
+            mode = Mode.Quest;
+            var available = AtTrader && state.Quests.IsAvailable(QuestId);
+            var finished = state.Quests.TryGetProgress(QuestId, out var step) && string.IsNullOrEmpty(step);
+            view.Show(strings.Get("quest.title"), strings.Get(finished ? "quest.contact" : "quest.trader"),
+                strings.Get(finished ? "quest.result" : "quest.condition"),
+                strings.Get(available ? "quest.acceptActions" : "quest.closeActions"),
+                state.Error, state.Error != null);
+        }
+
+        private void ShowPresentation()
+        {
+            mode = Mode.Present;
+            view.Show(strings.Get("quest.title"), ItemLabel(presentedItem), strings.Get("quest.presentDetail"),
+                strings.Get("quest.presentActions"), state.Error, state.Error != null);
+        }
+
         private void Travel(RunLocation destination)
         {
             if (!scenes.SaveAndTravel(() => state.TravelBetweenSettlements(destination)))
@@ -150,10 +203,17 @@ namespace TrashHunter
 
             var details = count == 0 ? strings.Get("home.empty") : rows.ToString().TrimEnd();
             var keys = strings.Get(AtTrader ? "trader.actions" : "home.actions");
+            if (CanViewQuest)
+                keys = $"{strings.Get(state.Quests.IsAvailable(QuestId) ? "quest.offer" : "quest.view")}     {keys}";
             if (AtTrader && count > 0)
-                keys = $"{strings.Get("trader.offer")}     {keys}";
+            {
+                var itemAction = state.Quests.TryGetPresentationStep(QuestId, state.Home[selection], out _)
+                    ? $"     {strings.Get("quest.present")}" : string.Empty;
+                var trade = $"{strings.Get("trader.offer")}{itemAction}";
+                keys = CanViewQuest ? $"{trade}\n{keys}" : $"{trade}     {keys}";
+            }
             else if (!AtTrader && count > VisibleRows)
-                keys = $"{strings.Get("home.browse")}     {keys}";
+                keys = CanViewQuest ? $"{strings.Get("home.browse")}\n{keys}" : $"{strings.Get("home.browse")}     {keys}";
             error ??= state.Error;
             view.Show(Title, string.Format(strings.Get("home.balance"), state.Balance), details, keys,
                 error ?? receipt, error != null);
