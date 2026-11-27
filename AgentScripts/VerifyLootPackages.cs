@@ -182,9 +182,11 @@ try
     void CheckTiers()
     {
         const BindingFlags Fields = BindingFlags.Instance | BindingFlags.NonPublic;
-        var tier = typeof(SearchItem).GetField("tier", Fields);
-        var value = typeof(SearchItem).GetField("baseValue", Fields);
-        var ranked = items.Values.Select(item => (Tier: (int)tier.GetValue(item), Base: (int)value.GetValue(item)))
+        var definition = typeof(SearchItem).GetProperty("Definition", Fields);
+        var tier = definition.PropertyType.GetProperty("Tier");
+        var value = definition.PropertyType.GetProperty("BaseValue");
+        var ranked = items.Values.Select(item => definition.GetValue(item))
+            .Select(item => (Tier: (int)tier.GetValue(item), Base: (int)value.GetValue(item)))
             .Where(item => item.Tier > 0).ToArray();
         Check(ranked.Select(item => item.Tier).Distinct().Count() == 3 &&
             ranked.All(item => ranked.Where(other => other.Tier < item.Tier).All(other => other.Base < item.Base)),

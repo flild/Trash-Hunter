@@ -10,22 +10,7 @@ namespace TrashHunter
         [SerializeField] private SearchPlayer playerPrefab;
         [SerializeField] private SearchHud hudPrefab;
 
-        private static LifetimeScope runScope;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetScope() => runScope = null;
-
-        protected override LifetimeScope FindParent()
-        {
-            if (runScope != null)
-                return runScope;
-
-            var appScope = Create(name: "Application Scope");
-            DontDestroyOnLoad(appScope.gameObject);
-            runScope = appScope.CreateChild(
-                builder => builder.Register<GameState>(Lifetime.Singleton), "Run Scope");
-            return runScope;
-        }
+        protected override LifetimeScope FindParent() => RunBootstrap.RunScope;
 
         protected override void Configure(IContainerBuilder builder)
         {
@@ -33,7 +18,7 @@ namespace TrashHunter
             {
                 var player = resolver.Instantiate(playerPrefab, transform);
                 var hud = resolver.Instantiate(hudPrefab, transform);
-                session.Initialize(resolver.Resolve<GameState>(), player, hud);
+                session.Initialize(resolver.Resolve<GameState>(), resolver.Resolve<LootCatalog>(), player, hud);
             });
         }
     }

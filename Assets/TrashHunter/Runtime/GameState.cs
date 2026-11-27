@@ -5,69 +5,48 @@ using UnityEngine;
 
 namespace TrashHunter
 {
+    public enum RunLocation { Search, Home }
+
     public sealed class GameState : IDisposable
     {
         private const string CabinetId = "cabinet-a";
         private static readonly string[] LegacyLayout = { "crate-a", "lamp-a", "radio-a", "strip-a", "dial-a" };
-        private readonly Dictionary<string, LootDefinition> catalog = new();
-        private readonly HashSet<string> layoutKeys = new();
-        private readonly HashSet<string> packageKeys = new();
-        private readonly Dictionary<string, string> initialPackages = new();
-        private SearchPile pile;
+        private readonly LootCatalog catalog;
         private RunSnapshot current;
         private SaveSlot slot;
         private BagInventory bag = new();
 
+        internal GameState(LootCatalog catalog) => this.catalog = catalog;
+
+        internal bool SlotLoaded => slot != null;
+        internal bool HasRun => current != null;
+        internal bool ResumePending { get; private set; }
         public BagInventory Bag => bag;
         public bool HasBag => current.hasBag;
         public string HeldItemId => string.IsNullOrEmpty(current.held) ? null : current.held;
         internal bool HeldInWorld => current.heldInWorld;
         public bool HeldItemRotated { get; set; }
         public int Expedition => current.expedition;
-        public bool AtHome => current.atHome;
+        public RunLocation Location => current?.atHome == true ? RunLocation.Home : RunLocation.Search;
+        public bool AtHome => Location == RunLocation.Home;
         public long Balance => current.cash;
         public IReadOnlyList<HomeItem> Home => current.home;
         public string Error { get; private set; }
         public string RecoveryNotice => slot?.RecoveryNotice;
         internal PlayerPose Player => current.player;
 
-        internal bool Open(SearchItem[] items, Bounds floor, Vector3 entry, PlayerPose spawn, out bool resuming)
+        internal bool LoadSlot()
         {
-            resuming = false;
-            if (current != null)
+            if (SlotLoaded)
                 return true;
-
-            foreach (var item in items)
-            {
-                catalog[item.Id] = item.Definition;
-                if (item.IsPackage)
-                {
-                    packageKeys.Add(item.Id);
-                    foreach (var content in item.InitialContents)
-                        initialPackages[content.Id] = item.Id;
-                }
-                else if (!item.LegacyLayoutOnly)
-                    layoutKeys.Add(item.Id);
-            }
 
             try
             {
-                pile ??= new SearchPile(items, floor, entry);
                 slot = new SaveSlot(ResolveSlotFolder(), Validate);
-                var loaded = slot.Load();
-                resuming = loaded != null;
-                var snapshot = loaded ?? new RunSnapshot
-                {
-                    format = RunSnapshot.CurrentFormat,
-                    runId = Guid.NewGuid().ToString("N"),
-                    expedition = 1,
-                    player = spawn,
-                    home = Array.Empty<HomeItem>()
-                };
-                if (!resuming)
-                    GeneratePile(snapshot);
-                current = snapshot;
-                RestoreBag();
+                current = slot.Load();
+                ResumePending = HasRun;
+                if (HasRun)
+                    RestoreBag();
                 Error = null;
                 return true;
             }
@@ -78,6 +57,28 @@ namespace TrashHunter
                 return false;
             }
         }
+
+        internal bool StartNewRun(SearchPile pile, PlayerPose spawn)
+        {
+            if (!SlotLoaded || HasRun)
+                return false;
+
+            var snapshot = new RunSnapshot
+            {
+                format = RunSnapshot.CurrentFormat,
+                runId = Guid.NewGuid().ToString("N"),
+                expedition = 1,
+                player = spawn,
+                home = Array.Empty<HomeItem>()
+            };
+            if (!TryGeneratePile(snapshot, pile))
+                return false;
+
+            current = snapshot;
+            return true;
+        }
+
+        internal void AcknowledgeResume() => ResumePending = false;
 
         public bool TryGetPose(string id, out (Vector3 Position, Quaternion Rotation) pose)
         {
@@ -131,7 +132,7 @@ namespace TrashHunter
         internal bool OpenPackage(string id)
         {
             var index = FindWorldItem(id);
-            if (!HasBag || HeldItemId != null || index < 0 || !packageKeys.Contains(id))
+            if (!HasBag || HeldItemId != null || index < 0 || !catalog.PackageKeys.Contains(id))
                 return false;
             if (current.world[index].opened)
                 return true;
@@ -144,7 +145,7 @@ namespace TrashHunter
         internal bool Take(string id)
         {
             var index = FindWorldItem(id);
-            if (!HasBag || HeldItemId != null || index < 0 || packageKeys.Contains(id))
+            if (!HasBag || HeldItemId != null || index < 0 || catalog.PackageKeys.Contains(id))
                 return false;
 
             var package = current.world[index].package;
@@ -189,7 +190,7 @@ namespace TrashHunter
             item.column = placement.Column;
             item.row = placement.Row;
             item.rotated = placement.Rotated;
-            if (bag.Check(catalog[id].Placement(item), id) != BagFit.Fits)
+            if (bag.Check(catalog[id].Definition.Placement(item), id) != BagFit.Fits)
                 return false;
 
             var next = current.Copy();
@@ -235,11 +236,11 @@ namespace TrashHunter
             return Publish(next);
         }
 
-        public SaleOffer Quote(HomeItem item) => new(item, catalog[item.key]);
+        public SaleOffer Quote(HomeItem item) => new(item, catalog[item.key].Definition);
 
         public bool Sell(SaleOffer offer)
         {
-            if (!AtHome || !catalog.TryGetValue(offer.Item.key ?? string.Empty, out var definition) ||
+            if (!AtHome || !catalog.TryGetDefinition(offer.Item.key ?? string.Empty, out var definition) ||
                 definition.Price <= 0 || definition.Price != offer.Price || Balance > long.MaxValue - offer.Price)
                 return false;
 
@@ -255,7 +256,7 @@ namespace TrashHunter
             return Publish(next);
         }
 
-        internal bool Depart(int previousExpedition, PlayerPose spawn)
+        internal bool Depart(int previousExpedition, SearchPile pile, PlayerPose spawn)
         {
             if (!AtHome || Expedition != previousExpedition || Expedition == int.MaxValue)
                 return false;
@@ -263,15 +264,8 @@ namespace TrashHunter
             var next = current.Copy();
             next.expedition++;
             next.atHome = false;
-            try
-            {
-                GeneratePile(next);
-            }
-            catch (InvalidDataException exception)
-            {
-                Error = exception.Message;
+            if (!TryGeneratePile(next, pile))
                 return false;
-            }
             next.player = spawn;
             return Publish(next);
         }
@@ -309,7 +303,7 @@ namespace TrashHunter
             foreach (var item in current.world)
             {
                 if (item.packed)
-                    bag.TryPack(item.key, catalog[item.key].Placement(item));
+                    bag.TryPack(item.key, catalog[item.key].Definition.Placement(item));
             }
             HeldItemRotated = current.heldRotated;
         }
@@ -329,7 +323,7 @@ namespace TrashHunter
             var stored = new HashSet<HomeItem>();
             foreach (var item in data.home)
             {
-                if (string.IsNullOrEmpty(item.key) || !catalog.TryGetValue(item.key, out var definition) ||
+                if (string.IsNullOrEmpty(item.key) || !catalog.TryGetDefinition(item.key, out var definition) ||
                     definition.Price <= 0 || item.expedition <= 0 || item.expedition > data.expedition ||
                     (!data.atHome && item.expedition == data.expedition) || !stored.Add(item))
                     return false;
@@ -350,11 +344,11 @@ namespace TrashHunter
             foreach (var item in data.world)
             {
                 var r = item.rotation;
-                if (string.IsNullOrEmpty(item.key) || !catalog.TryGetValue(item.key, out var definition) ||
+                if (string.IsNullOrEmpty(item.key) || !catalog.TryGetDefinition(item.key, out var definition) ||
                     !keys.Add(item.key) || !Finite(item.position) || !float.IsFinite(Quaternion.Dot(r, r)) ||
                     Mathf.Abs(Quaternion.Dot(r, r) - 1f) > 0.02f)
                     return false;
-                var isPackage = packageKeys.Contains(item.key);
+                var isPackage = catalog.PackageKeys.Contains(item.key);
                 var nested = !string.IsNullOrEmpty(item.package);
                 if (isPackage && (item.key == data.held || item.packed || nested) ||
                     item.opened && (!isPackage || !data.hasBag))
@@ -362,9 +356,9 @@ namespace TrashHunter
                 if (item.opened)
                     opened.Add(item.key);
                 if (nested && (!hasPackages || item.packed || item.key == data.held ||
-                    !initialPackages.TryGetValue(item.key, out var owner) || item.package != owner))
+                    !catalog.InitialPackages.TryGetValue(item.key, out var owner) || item.package != owner))
                     return false;
-                if (hasPackages && !nested && initialPackages.TryGetValue(item.key, out var originalPackage))
+                if (hasPackages && !nested && catalog.InitialPackages.TryGetValue(item.key, out var originalPackage))
                     extracted.Add(originalPackage);
                 if (item.packed && (!data.hasBag || item.key == data.held || definition.Price <= 0 ||
                     !packed.TryPack(item.key, definition.Placement(item))))
@@ -374,13 +368,14 @@ namespace TrashHunter
                 return false;
             if (hasPackages)
             {
-                if (!extracted.IsSubsetOf(opened) || !packageKeys.IsSubsetOf(keys))
+                if (!extracted.IsSubsetOf(opened) || !catalog.PackageKeys.IsSubsetOf(keys))
                     return false;
-                keys.ExceptWith(packageKeys);
-                return keys.SetEquals(layoutKeys);
+                keys.ExceptWith(catalog.PackageKeys);
+                return keys.SetEquals(catalog.LayoutKeys);
             }
 
             // I-040 expeditions predate the cabinet. Preserve their exact set of finds.
+            var layoutKeys = catalog.LayoutKeys;
             var beforeCabinet = keys.Count + 1 == layoutKeys.Count && layoutKeys.Contains(CabinetId) &&
                 !keys.Contains(CabinetId) && keys.IsSubsetOf(layoutKeys);
             return keys.SetEquals(layoutKeys) || keys.SetEquals(LegacyLayout) || beforeCabinet;
@@ -389,13 +384,23 @@ namespace TrashHunter
         private static bool Finite(Vector3 value) =>
             float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
 
-        private void GeneratePile(RunSnapshot snapshot)
+        private bool TryGeneratePile(RunSnapshot snapshot, SearchPile pile)
         {
             // A failed write and retry for the same expedition must produce the same pile.
             var runSeed = BitConverter.ToInt32(Guid.ParseExact(snapshot.runId, "N").ToByteArray(), 0);
             snapshot.pileSeed = unchecked(runSeed + snapshot.expedition * 1009);
             snapshot.pileGeneratorVersion = SearchPile.GeneratorVersion;
-            snapshot.world = pile.Generate(snapshot.pileSeed);
+            try
+            {
+                snapshot.world = pile.Generate(snapshot.pileSeed);
+                Error = null;
+                return true;
+            }
+            catch (InvalidDataException exception)
+            {
+                Error = exception.Message;
+                return false;
+            }
         }
 
         internal static int LayoutIndex(int expedition) => (expedition - 1) % 3;

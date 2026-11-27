@@ -37,12 +37,14 @@ D-070 завершён на уровне проектирования. Реше�
 [Области жизни VContainer](https://vcontainer.hadashikick.jp/scoping/lifetime-overview),
 [привязка области к сцене](https://vcontainer.hadashikick.jp/scoping/generate-child-via-scene).
 
-В I-010 корневая область VContainer держит область прохождения. Область одной
-сцены поиска пересоздаёт префабы игрока с камерой и HUD при загрузке (C-114).
-Их зависимости определены на уровне модулей, а время жизни совпадает со
-сценой поиска. Отдельную сцену запуска имеет смысл рассматривать при общем
-входе в несколько зон или меню. Аддитивную загрузку представлений можно
-рассмотреть, если их потребуется загружать или выгружать независимо от зоны.
+С I-140 `RunBootstrap` создаёт постоянную область приложения и дочернюю
+область прохождения до инициализации первой сцены. `GameState` читает автослот,
+используя [каталог](../Assets/TrashHunter/Resources/LootCatalog.json) из области
+приложения. Флаг `atHome` формата 1 даёт начальную зону `Home` или `Search`.
+Пустой слот выбирает `Search`. Область ContainerSearch подключается к готовому
+`GameState`, создаёт игрока, камеру и HUD и привязывает представления к ID каталога.
+Физический генератор принадлежит сцене поиска. Для пустого слота он создаёт
+первую укладку при входе в поиск. Выбор сцены по зоне относится к I-150.
 [Корневая область VContainer](https://vcontainer.hadashikick.jp/scoping/project-root-lifetimescope),
 [префабы Unity](https://docs.unity.com/en-us/engine/6000.6/manual/working-with-gameobjects/prefabs),
 [аддитивная загрузка](https://docs.unity.com/en-us/engine/6000.6/script-reference/unityengine/scenemanagement/loadscenemode/additive).

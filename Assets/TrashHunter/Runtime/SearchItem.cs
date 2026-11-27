@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -12,23 +14,28 @@ namespace TrashHunter
         private static readonly Color AimTint = new(1f, 0.84f, 0.46f);
 
         [SerializeField] private string itemId;
-        [SerializeField] private string displayName;
         [SerializeField] private string bagLabel;
+        [SerializeField] private GameObject packageClosure;
+        [SerializeField] private GameObject packageInterior;
+        [SerializeField] private Transform alternatePose;
+        [SerializeField] private Transform thirdPose;
+        [SerializeField] private Renderer[] lampShell;
+        [SerializeField] private Material secondLayoutFinish;
+
+        // Serialized inputs used by the historical Editor authoring scripts.
+        // The runtime binds the shared definitions from LootCatalog.
+        [SerializeField] private string displayName;
         [SerializeField] private Vector2Int bagSize;
         [FormerlySerializedAs("salePrice")]
         [SerializeField, Min(0)] private int baseValue;
         [SerializeField, Min(0)] private int conditionDiscount;
         [SerializeField, Min(0)] private int tier;
         [SerializeField] private SearchItem[] packageContents;
-        [SerializeField] private GameObject packageClosure;
-        [SerializeField] private GameObject packageInterior;
         [SerializeField] private string saleCondition;
-        [SerializeField] private Transform alternatePose;
-        [SerializeField] private Transform thirdPose;
         [SerializeField] private bool legacyLayoutOnly;
-        [SerializeField] private Renderer[] lampShell;
-        [SerializeField] private Material secondLayoutFinish;
 
+        private LootCatalog.Entry entry;
+        private SearchItem[] boundContents;
         private Rigidbody body;
         private BoxCollider shape;
         private WorldItem firstPose;
@@ -38,7 +45,7 @@ namespace TrashHunter
         private MeshRenderer[] highlightRenderers;
 
         public string Id => itemId;
-        public string DisplayName => displayName;
+        public string DisplayName => Definition.Name;
         public string BagLabel => bagLabel;
         public Vector3 HalfSize => shape.size * 0.5f;
         public bool IsHeld { get; private set; }
@@ -47,10 +54,19 @@ namespace TrashHunter
         internal Vector3 BodyPosition => body.position;
         internal Quaternion BodyRotation => body.rotation;
         internal float MinimumHoldDistance => 0.85f + new Vector2(HalfSize.x, HalfSize.z).magnitude;
-        internal LootDefinition Definition => new(displayName, tier, baseValue, conditionDiscount, saleCondition, bagSize);
-        internal bool IsPackage => packageContents is { Length: > 0 };
-        internal SearchItem[] InitialContents => packageContents;
-        internal bool LegacyLayoutOnly => legacyLayoutOnly;
+        internal LootDefinition Definition => entry?.Definition ??
+            new LootDefinition(displayName, tier, baseValue, conditionDiscount, saleCondition, bagSize);
+        internal bool IsPackage => InitialContents is { Length: > 0 };
+        internal SearchItem[] InitialContents => boundContents ?? packageContents;
+        internal bool LegacyLayoutOnly => entry?.legacyLayoutOnly ?? legacyLayoutOnly;
+
+        internal void Bind(LootCatalog.Entry definition, IReadOnlyDictionary<string, SearchItem> views)
+        {
+            entry = definition;
+            boundContents = entry.contents.Length == 0 ? Array.Empty<SearchItem>() : new SearchItem[entry.contents.Length];
+            for (var i = 0; i < boundContents.Length; i++)
+                boundContents[i] = views[entry.contents[i]];
+        }
 
         internal void SetAimHighlight(bool highlighted, MaterialPropertyBlock properties)
         {
@@ -74,8 +90,11 @@ namespace TrashHunter
             }
         }
 
-        public BagPlacement Placement(int column, int row, bool rotated) =>
-            new(column, row, bagSize.x, bagSize.y, rotated);
+        public BagPlacement Placement(int column, int row, bool rotated)
+        {
+            var size = Definition.Size;
+            return new BagPlacement(column, row, size.x, size.y, rotated);
+        }
 
         internal void CacheLayout() =>
             firstPose = new WorldItem { key = Id, position = transform.position, rotation = transform.rotation };

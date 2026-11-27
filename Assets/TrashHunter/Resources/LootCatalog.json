@@ -1,0 +1,402 @@
+{
+  "items": [
+    {
+      "id": "crate-a",
+      "name": "Деревянный ящик",
+      "tier": 0,
+      "baseValue": 0,
+      "conditionDiscount": 0,
+      "condition": "",
+      "size": {
+        "x": 4,
+        "y": 2
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "lamp-intact",
+      "name": "Складная лампа",
+      "tier": 3,
+      "baseValue": 42,
+      "conditionDiscount": 0,
+      "condition": "Крепление целое, плафон держится.",
+      "size": {
+        "x": 2,
+        "y": 2
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "lamp-cracked",
+      "name": "Складная лампа",
+      "tier": 3,
+      "baseValue": 42,
+      "conditionDiscount": 24,
+      "condition": "Ушко треснуло, плафон болтается.",
+      "size": {
+        "x": 2,
+        "y": 2
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "radio-a",
+      "name": "Карманный радиоприёмник",
+      "tier": 2,
+      "baseValue": 26,
+      "conditionDiscount": 0,
+      "condition": "Корпус без видимых повреждений.",
+      "size": {
+        "x": 1,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "strip-a",
+      "name": "Металлическая рейка",
+      "tier": 1,
+      "baseValue": 11,
+      "conditionDiscount": 5,
+      "condition": "Рейка погнута.",
+      "size": {
+        "x": 1,
+        "y": 3
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "dial-a",
+      "name": "Запасная ручка настройки",
+      "tier": 1,
+      "baseValue": 4,
+      "conditionDiscount": 0,
+      "condition": "Ручка цела.",
+      "size": {
+        "x": 1,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "plug-a",
+      "name": "Вилка",
+      "tier": 1,
+      "baseValue": 8,
+      "conditionDiscount": 0,
+      "condition": "Штыри ровные.",
+      "size": {
+        "x": 1,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "plug-b",
+      "name": "Вилка",
+      "tier": 1,
+      "baseValue": 8,
+      "conditionDiscount": 5,
+      "condition": "Один штырь погнут.",
+      "size": {
+        "x": 1,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "motor-a",
+      "name": "Моторчик",
+      "tier": 2,
+      "baseValue": 19,
+      "conditionDiscount": 0,
+      "condition": "Вал цел.",
+      "size": {
+        "x": 2,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "motor-b",
+      "name": "Моторчик",
+      "tier": 2,
+      "baseValue": 19,
+      "conditionDiscount": 12,
+      "condition": "Вал погнут.",
+      "size": {
+        "x": 2,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "adapter-a",
+      "name": "Адаптер",
+      "tier": 2,
+      "baseValue": 22,
+      "conditionDiscount": 0,
+      "condition": "Разъём цел.",
+      "size": {
+        "x": 2,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "adapter-b",
+      "name": "Адаптер",
+      "tier": 2,
+      "baseValue": 22,
+      "conditionDiscount": 14,
+      "condition": "Разъём продавлен.",
+      "size": {
+        "x": 2,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "fuse-a",
+      "name": "Держатель",
+      "tier": 1,
+      "baseValue": 9,
+      "conditionDiscount": 0,
+      "condition": "Крышка на месте.",
+      "size": {
+        "x": 1,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "fuse-b",
+      "name": "Держатель",
+      "tier": 1,
+      "baseValue": 9,
+      "conditionDiscount": 5,
+      "condition": "Крышки нет.",
+      "size": {
+        "x": 1,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "tin-a",
+      "name": "Коробка",
+      "tier": 1,
+      "baseValue": 10,
+      "conditionDiscount": 0,
+      "condition": "Крышка садится ровно.",
+      "size": {
+        "x": 2,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "tin-b",
+      "name": "Коробка",
+      "tier": 1,
+      "baseValue": 10,
+      "conditionDiscount": 5,
+      "condition": "Крышка перекошена.",
+      "size": {
+        "x": 2,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "bell-a",
+      "name": "Звонок",
+      "tier": 1,
+      "baseValue": 13,
+      "conditionDiscount": 0,
+      "condition": "Кнопка на месте.",
+      "size": {
+        "x": 1,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "bell-b",
+      "name": "Звонок",
+      "tier": 1,
+      "baseValue": 13,
+      "conditionDiscount": 7,
+      "condition": "Кнопки нет.",
+      "size": {
+        "x": 1,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "pack-a",
+      "name": "Блок питания",
+      "tier": 2,
+      "baseValue": 33,
+      "conditionDiscount": 0,
+      "condition": "Клеммы сухие.",
+      "size": {
+        "x": 3,
+        "y": 2
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "pack-b",
+      "name": "Блок питания",
+      "tier": 2,
+      "baseValue": 33,
+      "conditionDiscount": 22,
+      "condition": "На клеммах окисел.",
+      "size": {
+        "x": 3,
+        "y": 2
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "radio-b",
+      "name": "Карманный радиоприёмник",
+      "tier": 2,
+      "baseValue": 26,
+      "conditionDiscount": 14,
+      "condition": "Ручки настройки нет.",
+      "size": {
+        "x": 1,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "radio-c",
+      "name": "Карманный радиоприёмник",
+      "tier": 2,
+      "baseValue": 26,
+      "conditionDiscount": 0,
+      "condition": "Корпус без видимых повреждений.",
+      "size": {
+        "x": 1,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "strip-b",
+      "name": "Металлическая рейка",
+      "tier": 1,
+      "baseValue": 11,
+      "conditionDiscount": 0,
+      "condition": "Рейка ровная.",
+      "size": {
+        "x": 1,
+        "y": 3
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "dial-b",
+      "name": "Запасная ручка настройки",
+      "tier": 1,
+      "baseValue": 4,
+      "conditionDiscount": 0,
+      "condition": "Ручка цела.",
+      "size": {
+        "x": 1,
+        "y": 1
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "lamp-a",
+      "name": "Складная лампа",
+      "tier": 3,
+      "baseValue": 42,
+      "conditionDiscount": 24,
+      "condition": "Ушко треснуло, плафон болтается.",
+      "size": {
+        "x": 1,
+        "y": 2
+      },
+      "legacyLayoutOnly": true,
+      "contents": []
+    },
+    {
+      "id": "cabinet-a",
+      "name": "Шкаф",
+      "tier": 0,
+      "baseValue": 0,
+      "conditionDiscount": 0,
+      "condition": "",
+      "size": {
+        "x": 5,
+        "y": 4
+      },
+      "legacyLayoutOnly": false,
+      "contents": []
+    },
+    {
+      "id": "sack-a",
+      "name": "Мешок",
+      "tier": 0,
+      "baseValue": 0,
+      "conditionDiscount": 0,
+      "condition": "",
+      "size": {
+        "x": 0,
+        "y": 0
+      },
+      "legacyLayoutOnly": false,
+      "contents": [
+        "plug-a",
+        "motor-b"
+      ]
+    },
+    {
+      "id": "parcel-a",
+      "name": "Картонная коробка",
+      "tier": 0,
+      "baseValue": 0,
+      "conditionDiscount": 0,
+      "condition": "",
+      "size": {
+        "x": 0,
+        "y": 0
+      },
+      "legacyLayoutOnly": false,
+      "contents": [
+        "fuse-a",
+        "adapter-a"
+      ]
+    }
+  ]
+}

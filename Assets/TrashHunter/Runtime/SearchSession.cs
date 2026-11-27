@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -23,6 +24,7 @@ namespace TrashHunter
         private readonly RaycastHit[] aimHits = new RaycastHit[12];
         private readonly Collider[] placementHits = new Collider[2];
         private GameState state;
+        private SearchPile pile;
         private SearchPlayer player;
         private SearchHud hud;
         private SearchItem held;
@@ -50,7 +52,7 @@ namespace TrashHunter
         private SaleOffer offer;
         private string receipt;
 
-        public void Initialize(GameState gameState, SearchPlayer scenePlayer, SearchHud sceneHud)
+        internal void Initialize(GameState gameState, LootCatalog catalog, SearchPlayer scenePlayer, SearchHud sceneHud)
         {
             state = gameState;
             player = scenePlayer;
@@ -59,8 +61,10 @@ namespace TrashHunter
             strings = new UiStrings();
             knowsLootTiers = HasRecognitionForPrototype();
             hud.Bag.SetStrings(strings);
+            var views = items.ToDictionary(item => item.Id, StringComparer.Ordinal);
             foreach (var item in items)
             {
+                item.Bind(catalog[item.Id], views);
                 item.CacheLayout();
                 var name = ItemName(item);
                 aimLabels.Add(item, item.IsPackage
@@ -73,14 +77,14 @@ namespace TrashHunter
 
         private void Open()
         {
-            if (!state.Open(items, containerFloor.bounds, inside.position, SearchPlayer.PoseAt(outside), out var resuming))
+            if (!state.SlotLoaded || (!state.HasRun && !state.StartNewRun(Pile(), SearchPlayer.PoseAt(outside))))
             {
                 ShowLoadError();
                 return;
             }
 
             ApplySnapshot();
-            if (!resuming)
+            if (!state.ResumePending)
             {
                 CloseOverlay();
                 return;
@@ -94,6 +98,8 @@ namespace TrashHunter
             ShowOverlay(strings.Get("continue.title"), summary, string.Empty,
                 strings.Get("continue.actions"), state.RecoveryNotice);
         }
+
+        private SearchPile Pile() => pile ??= new SearchPile(items, containerFloor.bounds, inside.position);
 
         private void ApplySnapshot()
         {
@@ -394,6 +400,7 @@ namespace TrashHunter
                 case Mode.Continue:
                     if (confirm)
                     {
+                        state.AcknowledgeResume();
                         foreach (var item in items)
                             item.FreezeWorld(false);
                         CloseOverlay();
@@ -403,7 +410,10 @@ namespace TrashHunter
                     break;
                 case Mode.LoadError:
                     if (confirm)
+                    {
+                        state.LoadSlot();
                         Open();
+                    }
                     else if (cancel)
                         Application.Quit();
                     break;
@@ -429,7 +439,7 @@ namespace TrashHunter
                         Pause();
                     else if (keyboard.eKey.wasPressedThisFrame)
                     {
-                        if (state.Depart(state.Expedition, SearchPlayer.PoseAt(outside)))
+                        if (state.Depart(state.Expedition, Pile(), SearchPlayer.PoseAt(outside)))
                             Reload();
                         else
                             ShowHome();

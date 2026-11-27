@@ -25,7 +25,7 @@ namespace TrashHunter
 
         public SearchPile(SearchItem[] items, Bounds floor, Vector3 entry)
         {
-            // The run outlives a scene reload. Keep dimensions and poses, never scene objects.
+            // Capture the authored dimensions and cabinet pose before the finds move.
             var cabinet = items.Single(item => item.Id == "cabinet-a");
             cabinetStart = cabinet.LayoutPose(0);
             cabinetSize = cabinet.GetComponent<BoxCollider>().size;

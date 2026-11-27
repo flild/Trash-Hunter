@@ -461,6 +461,32 @@ unity command script eval --runtime TrashHunterPileQA --caller plugin --skill un
 Результаты обеих фаз, настройки замера, комплект Release и ограничения
 описаны в [отчёте I-120](sessions/2026-11-27-i120-windows-acceptance.md).
 
+## Проверка запуска прохождения
+
+[VerifyRunStartup.cs](../AgentScripts/VerifyRunStartup.cs) запускается с пустой
+сценой Editor. Для каждого прогона назначить новый абсолютный каталог в
+`TRASH_HUNTER_EDITOR_SAVE_DIR` в процессе Editor. Оставить каталог пустым
+для новой игры или скопировать старый файл под именем `slot.json`.
+После входа в Play Mode запустить проверку.
+
+~~~powershell
+$projectPath = 'F:\UnityProjects\Trash-Hunter'
+$pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
+unity command script eval @pipeline -- --file AgentScripts/VerifyRunStartup.cs --timeout 18
+~~~
+
+Скрипт сверяет состояние до появления объектов поиска и затем подключает
+ContainerSearch к той же области прохождения. Для пустого слота он подбирает
+сумку штатным вводом и записывает первый снимок. Остановить проверочный Play
+Mode, восстановить исходную сцену, переменные и временные настройки Editor.
+[Отчёт I-140](sessions/2026-11-27-i140-run-startup.md) перечисляет слоты и результаты.
+
+Изменения общих определений вносить в
+[`LootCatalog.json`](../Assets/TrashHunter/Resources/LootCatalog.json).
+Представления ContainerSearch связываются с записями по `itemId`.
+Поля прежнего авторинга сохраняют совместимость со сценариями создания
+прототипа в Editor.
+
 ## Официальные инструкции
 
 - [Unity CLI](https://docs.unity.com/en-us/unity-cli/use-unity-cli)
