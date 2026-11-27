@@ -10,17 +10,17 @@
 При повторном просмотре виден остаток. Вещь из руки укладывается через Tab
 в обычную поясную сумку.
 
-[SearchPile](../../Assets/TrashHunter/Runtime/SearchPile.cs) версии 2
+[SearchPile](../../Assets/TrashHunter/Runtime/Search/SearchPile.cs) версии 2
 записывает 27 ID, включая две упаковки и четыре вложенные вещи.
 На старте вылазки активно 23 физических тела. Упаковки размещаются близко
 к подходу, вложенные экземпляры остаются скрытыми до извлечения.
-[GameState](../../Assets/TrashHunter/Runtime/GameState.cs) сохраняет флаг
+[GameState](../../Assets/TrashHunter/Runtime/Run/GameState.cs) сохраняет флаг
 открытия и принадлежность экземпляров в текущем снимке формата 1.
 Извлечение записывает принадлежность руке и очищает ссылку на упаковку
 одной операцией. Версии генератора 0 и 1 восстанавливают свой исходный
 набор вещей, следующая вылазка у них генерируется по версии 2.
 
-В [SearchItem](../../Assets/TrashHunter/Runtime/SearchItem.cs) тир, базовая
+В [SearchItem](../../Assets/TrashHunter/Runtime/Search/SearchItem.cs) тир, базовая
 ценность и уценка за состояние заданы отдельно. Цены прототипа сохранены
 для всех 26 прежних ID. У младшего целого экземпляра может быть выше
 предложение. В тестовом наборе вилка первого тира стоит 8 ₽, а моторчик
@@ -32,7 +32,7 @@
 
 Для контента использованы материалы сцены, а для списка — её окно uGUI.
 Композицию и сохранение сцены выполнил Editor через
-[CreateSearchPrototype.AddLootPackages](../../AgentScripts/CreateSearchPrototype.cs).
+[CreateSearchPrototype.AddLootPackages](../../AgentScripts/Authoring/CreateSearchPrototype.cs).
 При выборе подхода сверены механизмы инвентаря и отключения представлений.
 [Unity Open Projects](https://github.com/UnityTechnologies/open-project-1/wiki),
 [Unity GameObject.SetActive](https://docs.unity3d.com/es/current/ScriptReference/GameObject.SetActive.html).

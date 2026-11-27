@@ -44,7 +44,7 @@ try
     var tin = items["tin-a"];
     var cabinet = items["cabinet-a"];
     var outside = GameObject.Find("Climb from yard").transform;
-    var rim = GameObject.Find("Roll-off Container/Access rim").GetComponent<Collider>();
+    var rim = GameObject.Find("Roll-off Container").transform.Find("Access rim").GetComponent<Collider>();
     var crateShape = crate.GetComponent<Collider>();
     var tint = new MaterialPropertyBlock();
     var baseColor = Shader.PropertyToID("_BaseColor");

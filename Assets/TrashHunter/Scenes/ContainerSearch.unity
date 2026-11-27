@@ -362,21 +362,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: strip-b
-  displayName: "\u041C\u0435\u0442\u0430\u043B\u043B\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u0440\u0435\u0439\u043A\u0430"
   bagLabel: "\u0420\u0435\u0439\u043A\u0430"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 291347376}
+  thirdPose: {fileID: 1355894492}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u041C\u0435\u0442\u0430\u043B\u043B\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u0440\u0435\u0439\u043A\u0430"
   bagSize: {x: 1, y: 3}
   baseValue: 11
   conditionDiscount: 0
   tier: 1
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u0420\u0435\u0439\u043A\u0430 \u0440\u043E\u0432\u043D\u0430\u044F."
-  alternatePose: {fileID: 291347376}
-  thirdPose: {fileID: 1355894492}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &28230896
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -440,7 +440,7 @@ Transform:
   m_Children:
   - {fileID: 1174254972}
   - {fileID: 1617154952}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &31368822
 GameObject:
@@ -538,7 +538,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 407184622}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &31368825
 MonoBehaviour:
@@ -2332,21 +2332,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: pack-a
-  displayName: "\u0411\u043B\u043E\u043A \u043F\u0438\u0442\u0430\u043D\u0438\u044F"
   bagLabel: "\u0411\u043B\u043E\u043A \u043F\u0438\u0442\u0430\u043D\u0438\u044F"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1180147996}
+  thirdPose: {fileID: 360879407}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0411\u043B\u043E\u043A \u043F\u0438\u0442\u0430\u043D\u0438\u044F"
   bagSize: {x: 3, y: 2}
   baseValue: 33
   conditionDiscount: 0
   tier: 2
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u041A\u043B\u0435\u043C\u043C\u044B \u0441\u0443\u0445\u0438\u0435."
-  alternatePose: {fileID: 1180147996}
-  thirdPose: {fileID: 360879407}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &305771619
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2410,7 +2410,7 @@ Transform:
   m_Children:
   - {fileID: 1421993849}
   - {fileID: 907342486}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &325907063
 GameObject:
@@ -2503,7 +2503,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1639372807}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &357158747
 GameObject:
@@ -2903,21 +2903,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: bell-a
-  displayName: "\u0417\u0432\u043E\u043D\u043E\u043A"
   bagLabel: "\u0417\u0432\u043E\u043D\u043E\u043A"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 325907064}
+  thirdPose: {fileID: 2067184767}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0417\u0432\u043E\u043D\u043E\u043A"
   bagSize: {x: 1, y: 1}
   baseValue: 13
   conditionDiscount: 0
   tier: 1
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u041A\u043D\u043E\u043F\u043A\u0430 \u043D\u0430 \u043C\u0435\u0441\u0442\u0435."
-  alternatePose: {fileID: 325907064}
-  thirdPose: {fileID: 2067184767}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &395107655
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2981,7 +2981,7 @@ Transform:
   m_Children:
   - {fileID: 1412977668}
   - {fileID: 1286406892}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &402020769
 GameObject:
@@ -3163,6 +3163,38 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 402896775}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &407184621
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 407184622}
+  m_Layer: 0
+  m_Name: Lighting
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &407184622
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 407184621}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 31368824}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &414540705
 GameObject:
   m_ObjectHideFlags: 0
@@ -3285,21 +3317,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: fuse-b
-  displayName: "\u0414\u0435\u0440\u0436\u0430\u0442\u0435\u043B\u044C"
   bagLabel: "\u0414\u0435\u0440\u0436\u0430\u0442\u0435\u043B\u044C"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1220248035}
+  thirdPose: {fileID: 169455576}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0414\u0435\u0440\u0436\u0430\u0442\u0435\u043B\u044C"
   bagSize: {x: 1, y: 1}
   baseValue: 9
   conditionDiscount: 5
   tier: 1
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u041A\u0440\u044B\u0448\u043A\u0438 \u043D\u0435\u0442."
-  alternatePose: {fileID: 1220248035}
-  thirdPose: {fileID: 169455576}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &419667976
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3362,7 +3394,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1420320558}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &420185185
 GameObject:
@@ -3751,7 +3783,7 @@ Transform:
   - {fileID: 669026295}
   - {fileID: 272819354}
   - {fileID: 794520580}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2027839238}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &487950101
 GameObject:
@@ -3785,21 +3817,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: fuse-a
-  displayName: "\u0414\u0435\u0440\u0436\u0430\u0442\u0435\u043B\u044C"
   bagLabel: "\u0414\u0435\u0440\u0436\u0430\u0442\u0435\u043B\u044C"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1009794505}
+  thirdPose: {fileID: 1149380519}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0414\u0435\u0440\u0436\u0430\u0442\u0435\u043B\u044C"
   bagSize: {x: 1, y: 1}
   baseValue: 9
   conditionDiscount: 0
   tier: 1
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u041A\u0440\u044B\u0448\u043A\u0430 \u043D\u0430 \u043C\u0435\u0441\u0442\u0435."
-  alternatePose: {fileID: 1009794505}
-  thirdPose: {fileID: 1149380519}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &487950103
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3863,7 +3895,7 @@ Transform:
   m_Children:
   - {fileID: 1945168339}
   - {fileID: 2012705979}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &489827479
 GameObject:
@@ -3897,21 +3929,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: crate-a
-  displayName: "\u0414\u0435\u0440\u0435\u0432\u044F\u043D\u043D\u044B\u0439 \u044F\u0449\u0438\u043A"
   bagLabel: "\u042F\u0449\u0438\u043A"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 474562775}
+  thirdPose: {fileID: 2075771406}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0414\u0435\u0440\u0435\u0432\u044F\u043D\u043D\u044B\u0439 \u044F\u0449\u0438\u043A"
   bagSize: {x: 4, y: 2}
   baseValue: 0
   conditionDiscount: 0
   tier: 0
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: 
-  alternatePose: {fileID: 474562775}
-  thirdPose: {fileID: 2075771406}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &489827481
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3981,7 +4013,7 @@ Transform:
   - {fileID: 2057475921}
   - {fileID: 1671310691}
   - {fileID: 121992808}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &493178052
 GameObject:
@@ -4105,21 +4137,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: radio-b
-  displayName: "\u041A\u0430\u0440\u043C\u0430\u043D\u043D\u044B\u0439 \u0440\u0430\u0434\u0438\u043E\u043F\u0440\u0438\u0451\u043C\u043D\u0438\u043A"
   bagLabel: "\u0420\u0430\u0434\u0438\u043E"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1510111413}
+  thirdPose: {fileID: 1294476423}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u041A\u0430\u0440\u043C\u0430\u043D\u043D\u044B\u0439 \u0440\u0430\u0434\u0438\u043E\u043F\u0440\u0438\u0451\u043C\u043D\u0438\u043A"
   bagSize: {x: 1, y: 1}
   baseValue: 26
   conditionDiscount: 14
   tier: 2
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u0420\u0443\u0447\u043A\u0438 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u043D\u0435\u0442."
-  alternatePose: {fileID: 1510111413}
-  thirdPose: {fileID: 1294476423}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &501883637
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4183,7 +4215,7 @@ Transform:
   m_Children:
   - {fileID: 1795336494}
   - {fileID: 1826566824}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &504769099
 GameObject:
@@ -6298,21 +6330,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: lamp-a
-  displayName: "\u0421\u043A\u043B\u0430\u0434\u043D\u0430\u044F \u043B\u0430\u043C\u043F\u0430"
   bagLabel: "\u041B\u0430\u043C\u043F\u0430"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 2076556546}
+  thirdPose: {fileID: 0}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0421\u043A\u043B\u0430\u0434\u043D\u0430\u044F \u043B\u0430\u043C\u043F\u0430"
   bagSize: {x: 1, y: 2}
   baseValue: 42
   conditionDiscount: 24
   tier: 3
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u0423\u0448\u043A\u043E \u0442\u0440\u0435\u0441\u043D\u0443\u043B\u043E, \u043F\u043B\u0430\u0444\u043E\u043D \u0431\u043E\u043B\u0442\u0430\u0435\u0442\u0441\u044F."
-  alternatePose: {fileID: 2076556546}
-  thirdPose: {fileID: 0}
   legacyLayoutOnly: 1
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &788250221
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6383,7 +6415,7 @@ Transform:
   - {fileID: 1408572231}
   - {fileID: 2074707829}
   - {fileID: 549562145}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &794520579
 GameObject:
@@ -7132,8 +7164,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: parcel-a
-  displayName: "\u041A\u0430\u0440\u0442\u043E\u043D\u043D\u0430\u044F \u043A\u043E\u0440\u043E\u0431\u043A\u0430"
   bagLabel: 
+  packageClosure: {fileID: 376824937}
+  packageInterior: {fileID: 242997607}
+  alternatePose: {fileID: 0}
+  thirdPose: {fileID: 0}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u041A\u0430\u0440\u0442\u043E\u043D\u043D\u0430\u044F \u043A\u043E\u0440\u043E\u0431\u043A\u0430"
   bagSize: {x: 0, y: 0}
   baseValue: 0
   conditionDiscount: 0
@@ -7141,14 +7179,8 @@ MonoBehaviour:
   packageContents:
   - {fileID: 487950102}
   - {fileID: 899428613}
-  packageClosure: {fileID: 376824937}
-  packageInterior: {fileID: 242997607}
   saleCondition: 
-  alternatePose: {fileID: 0}
-  thirdPose: {fileID: 0}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &866238999
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -7218,7 +7250,7 @@ Transform:
   - {fileID: 376824938}
   - {fileID: 242997608}
   - {fileID: 420185186}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &873189493
 GameObject:
@@ -7522,23 +7554,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: lamp-cracked
-  displayName: "\u0421\u043A\u043B\u0430\u0434\u043D\u0430\u044F \u043B\u0430\u043C\u043F\u0430"
   bagLabel: "\u041B\u0430\u043C\u043F\u0430"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1610400496}
+  thirdPose: {fileID: 255839333}
+  lampShell:
+  - {fileID: 815855461}
+  - {fileID: 1720804444}
+  secondLayoutFinish: {fileID: 2100000, guid: 01561810120716946b41c018987829e7, type: 2}
+  displayName: "\u0421\u043A\u043B\u0430\u0434\u043D\u0430\u044F \u043B\u0430\u043C\u043F\u0430"
   bagSize: {x: 2, y: 2}
   baseValue: 42
   conditionDiscount: 24
   tier: 3
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u0423\u0448\u043A\u043E \u0442\u0440\u0435\u0441\u043D\u0443\u043B\u043E, \u043F\u043B\u0430\u0444\u043E\u043D \u0431\u043E\u043B\u0442\u0430\u0435\u0442\u0441\u044F."
-  alternatePose: {fileID: 1610400496}
-  thirdPose: {fileID: 255839333}
   legacyLayoutOnly: 0
-  lampShell:
-  - {fileID: 815855461}
-  - {fileID: 1720804444}
-  secondLayoutFinish: {fileID: 2100000, guid: 01561810120716946b41c018987829e7, type: 2}
 --- !u!65 &889400220
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -7610,7 +7642,7 @@ Transform:
   - {fileID: 930074618}
   - {fileID: 1513212761}
   - {fileID: 1984061938}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &895630718
 GameObject:
@@ -7644,21 +7676,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: pack-b
-  displayName: "\u0411\u043B\u043E\u043A \u043F\u0438\u0442\u0430\u043D\u0438\u044F"
   bagLabel: "\u0411\u043B\u043E\u043A \u043F\u0438\u0442\u0430\u043D\u0438\u044F"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 992658739}
+  thirdPose: {fileID: 1342156189}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0411\u043B\u043E\u043A \u043F\u0438\u0442\u0430\u043D\u0438\u044F"
   bagSize: {x: 3, y: 2}
   baseValue: 33
   conditionDiscount: 22
   tier: 2
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u041D\u0430 \u043A\u043B\u0435\u043C\u043C\u0430\u0445 \u043E\u043A\u0438\u0441\u0435\u043B."
-  alternatePose: {fileID: 992658739}
-  thirdPose: {fileID: 1342156189}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &895630720
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -7722,7 +7754,7 @@ Transform:
   m_Children:
   - {fileID: 1812738829}
   - {fileID: 2043899036}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &899428612
 GameObject:
@@ -7756,21 +7788,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: adapter-a
-  displayName: "\u0410\u0434\u0430\u043F\u0442\u0435\u0440"
   bagLabel: "\u0410\u0434\u0430\u043F\u0442\u0435\u0440"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1711497273}
+  thirdPose: {fileID: 331359106}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0410\u0434\u0430\u043F\u0442\u0435\u0440"
   bagSize: {x: 2, y: 1}
   baseValue: 22
   conditionDiscount: 0
   tier: 2
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u0420\u0430\u0437\u044A\u0451\u043C \u0446\u0435\u043B."
-  alternatePose: {fileID: 1711497273}
-  thirdPose: {fileID: 331359106}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &899428614
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -7835,7 +7867,7 @@ Transform:
   - {fileID: 529231649}
   - {fileID: 241036977}
   - {fileID: 1028012755}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &907342485
 GameObject:
@@ -8302,21 +8334,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: cabinet-a
-  displayName: "\u0428\u043A\u0430\u0444"
   bagLabel: "\u0428\u043A\u0430\u0444"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1513999152}
+  thirdPose: {fileID: 334626016}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0428\u043A\u0430\u0444"
   bagSize: {x: 5, y: 4}
   baseValue: 0
   conditionDiscount: 0
   tier: 0
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: 
-  alternatePose: {fileID: 1513999152}
-  thirdPose: {fileID: 334626016}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &943436961
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8389,7 +8421,7 @@ Transform:
   - {fileID: 1896003799}
   - {fileID: 1029794766}
   - {fileID: 716236219}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &955275018
 GameObject:
@@ -8711,7 +8743,7 @@ Transform:
   - {fileID: 1248263133}
   - {fileID: 1397552060}
   - {fileID: 1144003439}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2027839238}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &981336283
 GameObject:
@@ -8835,21 +8867,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: tin-b
-  displayName: "\u041A\u043E\u0440\u043E\u0431\u043A\u0430"
   bagLabel: "\u041A\u043E\u0440\u043E\u0431\u043A\u0430"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 2114102910}
+  thirdPose: {fileID: 1226276298}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u041A\u043E\u0440\u043E\u0431\u043A\u0430"
   bagSize: {x: 2, y: 1}
   baseValue: 10
   conditionDiscount: 5
   tier: 1
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u041A\u0440\u044B\u0448\u043A\u0430 \u043F\u0435\u0440\u0435\u043A\u043E\u0448\u0435\u043D\u0430."
-  alternatePose: {fileID: 2114102910}
-  thirdPose: {fileID: 1226276298}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &988882564
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8913,7 +8945,7 @@ Transform:
   m_Children:
   - {fileID: 1878547362}
   - {fileID: 1273410157}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &992658738
 GameObject:
@@ -10052,21 +10084,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: radio-a
-  displayName: "\u041A\u0430\u0440\u043C\u0430\u043D\u043D\u044B\u0439 \u0440\u0430\u0434\u0438\u043E\u043F\u0440\u0438\u0451\u043C\u043D\u0438\u043A"
   bagLabel: "\u0420\u0430\u0434\u0438\u043E"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 295764016}
+  thirdPose: {fileID: 810901756}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u041A\u0430\u0440\u043C\u0430\u043D\u043D\u044B\u0439 \u0440\u0430\u0434\u0438\u043E\u043F\u0440\u0438\u0451\u043C\u043D\u0438\u043A"
   bagSize: {x: 1, y: 1}
   baseValue: 26
   conditionDiscount: 0
   tier: 2
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u041A\u043E\u0440\u043F\u0443\u0441 \u0431\u0435\u0437 \u0432\u0438\u0434\u0438\u043C\u044B\u0445 \u043F\u043E\u0432\u0440\u0435\u0436\u0434\u0435\u043D\u0438\u0439."
-  alternatePose: {fileID: 295764016}
-  thirdPose: {fileID: 810901756}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &1057643050
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -10131,7 +10163,7 @@ Transform:
   - {fileID: 1137534753}
   - {fileID: 357158748}
   - {fileID: 7456957}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1068218584
 GameObject:
@@ -10324,6 +10356,65 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1069001660}
   m_CullTransparentMesh: 1
+--- !u!1 &1081578369
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1081578370}
+  m_Layer: 0
+  m_Name: Search Items
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1081578370
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1081578369}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 489827483}
+  - {fileID: 788250223}
+  - {fileID: 1057643052}
+  - {fileID: 1927385028}
+  - {fileID: 1423141129}
+  - {fileID: 1326208003}
+  - {fileID: 889400222}
+  - {fileID: 1707524333}
+  - {fileID: 1504613588}
+  - {fileID: 1646824833}
+  - {fileID: 1263233480}
+  - {fileID: 899428616}
+  - {fileID: 1706525114}
+  - {fileID: 487950105}
+  - {fileID: 419667978}
+  - {fileID: 2037813781}
+  - {fileID: 988882566}
+  - {fileID: 395107657}
+  - {fileID: 1498954435}
+  - {fileID: 305771621}
+  - {fileID: 895630722}
+  - {fileID: 501883639}
+  - {fileID: 1267172248}
+  - {fileID: 28230898}
+  - {fileID: 1626355517}
+  - {fileID: 943436963}
+  - {fileID: 1488188575}
+  - {fileID: 866239001}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1091594584
 GameObject:
   m_ObjectHideFlags: 0
@@ -12159,7 +12250,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2027839238}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1263233476
 GameObject:
@@ -12193,21 +12284,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: motor-b
-  displayName: "\u041C\u043E\u0442\u043E\u0440\u0447\u0438\u043A"
   bagLabel: "\u041C\u043E\u0442\u043E\u0440\u0447\u0438\u043A"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1914915212}
+  thirdPose: {fileID: 1423987002}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u041C\u043E\u0442\u043E\u0440\u0447\u0438\u043A"
   bagSize: {x: 2, y: 1}
   baseValue: 19
   conditionDiscount: 12
   tier: 2
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u0412\u0430\u043B \u043F\u043E\u0433\u043D\u0443\u0442."
-  alternatePose: {fileID: 1914915212}
-  thirdPose: {fileID: 1423987002}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &1263233478
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -12271,7 +12362,7 @@ Transform:
   m_Children:
   - {fileID: 647890146}
   - {fileID: 1196903126}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1267172244
 GameObject:
@@ -12305,21 +12396,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: radio-c
-  displayName: "\u041A\u0430\u0440\u043C\u0430\u043D\u043D\u044B\u0439 \u0440\u0430\u0434\u0438\u043E\u043F\u0440\u0438\u0451\u043C\u043D\u0438\u043A"
   bagLabel: "\u0420\u0430\u0434\u0438\u043E"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1872656097}
+  thirdPose: {fileID: 172823424}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u041A\u0430\u0440\u043C\u0430\u043D\u043D\u044B\u0439 \u0440\u0430\u0434\u0438\u043E\u043F\u0440\u0438\u0451\u043C\u043D\u0438\u043A"
   bagSize: {x: 1, y: 1}
   baseValue: 26
   conditionDiscount: 0
   tier: 2
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u041A\u043E\u0440\u043F\u0443\u0441 \u0431\u0435\u0437 \u0432\u0438\u0434\u0438\u043C\u044B\u0445 \u043F\u043E\u0432\u0440\u0435\u0436\u0434\u0435\u043D\u0438\u0439."
-  alternatePose: {fileID: 1872656097}
-  thirdPose: {fileID: 172823424}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &1267172246
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -12384,7 +12475,7 @@ Transform:
   - {fileID: 1787201301}
   - {fileID: 1123591262}
   - {fileID: 1014605759}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1273410156
 GameObject:
@@ -12809,23 +12900,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: lamp-intact
-  displayName: "\u0421\u043A\u043B\u0430\u0434\u043D\u0430\u044F \u043B\u0430\u043C\u043F\u0430"
   bagLabel: "\u041B\u0430\u043C\u043F\u0430"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 391585359}
+  thirdPose: {fileID: 430760503}
+  lampShell:
+  - {fileID: 1706350400}
+  - {fileID: 1500710840}
+  secondLayoutFinish: {fileID: 2100000, guid: 5574d16c1bb53f547a31c12784cd8983, type: 2}
+  displayName: "\u0421\u043A\u043B\u0430\u0434\u043D\u0430\u044F \u043B\u0430\u043C\u043F\u0430"
   bagSize: {x: 2, y: 2}
   baseValue: 42
   conditionDiscount: 0
   tier: 3
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u041A\u0440\u0435\u043F\u043B\u0435\u043D\u0438\u0435 \u0446\u0435\u043B\u043E\u0435, \u043F\u043B\u0430\u0444\u043E\u043D \u0434\u0435\u0440\u0436\u0438\u0442\u0441\u044F."
-  alternatePose: {fileID: 391585359}
-  thirdPose: {fileID: 430760503}
   legacyLayoutOnly: 0
-  lampShell:
-  - {fileID: 1706350400}
-  - {fileID: 1500710840}
-  secondLayoutFinish: {fileID: 2100000, guid: 5574d16c1bb53f547a31c12784cd8983, type: 2}
 --- !u!65 &1326208001
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -12895,7 +12986,7 @@ Transform:
   - {fileID: 965008856}
   - {fileID: 994383615}
   - {fileID: 385563766}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1329656954
 GameObject:
@@ -12927,6 +13018,40 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1372023084}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1331996939
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1331996940}
+  m_Layer: 0
+  m_Name: Environment
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1331996940
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1331996939}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1544051416}
+  - {fileID: 2144808522}
+  - {fileID: 1454903072}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1333446975
 GameObject:
@@ -13224,7 +13349,7 @@ Transform:
   - {fileID: 1872656097}
   - {fileID: 291347376}
   - {fileID: 2108916712}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1639372807}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1377054616
 GameObject:
@@ -14031,21 +14156,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: dial-a
-  displayName: "\u0417\u0430\u043F\u0430\u0441\u043D\u0430\u044F \u0440\u0443\u0447\u043A\u0430 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438"
   bagLabel: "\u0420\u0443\u0447\u043A\u0430"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1445345703}
+  thirdPose: {fileID: 1008030240}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0417\u0430\u043F\u0430\u0441\u043D\u0430\u044F \u0440\u0443\u0447\u043A\u0430 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438"
   bagSize: {x: 1, y: 1}
   baseValue: 4
   conditionDiscount: 0
   tier: 1
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u0420\u0443\u0447\u043A\u0430 \u0446\u0435\u043B\u0430."
-  alternatePose: {fileID: 1445345703}
-  thirdPose: {fileID: 1008030240}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &1423141127
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -14109,7 +14234,7 @@ Transform:
   m_Children:
   - {fileID: 193976874}
   - {fileID: 624615658}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1423987001
 GameObject:
@@ -14297,7 +14422,7 @@ Transform:
   - {fileID: 561246539}
   - {fileID: 147054102}
   - {fileID: 1712784344}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1331996940}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1466582397
 GameObject:
@@ -14632,8 +14757,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: sack-a
-  displayName: "\u041C\u0435\u0448\u043E\u043A"
   bagLabel: 
+  packageClosure: {fileID: 1738443483}
+  packageInterior: {fileID: 106609327}
+  alternatePose: {fileID: 0}
+  thirdPose: {fileID: 0}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u041C\u0435\u0448\u043E\u043A"
   bagSize: {x: 0, y: 0}
   baseValue: 0
   conditionDiscount: 0
@@ -14641,14 +14772,8 @@ MonoBehaviour:
   packageContents:
   - {fileID: 1707524330}
   - {fileID: 1263233477}
-  packageClosure: {fileID: 1738443483}
-  packageInterior: {fileID: 106609327}
   saleCondition: 
-  alternatePose: {fileID: 0}
-  thirdPose: {fileID: 0}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &1488188573
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -14713,7 +14838,7 @@ Transform:
   - {fileID: 1738443484}
   - {fileID: 106609328}
   - {fileID: 298821639}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1488515652
 GameObject:
@@ -14837,21 +14962,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: bell-b
-  displayName: "\u0417\u0432\u043E\u043D\u043E\u043A"
   bagLabel: "\u0417\u0432\u043E\u043D\u043E\u043A"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1524819528}
+  thirdPose: {fileID: 2000075275}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0417\u0432\u043E\u043D\u043E\u043A"
   bagSize: {x: 1, y: 1}
   baseValue: 13
   conditionDiscount: 7
   tier: 1
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u041A\u043D\u043E\u043F\u043A\u0438 \u043D\u0435\u0442."
-  alternatePose: {fileID: 1524819528}
-  thirdPose: {fileID: 2000075275}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &1498954433
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -14914,7 +15039,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 102565706}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1500710839
 GameObject:
@@ -15038,21 +15163,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: plug-b
-  displayName: "\u0412\u0438\u043B\u043A\u0430"
   bagLabel: "\u0412\u0438\u043B\u043A\u0430"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1241780547}
+  thirdPose: {fileID: 2028230477}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0412\u0438\u043B\u043A\u0430"
   bagSize: {x: 1, y: 1}
   baseValue: 8
   conditionDiscount: 5
   tier: 1
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u041E\u0434\u0438\u043D \u0448\u0442\u044B\u0440\u044C \u043F\u043E\u0433\u043D\u0443\u0442."
-  alternatePose: {fileID: 1241780547}
-  thirdPose: {fileID: 2028230477}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &1504613586
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15116,7 +15241,7 @@ Transform:
   m_Children:
   - {fileID: 1669825493}
   - {fileID: 2135665150}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1510111412
 GameObject:
@@ -15268,7 +15393,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1639372807}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1524819527
 GameObject:
@@ -15335,7 +15460,7 @@ Transform:
   - {fileID: 128242317}
   - {fileID: 1037470268}
   - {fileID: 1313670278}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1331996940}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1610400495
 GameObject:
@@ -15580,21 +15705,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: dial-b
-  displayName: "\u0417\u0430\u043F\u0430\u0441\u043D\u0430\u044F \u0440\u0443\u0447\u043A\u0430 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438"
   bagLabel: "\u0420\u0443\u0447\u043A\u0430"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 2108916712}
+  thirdPose: {fileID: 1392117227}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0417\u0430\u043F\u0430\u0441\u043D\u0430\u044F \u0440\u0443\u0447\u043A\u0430 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438"
   bagSize: {x: 1, y: 1}
   baseValue: 4
   conditionDiscount: 0
   tier: 1
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u0420\u0443\u0447\u043A\u0430 \u0446\u0435\u043B\u0430."
-  alternatePose: {fileID: 2108916712}
-  thirdPose: {fileID: 1392117227}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &1626355515
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15658,7 +15783,7 @@ Transform:
   m_Children:
   - {fileID: 774113803}
   - {fileID: 402020770}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1627099142
 GameObject:
@@ -15840,6 +15965,41 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1632520883}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1639372806
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1639372807}
+  m_Layer: 0
+  m_Name: Legacy Layouts
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1639372807
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1639372806}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1372023084}
+  - {fileID: 2122790053}
+  - {fileID: 1513999152}
+  - {fileID: 334626016}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1646824829
 GameObject:
   m_ObjectHideFlags: 0
@@ -15872,21 +16032,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: motor-a
-  displayName: "\u041C\u043E\u0442\u043E\u0440\u0447\u0438\u043A"
   bagLabel: "\u041C\u043E\u0442\u043E\u0440\u0447\u0438\u043A"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1329656955}
+  thirdPose: {fileID: 25883413}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u041C\u043E\u0442\u043E\u0440\u0447\u0438\u043A"
   bagSize: {x: 2, y: 1}
   baseValue: 19
   conditionDiscount: 0
   tier: 2
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u0412\u0430\u043B \u0446\u0435\u043B."
-  alternatePose: {fileID: 1329656955}
-  thirdPose: {fileID: 25883413}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &1646824831
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -15950,7 +16110,7 @@ Transform:
   m_Children:
   - {fileID: 255930582}
   - {fileID: 1925045686}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1669825492
 GameObject:
@@ -16434,21 +16594,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: adapter-b
-  displayName: "\u0410\u0434\u0430\u043F\u0442\u0435\u0440"
   bagLabel: "\u0410\u0434\u0430\u043F\u0442\u0435\u0440"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1466582398}
+  thirdPose: {fileID: 915010507}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0410\u0434\u0430\u043F\u0442\u0435\u0440"
   bagSize: {x: 2, y: 1}
   baseValue: 22
   conditionDiscount: 14
   tier: 2
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u0420\u0430\u0437\u044A\u0451\u043C \u043F\u0440\u043E\u0434\u0430\u0432\u043B\u0435\u043D."
-  alternatePose: {fileID: 1466582398}
-  thirdPose: {fileID: 915010507}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &1706525112
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -16513,7 +16673,7 @@ Transform:
   - {fileID: 1828693789}
   - {fileID: 414540706}
   - {fileID: 1412140859}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1707524329
 GameObject:
@@ -16547,21 +16707,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: plug-a
-  displayName: "\u0412\u0438\u043B\u043A\u0430"
   bagLabel: "\u0412\u0438\u043B\u043A\u0430"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 930855579}
+  thirdPose: {fileID: 1781186555}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u0412\u0438\u043B\u043A\u0430"
   bagSize: {x: 1, y: 1}
   baseValue: 8
   conditionDiscount: 0
   tier: 1
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u0428\u0442\u044B\u0440\u0438 \u0440\u043E\u0432\u043D\u044B\u0435."
-  alternatePose: {fileID: 930855579}
-  thirdPose: {fileID: 1781186555}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &1707524331
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -16625,7 +16785,7 @@ Transform:
   m_Children:
   - {fileID: 1782942758}
   - {fileID: 1214501014}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1709945255
 GameObject:
@@ -17625,7 +17785,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2027839238}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1826566823
 GameObject:
@@ -18261,21 +18421,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: strip-a
-  displayName: "\u041C\u0435\u0442\u0430\u043B\u043B\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u0440\u0435\u0439\u043A\u0430"
   bagLabel: "\u0420\u0435\u0439\u043A\u0430"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 1977277348}
+  thirdPose: {fileID: 1792083163}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u041C\u0435\u0442\u0430\u043B\u043B\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u0440\u0435\u0439\u043A\u0430"
   bagSize: {x: 1, y: 3}
   baseValue: 11
   conditionDiscount: 5
   tier: 1
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u0420\u0435\u0439\u043A\u0430 \u043F\u043E\u0433\u043D\u0443\u0442\u0430."
-  alternatePose: {fileID: 1977277348}
-  thirdPose: {fileID: 1792083163}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &1927385026
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -18339,7 +18499,7 @@ Transform:
   m_Children:
   - {fileID: 1333446976}
   - {fileID: 1026903001}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1939010795
 GameObject:
@@ -18555,6 +18715,8 @@ MonoBehaviour:
     TypeName: 
   autoRun: 1
   autoInjectGameObjects: []
+  location: 0
+  entry: {fileID: 0}
   session: {fileID: 1950966198}
   playerPrefab: {fileID: 8406145165027226526, guid: bd5e0f56e048a084ca36b39b00ca9e1c, type: 3}
   hudPrefab: {fileID: 7502016069326149499, guid: 47e0ba0aa96f42244bf6bdc77cdd0067, type: 3}
@@ -19133,6 +19295,41 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2022562973}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &2027839237
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2027839238}
+  m_Layer: 0
+  m_Name: Interaction Points
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2027839238
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2027839237}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1259579435}
+  - {fileID: 1824465492}
+  - {fileID: 978394221}
+  - {fileID: 485850116}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2028230476
 GameObject:
   m_ObjectHideFlags: 0
@@ -19286,21 +19483,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrashHunter.SearchItem
   itemId: tin-a
-  displayName: "\u041A\u043E\u0440\u043E\u0431\u043A\u0430"
   bagLabel: "\u041A\u043E\u0440\u043E\u0431\u043A\u0430"
+  packageClosure: {fileID: 0}
+  packageInterior: {fileID: 0}
+  alternatePose: {fileID: 86413280}
+  thirdPose: {fileID: 1220393505}
+  lampShell: []
+  secondLayoutFinish: {fileID: 0}
+  displayName: "\u041A\u043E\u0440\u043E\u0431\u043A\u0430"
   bagSize: {x: 2, y: 1}
   baseValue: 10
   conditionDiscount: 0
   tier: 1
   packageContents: []
-  packageClosure: {fileID: 0}
-  packageInterior: {fileID: 0}
   saleCondition: "\u041A\u0440\u044B\u0448\u043A\u0430 \u0441\u0430\u0434\u0438\u0442\u0441\u044F \u0440\u043E\u0432\u043D\u043E."
-  alternatePose: {fileID: 86413280}
-  thirdPose: {fileID: 1220393505}
   legacyLayoutOnly: 0
-  lampShell: []
-  secondLayoutFinish: {fileID: 0}
 --- !u!65 &2037813779
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -19364,7 +19561,7 @@ Transform:
   m_Children:
   - {fileID: 873189494}
   - {fileID: 1241546380}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1081578370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2043899035
 GameObject:
@@ -19923,7 +20120,7 @@ Transform:
   - {fileID: 172823424}
   - {fileID: 1355894492}
   - {fileID: 1392117227}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1639372807}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2125278572
 GameObject:
@@ -20161,51 +20358,16 @@ Transform:
   - {fileID: 1091594585}
   - {fileID: 1274436313}
   - {fileID: 802587645}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1331996940}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 908421703}
-  - {fileID: 1544051416}
-  - {fileID: 2144808522}
-  - {fileID: 1454903072}
-  - {fileID: 489827483}
-  - {fileID: 788250223}
-  - {fileID: 1057643052}
-  - {fileID: 1259579435}
-  - {fileID: 1824465492}
   - {fileID: 1950966199}
-  - {fileID: 31368824}
-  - {fileID: 978394221}
-  - {fileID: 1927385028}
-  - {fileID: 1423141129}
-  - {fileID: 1372023084}
-  - {fileID: 485850116}
-  - {fileID: 1326208003}
-  - {fileID: 889400222}
-  - {fileID: 1707524333}
-  - {fileID: 1504613588}
-  - {fileID: 1646824833}
-  - {fileID: 1263233480}
-  - {fileID: 899428616}
-  - {fileID: 1706525114}
-  - {fileID: 487950105}
-  - {fileID: 419667978}
-  - {fileID: 2037813781}
-  - {fileID: 988882566}
-  - {fileID: 395107657}
-  - {fileID: 1498954435}
-  - {fileID: 305771621}
-  - {fileID: 895630722}
-  - {fileID: 501883639}
-  - {fileID: 1267172248}
-  - {fileID: 28230898}
-  - {fileID: 1626355517}
-  - {fileID: 2122790053}
-  - {fileID: 943436963}
-  - {fileID: 1513999152}
-  - {fileID: 334626016}
-  - {fileID: 1488188575}
-  - {fileID: 866239001}
+  - {fileID: 1331996940}
+  - {fileID: 407184622}
+  - {fileID: 2027839238}
+  - {fileID: 1081578370}
+  - {fileID: 1639372807}

@@ -178,8 +178,8 @@ D-070 завершён на уровне проектирования. Реше�
 Первый автослот I-030 хранит этап, номер вылазки, состав одной зоны с позами,
 руку, раскладку поясной сумки, домашние вещи и кассу. Дом в этом срезе
 представлен экраном в [ContainerSearch](../Assets/TrashHunter/Scenes/ContainerSearch.unity).
-[GameState](../Assets/TrashHunter/Runtime/GameState.cs) применяет переход после
-подтверждённой записи [SaveSlot](../Assets/TrashHunter/Runtime/SaveSlot.cs).
+[GameState](../Assets/TrashHunter/Runtime/Run/GameState.cs) применяет переход после
+подтверждённой записи [SaveSlot](../Assets/TrashHunter/Runtime/Run/SaveSlot.cs).
 В домашнем списке экземпляр определяется парой из номера вылазки и ID находки.
 Порядок проверки прототипа и назначение файлов слота — в
 [DEVELOPMENT](DEVELOPMENT.md#проверка-автослота-и-продажи).

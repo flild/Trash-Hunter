@@ -38,7 +38,7 @@ unity open $projectPath
 unity pipeline editors --format json
 unity status --until-ready --timeout 45 --project-path $projectPath --format json
 unity command editor status --caller plugin --skill unity-pipeline --project-path $projectPath --format json
-unity command script run --caller plugin --skill unity-pipeline --project-path $projectPath --format json -- --file AgentScripts/SetupCheck.cs --entry SetupCheck.Inspect
+unity command script run --caller plugin --skill unity-pipeline --project-path $projectPath --format json -- --file AgentScripts/Diagnostics/SetupCheck.cs --entry SetupCheck.Inspect
 ```
 
 Фактически получены: `state: ready`, Editor PID 20700, порт 7800,
@@ -94,7 +94,7 @@ UserSettings, Build/Builds, генерируемые проекты IDE и ло�
 
 ## SetupCheck
 
-Создана и сохранена **Assets/Scenes/SetupCheck.unity** вместе с `.meta`.
+Создана и сохранена **Assets/Diagnostics/SetupCheck.unity** вместе с `.meta`.
 Сцена содержит четыре корневых объекта:
 
 - Floor: Plane с коллайдером, размер 20 × 20.
@@ -103,7 +103,7 @@ UserSettings, Build/Builds, генерируемые проекты IDE и ло�
 - Directional Light: направленный свет.
 
 Сцена создана через Editor командой `script run`, а не ручной записью YAML.
-`AgentScripts/SetupCheck.cs` хранится вне Assets, компилируется Pipeline в памяти
+`AgentScripts/Diagnostics/SetupCheck.cs` хранится вне Assets, компилируется Pipeline в памяти
 и не включается в игру. Entry point `SetupCheck.Inspect` читает окружение,
 `SetupCheck.Create` создаёт сцену, `SetupCheck.Verify` проверяет активную сцену.
 Create отказывается перезаписывать существующую SetupCheck и закрывать
@@ -138,7 +138,7 @@ unity command script recompile --caller plugin --skill unity-pipeline --project-
 unity command script recompile_status --caller plugin --skill unity-pipeline --project-path $projectPath --format json
 unity command console status --caller plugin --skill unity-pipeline --project-path $projectPath --format json
 unity command console get --caller plugin --skill unity-pipeline --project-path $projectPath --format json -- --tail 30
-unity command script run --caller plugin --skill unity-pipeline --project-path $projectPath --format json -- --file AgentScripts/SetupCheck.cs --entry SetupCheck.Verify
+unity command script run --caller plugin --skill unity-pipeline --project-path $projectPath --format json -- --file AgentScripts/Diagnostics/SetupCheck.cs --entry SetupCheck.Verify
 ```
 
 Для повторного Play Mode из остановленного Editor:
@@ -176,12 +176,12 @@ git diff --check
 ## Проверка сцены поиска
 
 Сцена — [ContainerSearch.unity](../Assets/TrashHunter/Scenes/ContainerSearch.unity).
-Её, префабы и материалы создал Editor из [CreateSearchPrototype.cs](../AgentScripts/CreateSearchPrototype.cs).
+Её, префабы и материалы создал Editor из [CreateSearchPrototype.cs](../AgentScripts/Authoring/CreateSearchPrototype.cs).
 Повторный запуск Create для существующей сцены не требуется. VContainer 1.19.0
 зафиксирован в manifest и lock по ревизии. Уведомление для Player —
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-[VerifySearchPrototype.cs](../AgentScripts/VerifySearchPrototype.cs) проходит
+[VerifySearchPrototype.cs](../AgentScripts/Verification/VerifySearchPrototype.cs) проходит
 маршрут виртуальными клавиатурой и мышью через Input System. Запускать на
 свежем Play Mode или в только что открытом Windows Player с исходной укладкой.
 Скрипт находится вне `Assets/` и не компилируется в игру.
@@ -189,18 +189,18 @@ git diff --check
 ```powershell
 $projectPath = 'F:\UnityProjects\Trash-Hunter'
 $pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
-unity command script eval @pipeline -- --file AgentScripts/VerifySearchPrototype.cs --timeout 35
+unity command script eval @pipeline -- --file AgentScripts/Verification/VerifySearchPrototype.cs --timeout 35
 ```
 
 Проверочные Development-сборки I-010–I-040 удалены при закрытии эстафеты.
 Для нового прогона в Player собрать ContainerSearch с временно включённым
 Pipeline Runtime. Запускать исполняемый файл
-с рабочей папкой проекта. [VerifySearchPlayer.cs](../AgentScripts/VerifySearchPlayer.cs)
+с рабочей папкой проекта. [VerifySearchPlayer.cs](../AgentScripts/Verification/VerifySearchPlayer.cs)
 выбирает маршрут по версии собранной игры и передаёт ему ссылки на библиотеки
 ввода и DI через компилятор Pipeline 1.0.0. Для сборки I-010 используется команда:
 
 ```powershell
-unity command script eval --runtime TrashHunterSearch --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/VerifySearchPlayer.cs --timeout 35
+unity command script eval --runtime TrashHunterSearch --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/Verification/VerifySearchPlayer.cs --timeout 35
 ```
 
 Итоговый Player собирать с выключенным Pipeline Runtime. После локальной
@@ -209,16 +209,16 @@ unity command script eval --runtime TrashHunterSearch --caller plugin --skill un
 
 ## Проверка поясной сумки
 
-[VerifyBagSelection.cs](../AgentScripts/VerifyBagSelection.cs) проходит I-020
-виртуальным вводом на свежем Play Mode. [VerifySearchPrototype.cs](../AgentScripts/VerifySearchPrototype.cs)
+[VerifyBagSelection.cs](../AgentScripts/Verification/VerifyBagSelection.cs) проходит I-020
+виртуальным вводом на свежем Play Mode. [VerifySearchPrototype.cs](../AgentScripts/Verification/VerifySearchPrototype.cs)
 учитывает подбор сумки при повторе маршрута I-010 в актуальной сцене.
 Оба скрипта находятся вне `Assets/`.
 
 ~~~powershell
 $projectPath = 'F:\UnityProjects\Trash-Hunter'
 $pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
-unity command script eval @pipeline -- --file AgentScripts/VerifyBagSelection.cs --timeout 55
-unity command script eval --runtime TrashHunterBag --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/VerifySearchPlayer.cs --timeout 55
+unity command script eval @pipeline -- --file AgentScripts/Verification/VerifyBagSelection.cs --timeout 55
+unity command script eval --runtime TrashHunterBag --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/Verification/VerifySearchPlayer.cs --timeout 55
 ~~~
 
 Использовать свежую сессию для каждого маршрута. Player запускать с рабочей
@@ -228,9 +228,9 @@ unity command script eval --runtime TrashHunterBag --caller plugin --skill unity
 
 В I-030 [ContainerSearch](../Assets/TrashHunter/Scenes/ContainerSearch.unity)
 получила отдельный выход со двора и вторую укладку. Экран дома, предложение,
-пауза и продолжение находятся в [SearchHud](../Assets/TrashHunter/Content/Search/SearchHud.prefab).
+пауза и продолжение находятся в [SearchHud](../Assets/TrashHunter/Content/Search/Prefabs/SearchHud.prefab).
 Сцена и префаб сохранены через `CreateSearchPrototype.AddExpedition`.
-Подробный маршрут сохраняет [VerifyExpedition.cs](../AgentScripts/VerifyExpedition.cs).
+Подробный маршрут сохраняет [VerifyExpedition.cs](../AgentScripts/Verification/VerifyExpedition.cs).
 
 Обычный Windows Player хранит один слот в `prototype/` внутри
 `Application.persistentDataPath`. В Editor используется `prototype-editor/`.
@@ -242,7 +242,7 @@ unity command script eval --runtime TrashHunterBag --caller plugin --skill unity
 Для тестов в Editor перед Play Mode задать переменные **в процессе Unity**
 через `script eval`: абсолютный путь нового тестового каталога в
 `TRASH_HUNTER_EDITOR_SAVE_DIR` и фазу `prepare` или `resume` в `TRASH_HUNTER_CHECK`.
-Запустить `script eval -- --file AgentScripts/VerifyExpedition.cs --timeout 55`
+Запустить `script eval -- --file AgentScripts/Verification/VerifyExpedition.cs --timeout 55`
 с флагами проекта и Pipeline из предыдущего раздела. Между фазами выйти из
 Play Mode и начать новый. После теста снять переменные. Для регрессии сумки
 использовать свежий слот и `VerifyBagSelection.cs`.
@@ -254,7 +254,7 @@ Development Player `TrashHunterCycle.exe` и запустить с рабоче�
 используют тот же тестовый каталог и каждый раз новый процесс.
 
 ~~~powershell
-unity command script eval --runtime TrashHunterCycle --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/VerifySearchPlayer.cs --timeout 55
+unity command script eval --runtime TrashHunterCycle --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/Verification/VerifySearchPlayer.cs --timeout 55
 ~~~
 
 Фаза `recovery` читает ранее подготовленную копию при пропавшем или
@@ -272,7 +272,7 @@ unity command script eval --runtime TrashHunterCycle --caller plugin --skill uni
 выполнение. Запускать QA Player с рабочей папкой проекта и изолированным
 `-trash-hunter-save-dir <абсолютный-путь>`.
 
-Маршрут [VerifyPlaytest.cs](../AgentScripts/VerifyPlaytest.cs) состоит из
+Маршрут [VerifyPlaytest.cs](../AgentScripts/Verification/VerifyPlaytest.cs) состоит из
 `playtest-first` и `playtest-resume`. Каждая фаза запускается в отдельном
 процессе QA Player с тем же тестовым каталогом. Передать имя фазы через
 `-trash-hunter-check`. Первая фаза заканчивается обычным закрытием Unity,
@@ -281,7 +281,7 @@ unity command script eval --runtime TrashHunterCycle --caller plugin --skill uni
 лампой и радио в руке.
 
 ~~~powershell
-unity command script eval --runtime TrashHunterPrototypeQA --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/VerifySearchPlayer.cs --timeout 65
+unity command script eval --runtime TrashHunterPrototypeQA --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/Verification/VerifySearchPlayer.cs --timeout 65
 ~~~
 
 Результаты сборок и фаз, полный маршрут, управление и ограничения сохранены
@@ -290,7 +290,7 @@ unity command script eval --runtime TrashHunterPrototypeQA --caller plugin --ski
 
 ## Проверка переноса в сумке и локалей
 
-[UiStrings](../Assets/TrashHunter/Runtime/UiStrings.cs) загружает ключи из
+[UiStrings](../Assets/TrashHunter/Runtime/Ui/UiStrings.cs) загружает ключи из
 [таблиц RU и EN](../Assets/TrashHunter/Resources/Localization). Для новых
 строк добавлять один ключ в обе таблицы. Подстановки в переводах задаются
 как {0}, {1} и далее. Русские строки служат исходными и запасными.
@@ -298,7 +298,7 @@ unity command script eval --runtime TrashHunterPrototypeQA --caller plugin --ski
 сумки. В процессе Editor тот же выбор задаёт `TRASH_HUNTER_LOCALE=en`.
 Для русской локали можно указать `ru` или использовать исходный выбор.
 
-[VerifyBagRearrangement.cs](../AgentScripts/VerifyBagRearrangement.cs) работает
+[VerifyBagRearrangement.cs](../AgentScripts/Verification/VerifyBagRearrangement.cs) работает
 через тот же ввод сцены и пишет снимки в `Logs/I-060/`. Для каждой локали
 указать новый абсолютный каталог автослота через
 `TRASH_HUNTER_EDITOR_SAVE_DIR` в процессе Unity. Последовательно задать
@@ -313,7 +313,7 @@ unity command script eval --runtime TrashHunterPrototypeQA --caller plugin --ski
 ~~~powershell
 $projectPath = 'F:\UnityProjects\Trash-Hunter'
 $pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
-unity command script eval @pipeline -- --file AgentScripts/VerifyBagRearrangement.cs --timeout 50
+unity command script eval @pipeline -- --file AgentScripts/Verification/VerifyBagRearrangement.cs --timeout 50
 ~~~
 
 После проверки восстановить прежние значения переменных и временные настройки
@@ -322,7 +322,7 @@ Editor. [Отчёт I-060](sessions/2026-11-25-i060-bag-rearrangement.md) сод
 
 ## Проверка перетаскивания с весом
 
-[VerifyWeightedDrag.cs](../AgentScripts/VerifyWeightedDrag.cs) использует
+[VerifyWeightedDrag.cs](../AgentScripts/Verification/VerifyWeightedDrag.cs) использует
 виртуальную клавиатуру и мышь в сцене ContainerSearch. Выбрать пустой
 каталог автослота через `TRASH_HUNTER_EDITOR_SAVE_DIR` и указать локаль
 `TRASH_HUNTER_LOCALE` в процессе Editor. В фазе `drag` проверяются
@@ -334,14 +334,14 @@ Editor. [Отчёт I-060](sessions/2026-11-25-i060-bag-rearrangement.md) сод
 ~~~powershell
 $projectPath = 'F:\UnityProjects\Trash-Hunter'
 $pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
-unity command script eval @pipeline -- --file AgentScripts/VerifyWeightedDrag.cs --timeout 48
+unity command script eval @pipeline -- --file AgentScripts/Verification/VerifyWeightedDrag.cs --timeout 48
 ~~~
 
 Восстановить значения переменных и временные настройки Editor после прогона.
 
 ## Проверка прыжка и наведения
 
-Для [VerifyJumpAndAim.cs](../AgentScripts/VerifyJumpAndAim.cs) открыть
+Для [VerifyJumpAndAim.cs](../AgentScripts/Verification/VerifyJumpAndAim.cs) открыть
 ContainerSearch и задать пустой абсолютный каталог автослота через
 `TRASH_HUNTER_EDITOR_SAVE_DIR` в процессе Editor. Задать
 `TRASH_HUNTER_LOCALE` и начать новый Play Mode для каждой локали.
@@ -352,7 +352,7 @@ ContainerSearch и задать пустой абсолютный каталог
 ~~~powershell
 $projectPath = 'F:\UnityProjects\Trash-Hunter'
 $pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
-unity command script eval @pipeline -- --file AgentScripts/VerifyJumpAndAim.cs --timeout 48
+unity command script eval @pipeline -- --file AgentScripts/Verification/VerifyJumpAndAim.cs --timeout 48
 ~~~
 
 Завершить тестовый Play Mode и восстановить переменные. Результат и
@@ -365,7 +365,7 @@ unity command script eval @pipeline -- --file AgentScripts/VerifyJumpAndAim.cs -
 На текущей ревизии проверка новой вылазки описана в следующем разделе.
 Для остальных фаз этого маршрута брать соответствующий старый слот. В процессе Editor задать изолированный каталог
 `TRASH_HUNTER_EDITOR_SAVE_DIR` и фазу `TRASH_HUNTER_CHECK`. Начинать новый
-Play Mode после смены фазы. [VerifySearchPile.cs](../AgentScripts/VerifySearchPile.cs)
+Play Mode после смены фазы. [VerifySearchPile.cs](../AgentScripts/Verification/VerifySearchPile.cs)
 использует виртуальную клавиатуру и мышь.
 
 | Фаза | Слот и ожидаемый результат |
@@ -377,7 +377,7 @@ Play Mode после смены фазы. [VerifySearchPile.cs](../AgentScripts/
 ~~~powershell
 $projectPath = 'F:\UnityProjects\Trash-Hunter'
 $pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
-unity command script eval @pipeline -- --file AgentScripts/VerifySearchPile.cs --timeout 48
+unity command script eval @pipeline -- --file AgentScripts/Verification/VerifySearchPile.cs --timeout 48
 ~~~
 
 После прогона остановить тестовый Play Mode и восстановить переменные.
@@ -386,7 +386,7 @@ unity command script eval @pipeline -- --file AgentScripts/VerifySearchPile.cs -
 
 ## Проверка упаковок и тиров
 
-[VerifyLootPackages.cs](../AgentScripts/VerifyLootPackages.cs) проверяет
+[VerifyLootPackages.cs](../AgentScripts/Verification/VerifyLootPackages.cs) проверяет
 упаковки виртуальным вводом в ContainerSearch. Перед каждой фазой начать
 новый Play Mode. Задать переменные в процессе Editor.
 
@@ -400,7 +400,7 @@ unity command script eval @pipeline -- --file AgentScripts/VerifySearchPile.cs -
 ~~~powershell
 $projectPath = 'F:\UnityProjects\Trash-Hunter'
 $pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
-unity command script eval @pipeline -- --file AgentScripts/VerifyLootPackages.cs --timeout 40
+unity command script eval @pipeline -- --file AgentScripts/Verification/VerifyLootPackages.cs --timeout 40
 ~~~
 
 У Windows Player для теста навыка предусмотрен флаг
@@ -411,7 +411,7 @@ unity command script eval @pipeline -- --file AgentScripts/VerifyLootPackages.cs
 
 ## Замер навала в Editor
 
-[MeasureSearchPile.cs](../AgentScripts/MeasureSearchPile.cs) измеряет три
+[MeasureSearchPile.cs](../AgentScripts/Verification/MeasureSearchPile.cs) измеряет три
 отрезка на копии одного автослота с 23 активными телами и закрытыми
 упаковками. Скопировать [тестовый автослот I-110](../AgentScripts/Fixtures/i110-pile-measurement.json)
 с seed 706296053 под именем `slot.json` в новый каталог прогона.
@@ -421,7 +421,7 @@ unity command script eval @pipeline -- --file AgentScripts/VerifyLootPackages.cs
 ~~~powershell
 $projectPath = 'F:\UnityProjects\Trash-Hunter'
 $pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
-unity command script eval @pipeline -- --file AgentScripts/MeasureSearchPile.cs --timeout 45
+unity command script eval @pipeline -- --file AgentScripts/Verification/MeasureSearchPile.cs --timeout 45
 ~~~
 
 Запись содержит размеры Game View, профиль, конфигурацию ПК, p50 и p95
@@ -450,12 +450,12 @@ $projectPath = 'F:\UnityProjects\Trash-Hunter'
 Set-Location $projectPath
 # При запуске Player дополнительно передать -trash-hunter-locale ru или en,
 # -trash-hunter-save-dir <каталог> и -trash-hunter-check i120-first.
-unity command script eval --runtime TrashHunterPileQA --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/VerifySearchPlayer.cs --timeout 60
+unity command script eval --runtime TrashHunterPileQA --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/Verification/VerifySearchPlayer.cs --timeout 60
 # Дождаться штатного выхода, запустить новый процесс с i120-resume
 # и повторить ту же команду eval.
 ~~~
 
-[VerifySearchAcceptance.cs](../AgentScripts/VerifySearchAcceptance.cs)
+[VerifySearchAcceptance.cs](../AgentScripts/Verification/VerifySearchAcceptance.cs)
 управляет Player виртуальными клавиатурой и мышью. Результат содержит
 проверки состояния, границы строк и замеры кадров игровой камеры.
 Результаты обеих фаз, настройки замера, комплект Release и ограничения
@@ -463,7 +463,7 @@ unity command script eval --runtime TrashHunterPileQA --caller plugin --skill un
 
 ## Проверка запуска прохождения
 
-[VerifyRunStartup.cs](../AgentScripts/VerifyRunStartup.cs) проверяет холодный
+[VerifyRunStartup.cs](../AgentScripts/Verification/VerifyRunStartup.cs) проверяет холодный
 старт на ревизии I-140 (`e23dae7`) с пустой сценой Editor. Для текущей ревизии
 использовать проверку координатора ниже. Для каждого прогона назначить новый абсолютный каталог в
 `TRASH_HUNTER_EDITOR_SAVE_DIR` в процессе Editor. Оставить каталог пустым
@@ -473,7 +473,7 @@ unity command script eval --runtime TrashHunterPileQA --caller plugin --skill un
 ~~~powershell
 $projectPath = 'F:\UnityProjects\Trash-Hunter'
 $pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
-unity command script eval @pipeline -- --file AgentScripts/VerifyRunStartup.cs --timeout 18
+unity command script eval @pipeline -- --file AgentScripts/Verification/VerifyRunStartup.cs --timeout 18
 ~~~
 
 Скрипт сверяет состояние до появления объектов поиска и затем подключает
@@ -507,14 +507,34 @@ Mode, восстановить исходную сцену, переменные
 ~~~powershell
 $projectPath = 'F:\UnityProjects\Trash-Hunter'
 $pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
-unity command script eval @pipeline -- --file AgentScripts/VerifySceneTransitions.cs --timeout 50
+unity command script eval @pipeline -- --file AgentScripts/Verification/VerifySceneTransitions.cs --timeout 50
 ~~~
 
 После каждого прогона выйти из Play Mode. После серии вернуть переменные и
 открытую до проверки сцену. Для авторинга Startup и Home открыть сохранённый
 ContainerSearch в Edit Mode и использовать `script run --file
-AgentScripts/AuthorWorldScenes.cs --entry AuthorWorldScenes.Create`.
+AgentScripts/Authoring/AuthorWorldScenes.cs --entry AuthorWorldScenes.Create`.
 [Результаты и замеры I-150](sessions/2026-11-27-i150-scene-coordinator.md).
+
+## Структура проекта
+
+| Путь от корня | Содержание |
+|---|---|
+| `Assets/TrashHunter/Scenes/` | Игровые сцены. `Startup` начинает загрузку игрового сеанса, `ContainerSearch` содержит площадку поиска, `Home` содержит домашнюю область и точку входа. |
+| `Assets/TrashHunter/Content/Search/` | Ассеты поиска в `Materials/`, `Meshes/`, `Prefabs/` и `Textures/`. |
+| `Assets/TrashHunter/Runtime/` | `World/` для загрузки и областей сцен, `Run/` для состояния и автослота, `Search/` для поиска и игрока, `Inventory/` для сумки и каталога, `Ui/` для представлений и строк. |
+| `Assets/TrashHunter/Resources/` | Каталог добычи и строки RU/EN. Пути относительно `Resources` используются при загрузке. |
+| `Assets/Diagnostics/` | Техническая сцена `SetupCheck`. Шаблонная `SampleScene` находится в `Assets/Scenes/`. |
+| `Assets/Settings/` | Профили рендера Unity и общий Input Actions в `Input/`. |
+| `AgentScripts/` | `Authoring/` для авторинга, `Diagnostics/` для проверки установки, `Verification/` для проверок и замеров, `Fixtures/` для их входных данных. |
+
+В `ContainerSearch` окружение лежит в `Environment`, свет в `Lighting`,
+выход, точки входа и стартовая сумка в `Interaction Points`, экземпляры
+предметов в `Search Items`, маркеры прежних укладок в `Legacy Layouts`.
+`Search Scope` и `EventSystem` находятся в корне. Координатор и область
+сцены находят их среди корневых объектов. В `Home` точка `Home Entry`
+лежит под `Home Scope`. Сохраняйте точки входа и выходы в сериализованных
+ссылках, перемещайте ассеты и сцены через Editor с сохранением GUID.
 
 ## Официальные инструкции
 

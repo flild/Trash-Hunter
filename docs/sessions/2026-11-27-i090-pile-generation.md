@@ -6,15 +6,15 @@
 меняет положение рядом с правым бортом. Свободная площадка у переднего
 борта позволяет войти и выйти по E.
 
-[SearchPile](../../Assets/TrashHunter/Runtime/SearchPile.cs) учитывает размеры
+[SearchPile](../../Assets/TrashHunter/Runtime/Search/SearchPile.cs) учитывает размеры
 физических коробок, перекрытие с уже размещёнными вещами и статические
 коллайдеры сцены. Запросы к сцене используют штатные API Unity.
 [Unity Physics.OverlapBox](https://docs.unity.com/en-us/engine/6000.0/script-reference/unityengine/physics/overlapbox)
 
-[GameState](../../Assets/TrashHunter/Runtime/GameState.cs) генерирует первый
+[GameState](../../Assets/TrashHunter/Runtime/Run/GameState.cs) генерирует первый
 навал и следующий при отправлении из дома. Seed зависит от ID прохождения
 и номера вылазки, поэтому повтор той же записи воспроизводим. В
-[RunSnapshot](../../Assets/TrashHunter/Runtime/RunSnapshot.cs) записываются
+[RunSnapshot](../../Assets/TrashHunter/Runtime/Run/RunSnapshot.cs) записываются
 seed, версия генератора, ID и фактические позы. При продолжении берутся
 сохранённые данные. Формат автослота остался 1, новые поля для старых
 слотов принимают значение 0. Открытие упаковок и тиры переданы в I-100.

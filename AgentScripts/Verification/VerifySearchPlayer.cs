@@ -8,14 +8,14 @@ var checkArgs = Environment.GetCommandLineArgs();
 var checkIndex = Array.IndexOf(checkArgs, "-trash-hunter-check");
 var check = checkIndex >= 0 && checkIndex + 1 < checkArgs.Length ? checkArgs[checkIndex + 1] : null;
 var routeFile = check?.StartsWith("i120-", StringComparison.Ordinal) == true
-    ? "AgentScripts/VerifySearchAcceptance.cs"
+    ? "AgentScripts/Verification/VerifySearchAcceptance.cs"
     : check?.StartsWith("playtest-", StringComparison.Ordinal) == true
-    ? "AgentScripts/VerifyPlaytest.cs"
+    ? "AgentScripts/Verification/VerifyPlaytest.cs"
     : checkIndex >= 0
-    ? "AgentScripts/VerifyExpedition.cs"
+    ? "AgentScripts/Verification/VerifyExpedition.cs"
     : typeof(TrashHunter.GameState).GetProperty("Bag") == null
-    ? "AgentScripts/VerifySearchPrototype.cs"
-    : "AgentScripts/VerifyBagSelection.cs";
+    ? "AgentScripts/Verification/VerifySearchPrototype.cs"
+    : "AgentScripts/Verification/VerifyBagSelection.cs";
 var source = Path.GetFullPath(routeFile);
 var assembly = typeof(Wait).Assembly;
 var requestType = assembly.GetType("Unity.Pipeline.Compilation.CompilationRequest", true);

@@ -11,7 +11,7 @@ public static class AuthorWorldScenes
     private const string SearchPath = "Assets/TrashHunter/Scenes/ContainerSearch.unity";
     private const string HomePath = "Assets/TrashHunter/Scenes/Home.unity";
     private const string StartupPath = "Assets/TrashHunter/Scenes/Startup.unity";
-    private const string Prefabs = "Assets/TrashHunter/Content/Search";
+    private const string Prefabs = "Assets/TrashHunter/Content/Search/Prefabs";
 
     public static object Create()
     {

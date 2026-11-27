@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public static class AuthorSearchHud
 {
-    private const string Path = "Assets/TrashHunter/Content/Search/SearchHud.prefab";
+    private const string Path = "Assets/TrashHunter/Content/Search/Prefabs/SearchHud.prefab";
     private static readonly Color32 Accent = new(240, 199, 118, 255);
 
     public static object Apply()

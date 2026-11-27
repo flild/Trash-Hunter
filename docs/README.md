@@ -7,7 +7,7 @@ I-060–I-120 закрыты.
 ## Порядок чтения
 
 Активная эстафета — [локации и квесты](relay/world/PLAN.md).
-[Передача](relay/world/HANDOFF.md) · [Отчёт подготовки](sessions/2026-11-27-world-relay.md).
+[Передача I-160](relay/world/HANDOFF.md) · [Отчёт подготовки](sessions/2026-11-27-world-relay.md).
 [Отчёт I-140](sessions/2026-11-27-i140-run-startup.md) описывает проверку холодного
 старта в Unity и совместимости старых файлов.
 [Отчёт I-150](sessions/2026-11-27-i150-scene-coordinator.md) содержит
@@ -23,7 +23,8 @@ I-060–I-120 закрыты.
 
 | Документ | Основное содержание |
 |---|---|
-| [DEVELOPMENT.md](DEVELOPMENT.md) | Настроенное окружение, команды CLI/Pipeline и историческая проверка SetupCheck |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | Структура Unity-проекта, окружение, команды CLI/Pipeline и проверки |
+| [Уборка проекта, 27 ноября](sessions/2026-11-27-repository-organization.md) | Перенос ассетов, иерархия сцен, проверки и передача I-160 |
 | [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) | Источник и лицензия VContainer для локальных сборок |
 | [ROADMAP.md](ROADMAP.md) | Этапы и условия перехода, объём выпуска, цели качества, поддержка и совместимость |
 | [BACKLOG.md](BACKLOG.md) | Конкретные задачи, зависимости и критерии готовности |
@@ -37,7 +38,7 @@ I-060–I-120 закрыты.
 | [PROTOTYPE.md](design/PROTOTYPE.md) | Проверка поиска в первом рабочем срезе и исследовательские гипотезы |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Архитектура, VContainer, границы систем, данные, сохранения и восстановление |
 | [DESIGN_REVIEW.md](design/DESIGN_REVIEW.md) | Итоговая сверка D-080, сквозной маршрут, покрытие A-01–A-12 и история ревизии |
-| [План](relay/PLAN.md), [контекст](relay/CONTEXT.md), [передача](relay/HANDOFF.md) | Архив цели, критериев и договорённостей эстафеты прототипа |
+| [План](relay/prototype/PLAN.md), [контекст](relay/prototype/CONTEXT.md), [передача](relay/prototype/HANDOFF.md) | Архив цели, критериев и договорённостей эстафеты прототипа |
 | [Отчёт 16 ноября](sessions/2026-11-16-design-foundation.md) | Что изменено и проверено в этой сессии |
 | [Отчёт D-005, 22 ноября](sessions/2026-11-22-document-review.md) | Первичная ревизия, ответы владельца и проверки документации |
 | [Отчёт D-006, 22 ноября](sessions/2026-11-22-progression-direction.md) | Согласование пути развития, домашнего труда и новых источников вещей; свежие проверки |

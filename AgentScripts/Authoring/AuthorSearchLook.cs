@@ -15,14 +15,16 @@ using Object = UnityEngine.Object;
 public static class AuthorSearchLook
 {
     private const string Content = "Assets/TrashHunter/Content/Search";
-    private const string Art = Content + "/PileArt";
-    private const string MeshPath = Art + "/PileMeshes.asset";
+    private const string Materials = Content + "/Materials";
+    private const string Textures = Content + "/Textures";
+    private const string Meshes = Content + "/Meshes";
+    private const string MeshPath = Meshes + "/PileMeshes.asset";
 
     public static object Apply()
     {
         var scene = SceneManager.GetActiveScene();
         if (scene.path != "Assets/TrashHunter/Scenes/ContainerSearch.unity" || scene.isDirty ||
-            EditorApplication.isPlayingOrWillChangePlaymode || AssetDatabase.IsValidFolder(Art))
+            EditorApplication.isPlayingOrWillChangePlaymode || AssetDatabase.LoadMainAssetAtPath(MeshPath) != null)
             throw new InvalidOperationException("Open the saved I-100 ContainerSearch scene in Edit Mode.");
 
         var container = GameObject.Find("Roll-off Container").transform;
@@ -40,7 +42,9 @@ public static class AuthorSearchLook
         var meshCount = 0;
         var mergedSources = 0;
         var mergedRenderers = 0;
-        AssetDatabase.CreateFolder(Content, "PileArt");
+        foreach (var folder in new[] { "Materials", "Textures", "Meshes" })
+            if (!AssetDatabase.IsValidFolder(Content + "/" + folder))
+                AssetDatabase.CreateFolder(Content, folder);
 
         var concrete = Finish(Existing("Concrete"), "Concrete", (x, y, n) =>
             Shade(n + (y is 0 or 63 ? -17 : 0) + (x is 0 or 63 ? -9 : 0)));
@@ -142,7 +146,7 @@ public static class AuthorSearchLook
         return new { materialCount, meshCount, mergedSources, mergedRenderers, shadowDistance = pipeline.shadowDistance, shadowCascades = pipeline.shadowCascadeCount };
 
         Material Existing(string name) =>
-            AssetDatabase.LoadAssetAtPath<Material>($"{Content}/{name}.mat") ??
+            AssetDatabase.LoadAssetAtPath<Material>($"{Materials}/{name}.mat") ??
             throw new InvalidOperationException("Missing search material: " + name);
 
         Material NewFinish(string name, int color, Func<int, int, int, Color32> pixel)
@@ -150,7 +154,7 @@ public static class AuthorSearchLook
             var material = new Material(enamel) { name = name };
             material.mainTextureScale = Vector2.one;
             SetColor(material, color);
-            AssetDatabase.CreateAsset(material, $"{Art}/{name}.mat");
+            AssetDatabase.CreateAsset(material, $"{Materials}/{name}.mat");
             materialCount++;
             return Finish(material, name, pixel);
         }
@@ -169,7 +173,7 @@ public static class AuthorSearchLook
 
             image.SetPixels32(pixels);
             image.Apply();
-            var path = $"{Art}/{name}.png";
+            var path = $"{Textures}/{name}.png";
             File.WriteAllBytes(path, image.EncodeToPNG());
             Object.DestroyImmediate(image);
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);

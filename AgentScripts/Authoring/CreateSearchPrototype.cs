@@ -14,7 +14,8 @@ using Object = UnityEngine.Object;
 public static class CreateSearchPrototype
 {
     private const string Root = "Assets/TrashHunter";
-    private const string Content = Root + "/Content/Search";
+    private const string Materials = Root + "/Content/Search/Materials";
+    private const string Prefabs = Root + "/Content/Search/Prefabs";
     private const string ScenePath = Root + "/Scenes/ContainerSearch.unity";
 
     public static object Create()
@@ -26,7 +27,8 @@ public static class CreateSearchPrototype
             throw new InvalidOperationException("ContainerSearch already exists. Open and edit the saved scene.");
 
         EnsureFolder(Root + "/Scenes");
-        EnsureFolder(Content);
+        EnsureFolder(Materials);
+        EnsureFolder(Prefabs);
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         if (!font.HasCharacter('З'))
@@ -155,7 +157,7 @@ public static class CreateSearchPrototype
         if (serialized.FindProperty("starterBag").objectReferenceValue != null)
             throw new InvalidOperationException("The scene already has a starter bag.");
 
-        var hudPath = Content + "/SearchHud.prefab";
+        var hudPath = Prefabs + "/SearchHud.prefab";
         var hudRoot = PrefabUtility.LoadPrefabContents(hudPath);
         try
         {
@@ -172,7 +174,7 @@ public static class CreateSearchPrototype
             PrefabUtility.UnloadPrefabContents(hudRoot);
         }
 
-        Material Existing(string name) => AssetDatabase.LoadAssetAtPath<Material>($"{Content}/{name}.mat");
+        Material Existing(string name) => AssetDatabase.LoadAssetAtPath<Material>($"{Materials}/{name}.mat");
         var dark = Existing("Dark_Metal");
         var gold = Existing("Safety_Paint");
         var cream = Existing("Ivory");
@@ -248,7 +250,7 @@ public static class CreateSearchPrototype
         if (layout.Length != definitions.Count || layout.Any(item => !definitions.ContainsKey(item.key)))
             throw new InvalidOperationException("Alternate layout must refer to the current five item definitions.");
 
-        var hudPath = Content + "/SearchHud.prefab";
+        var hudPath = Prefabs + "/SearchHud.prefab";
         var hudRoot = PrefabUtility.LoadPrefabContents(hudPath);
         var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         try
@@ -288,8 +290,8 @@ public static class CreateSearchPrototype
 
         var exit = Marker("Yard Exit", new(0, 0, -3.82f), Vector3.zero);
         Assign(session, "exit", exit);
-        var dark = AssetDatabase.LoadAssetAtPath<Material>(Content + "/Dark_Metal.mat");
-        var safety = AssetDatabase.LoadAssetAtPath<Material>(Content + "/Safety_Paint.mat");
+        var dark = AssetDatabase.LoadAssetAtPath<Material>(Materials + "/Dark_Metal.mat");
+        var safety = AssetDatabase.LoadAssetAtPath<Material>(Materials + "/Safety_Paint.mat");
         Box(exit, "Exit marking", new(0, 0.006f, 0.32f), new(2.55f, 0.026f, 0.08f), safety);
         Box(exit, "Sign post", new(1.34f, 0.57f, 0), new(0.06f, 1.14f, 0.06f), dark);
         Box(exit, "Exit sign", new(1.34f, 1.20f, 0), new(0.78f, 0.28f, 0.052f), dark);
@@ -437,7 +439,7 @@ public static class CreateSearchPrototype
             throw new InvalidOperationException("Failed to save the playtest scene.");
         return new { definitions = 12, activePieces = pieces.Length - 1, layouts = 3, legacyPieces = 1 };
 
-        Material Existing(string name) => AssetDatabase.LoadAssetAtPath<Material>($"{Content}/{name}.mat");
+        Material Existing(string name) => AssetDatabase.LoadAssetAtPath<Material>($"{Materials}/{name}.mat");
 
         void SetLamp(SearchItem item, string id, string name, int price, string condition, Material first, Material secondFinish)
         {
@@ -611,7 +613,7 @@ public static class CreateSearchPrototype
             throw new InvalidOperationException("Failed to save the search packages.");
         return new { scene = scene.path, packages = 2, nestedItems = 4 };
 
-        Material Existing(string name) => AssetDatabase.LoadAssetAtPath<Material>($"{Content}/{name}.mat");
+        Material Existing(string name) => AssetDatabase.LoadAssetAtPath<Material>($"{Materials}/{name}.mat");
 
         GameObject Part(SearchItem item, string name)
         {
@@ -936,7 +938,7 @@ public static class CreateSearchPrototype
         var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
         material.SetColor("_BaseColor", ColorFromHex(color));
         material.SetFloat("_Smoothness", 0.18f);
-        AssetDatabase.CreateAsset(material, $"{Content}/{name.Replace(' ', '_')}.mat");
+        AssetDatabase.CreateAsset(material, $"{Materials}/{name.Replace(' ', '_')}.mat");
         return material;
     }
 
@@ -952,7 +954,7 @@ public static class CreateSearchPrototype
 
     private static T SavePrefab<T>(GameObject root, string name) where T : Component
     {
-        var prefab = PrefabUtility.SaveAsPrefabAsset(root, $"{Content}/{name}.prefab").GetComponent<T>();
+        var prefab = PrefabUtility.SaveAsPrefabAsset(root, $"{Prefabs}/{name}.prefab").GetComponent<T>();
         Object.DestroyImmediate(root);
         return prefab;
     }

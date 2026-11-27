@@ -8,13 +8,13 @@
 - На борту [ContainerSearch](../../Assets/TrashHunter/Scenes/ContainerSearch.unity)
   видна стартовая поясная сумка. Цель подсказывает её подобрать. Подбор
   открывает поиск и переноску.
-- В [SearchHud](../../Assets/TrashHunter/Content/Search/SearchHud.prefab)
+- В [SearchHud](../../Assets/TrashHunter/Content/Search/Prefabs/SearchHud.prefab)
   открывается сетка 3 × 2 по прототипному размеру из [экономики](../design/PROGRESSION_AND_ECONOMY.md).
   Цветной контур и текст показывают поворот, подходящую форму, занятые
   ячейки и выход за край. Отклонённая укладка оставляет вещь в руке.
-- Правила вместимости в [BagInventory](../../Assets/TrashHunter/Runtime/BagInventory.cs).
-  [GameState](../../Assets/TrashHunter/Runtime/GameState.cs) хранит добычу по ID,
-  а [SearchSession](../../Assets/TrashHunter/Runtime/SearchSession.cs) переносит те же
+- Правила вместимости в [BagInventory](../../Assets/TrashHunter/Runtime/Inventory/BagInventory.cs).
+  [GameState](../../Assets/TrashHunter/Runtime/Run/GameState.cs) хранит добычу по ID,
+  а [SearchSession](../../Assets/TrashHunter/Runtime/Search/SearchSession.cs) переносит те же
   физические экземпляры между миром, рукой и сумкой. Достать вещь можно за любую
   занятую ею ячейку. Для выкладки в мир из руки проверяются поверхность,
   пересечения и зазор у точки прохода.
@@ -37,7 +37,7 @@
 | Windows Player, I-020 | Те же 60 проверок, 56 059 кадров, 0 ошибок и предупреждений в Console Pipeline |
 | Изображение | Снимки Game View и внеэкранный рендер Player 1280 × 720. Проверены цель, читаемость ячеек внутри формы, поворот, оба вида отказа и пустая сетка |
 
-[Маршрут I-020](../../AgentScripts/VerifyBagSelection.cs) использует виртуальные
+[Маршрут I-020](../../AgentScripts/Verification/VerifyBagSelection.cs) использует виртуальные
 устройства через обычный игровой ввод. Он проверяет закрытые до подбора
 действия, выход с пустой сумкой, поворот, заполнение, осмотр другой вещи,
 отмену, безопасную выкладку и повторный подбор того же экземпляра. После

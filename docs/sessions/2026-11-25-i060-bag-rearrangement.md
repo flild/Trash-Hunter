@@ -10,13 +10,13 @@
 - Пока игрок выбирает место, исходный предмет остаётся в сетке, его плитка
   приглушена, название видно в строке переноса. Контур показывает допустимость размещения. Проверка допускает
   пересечь старые клетки выбранного предмета и учитывает все остальные вещи.
-- После успешной записи [GameState](../../Assets/TrashHunter/Runtime/GameState.cs)
+- После успешной записи [GameState](../../Assets/TrashHunter/Runtime/Run/GameState.cs)
   принимает новую раскладку с прежними ID, предметом в руке и его текущим
   поворотом. Для ввода и показа изменений используются
-  [SearchSession](../../Assets/TrashHunter/Runtime/SearchSession.cs) и
-  [BagView](../../Assets/TrashHunter/Runtime/BagView.cs).
+  [SearchSession](../../Assets/TrashHunter/Runtime/Search/SearchSession.cs) и
+  [BagView](../../Assets/TrashHunter/Runtime/Ui/BagView.cs).
 - Строки существующего uGUI и названия предметов в сетке читает
-  [UiStrings](../../Assets/TrashHunter/Runtime/UiStrings.cs) из
+  [UiStrings](../../Assets/TrashHunter/Runtime/Ui/UiStrings.cs) из
   [таблиц RU/EN](../../Assets/TrashHunter/Resources/Localization).
   Русский — исходная локаль. Английский включается параметром запуска или
   переменной процесса Editor. Способ и порядок проверки описаны в
@@ -28,7 +28,7 @@
 ## Свежая проверка в Editor
 
 Виртуальные клавиатура и мышь в
-[VerifyBagRearrangement.cs](../../AgentScripts/VerifyBagRearrangement.cs)
+[VerifyBagRearrangement.cs](../../AgentScripts/Verification/VerifyBagRearrangement.cs)
 проходят обычный ввод ContainerSearch, а снимки сделаны из Game View
 930 × 523. Для прогона использовались изолированные автослоты.
 Исходная тестовая запись формата 1 содержит пять ID из старого прототипа.

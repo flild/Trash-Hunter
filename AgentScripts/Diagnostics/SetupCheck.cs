@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 // setup utility is not compiled into the game.
 public static class SetupCheck
 {
-    private const string ScenePath = "Assets/Scenes/SetupCheck.unity";
+    private const string ScenePath = "Assets/Diagnostics/SetupCheck.unity";
 
     public static object Inspect()
     {
@@ -44,8 +44,8 @@ public static class SetupCheck
         if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null)
             throw new InvalidOperationException("SetupCheck already exists; inspect it instead.");
 
-        if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
-            AssetDatabase.CreateFolder("Assets", "Scenes");
+        if (!AssetDatabase.IsValidFolder("Assets/Diagnostics"))
+            AssetDatabase.CreateFolder("Assets", "Diagnostics");
         EditorSettings.serializationMode = SerializationMode.ForceText;
         UnityEditor.VersionControlSettings.mode = "Visible Meta Files";
 

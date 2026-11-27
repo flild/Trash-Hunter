@@ -1,6 +1,6 @@
 # 27 ноября 2026 — I-150, координатор сцен
 
-[SceneCoordinator](../../Assets/TrashHunter/Runtime/SceneCoordinator.cs)
+[SceneCoordinator](../../Assets/TrashHunter/Runtime/World/SceneCoordinator.cs)
 живёт в постоянной области приложения. Выбирает `Home` или `Search` по
 `GameState.Location` после чтения слота. В списке сборки первой идёт
 [Startup](../../Assets/TrashHunter/Scenes/Startup.unity).
