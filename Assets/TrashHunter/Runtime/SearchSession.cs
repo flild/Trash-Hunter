@@ -89,8 +89,10 @@ namespace TrashHunter
             mode = Mode.Continue;
             foreach (var item in items)
                 item.FreezeWorld(true);
-            ShowOverlay("Продолжить", state.AtHome ? "Дома" : $"Вылазка {state.Expedition}", string.Empty,
-                "Enter  Продолжить     Esc  Выйти", state.RecoveryNotice);
+            var summary = state.AtHome ? strings.Get("home.title") :
+                string.Format(strings.Get("continue.expedition"), state.Expedition);
+            ShowOverlay(strings.Get("continue.title"), summary, string.Empty,
+                strings.Get("continue.actions"), state.RecoveryNotice);
         }
 
         private void ApplySnapshot()
@@ -294,7 +296,7 @@ namespace TrashHunter
         }
 
         private string ItemName(SearchItem item) =>
-            strings.Get($"item.{item.Id}.name", strings.Get($"item.{item.Id}", item.DisplayName));
+            strings.ItemName(item.Id, item.DisplayName);
 
         private string AimLabel(SearchItem item)
         {
@@ -455,7 +457,7 @@ namespace TrashHunter
                     {
                         if (state.Sell(offer))
                         {
-                            receipt = $"{offer.Name}  +{offer.Price} ₽\n{offer.Condition}";
+                            receipt = $"{strings.ItemName(offer.Item.key, offer.Name)}  +{offer.Price} ₽\n{OfferCondition()}";
                             CloseOverlay();
                         }
                         else
@@ -473,10 +475,10 @@ namespace TrashHunter
 
         private void ShowReturn()
         {
-            var warning = held == null ? "Остальные вещи будут потеряны." :
-                "Вещь в руке будет потеряна вместе с оставленными находками.";
-            ShowOverlay("Уйти домой?", $"В сумке  {state.Bag.Count}", $"Домой отправятся только вещи из сумки.\n<color=#FFAA95>{warning}</color>",
-                "Enter  Уйти домой     Esc  Продолжить поиск", state.Error, true);
+            var warning = strings.Get(held == null ? "return.warning" : "return.warningWithHand");
+            var summary = string.Format(strings.Get("return.bag"), state.Bag.Count);
+            var details = $"{strings.Get("return.details")}\n<color=#FFAA95>{warning}</color>";
+            ShowOverlay(strings.Get("return.title"), summary, details, strings.Get("return.actions"), state.Error, true);
         }
 
         private void ShowHome()
@@ -485,12 +487,15 @@ namespace TrashHunter
             hud.ShowError(null);
             selection = Mathf.Clamp(selection, 0, Mathf.Max(0, state.Home.Count - 1));
             hud.Show(string.Empty, string.Empty, false);
-            hud.Expedition.ShowHome(state, selection, receipt);
+            hud.Expedition.ShowHome(state, selection, receipt, strings);
             UnlockCursor();
         }
 
-        private void ShowSale() => ShowOverlay("Продать вещь?", $"{offer.Price} ₽",
-            $"{offer.Name}\n{offer.Condition}", "Enter  Продать     Esc  Отмена", state.Error, state.Error != null);
+        private void ShowSale() => ShowOverlay(strings.Get("sale.title"), $"{offer.Price} ₽",
+            $"{strings.ItemName(offer.Item.key, offer.Name)}\n{OfferCondition()}",
+            strings.Get("sale.actions"), state.Error, state.Error != null);
+
+        private string OfferCondition() => strings.Get($"item.{offer.Item.key}.saleCondition", offer.Condition);
 
         private void ShowLoadError()
         {
@@ -505,9 +510,9 @@ namespace TrashHunter
                 CloseBag();
             EndInspection();
             mode = Mode.Pause;
-            ShowOverlay("Пауза", string.Empty,
-                state.AtHome ? "Игра продолжится дома." : "При выходе сохранится эта вылазка.",
-                "Enter / Esc  Продолжить     Q  Выйти из игры", state.Error, state.Error != null);
+            ShowOverlay(strings.Get("pause.title"), string.Empty,
+                strings.Get(state.AtHome ? "pause.home" : "pause.expedition"),
+                strings.Get("pause.actions"), state.Error, state.Error != null);
         }
 
         private void ShowOverlay(string title, string summary, string details, string keys, string message,

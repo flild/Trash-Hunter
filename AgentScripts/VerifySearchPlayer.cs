@@ -6,8 +6,10 @@ using Unity.Pipeline.Scripting;
 // Run the same route against Input System and VContainer in the development Player.
 var checkArgs = Environment.GetCommandLineArgs();
 var checkIndex = Array.IndexOf(checkArgs, "-trash-hunter-check");
-var routeFile = checkIndex >= 0 && checkIndex + 1 < checkArgs.Length &&
-    checkArgs[checkIndex + 1].StartsWith("playtest-", StringComparison.Ordinal)
+var check = checkIndex >= 0 && checkIndex + 1 < checkArgs.Length ? checkArgs[checkIndex + 1] : null;
+var routeFile = check?.StartsWith("i120-", StringComparison.Ordinal) == true
+    ? "AgentScripts/VerifySearchAcceptance.cs"
+    : check?.StartsWith("playtest-", StringComparison.Ordinal) == true
     ? "AgentScripts/VerifyPlaytest.cs"
     : checkIndex >= 0
     ? "AgentScripts/VerifyExpedition.cs"

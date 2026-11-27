@@ -31,6 +31,9 @@ namespace TrashHunter
         public string Get(string key, string fallback = null) =>
             entries.TryGetValue(key, out var value) ? value : fallback ?? key;
 
+        public string ItemName(string id, string fallback) =>
+            Get($"item.{id}.name", Get($"item.{id}", fallback));
+
         private void Load(string locale)
         {
             var asset = Resources.Load<TextAsset>($"Localization/{locale}");

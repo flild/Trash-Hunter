@@ -431,6 +431,36 @@ unity command script eval @pipeline -- --file AgentScripts/MeasureSearchPile.cs 
 остановить тестовый Play Mode и восстановить переменные Editor.
 [Результаты I-110](sessions/2026-11-27-i110-pile-look.md#сравнение-кадров).
 
+
+## Сквозная приёмка поиска в Windows Player
+
+Итоговый Player I-120 запускается из `Builds/I-120/`. Русский используется
+по умолчанию, для английского передать `-trash-hunter-locale en`.
+`-trash-hunter-save-dir <абсолютный-путь>` изолирует автослот прогона.
+
+Для инструментального повтора использовать Development Player
+`Builds/I-120-QA/TrashHunterPileQA.exe` с Pipeline Runtime. Скопировать
+`Logs/I-120/fixture.json` под именем `slot.json` в новый каталог для
+каждой локали. В обеих фазах локали использовать этот же каталог.
+Запускать Player с рабочей папкой проекта.
+
+~~~powershell
+$projectPath = 'F:\UnityProjects\Trash-Hunter'
+Set-Location $projectPath
+# При запуске Player дополнительно передать -trash-hunter-locale ru или en,
+# -trash-hunter-save-dir <каталог> и -trash-hunter-check i120-first.
+unity command script eval --runtime TrashHunterPileQA --caller plugin --skill unity-pipeline --format json -- --file AgentScripts/VerifySearchPlayer.cs --timeout 60
+# Дождаться штатного выхода, запустить новый процесс с i120-resume
+# и повторить ту же команду eval.
+~~~
+
+[VerifySearchAcceptance.cs](../AgentScripts/VerifySearchAcceptance.cs)
+управляет Player виртуальными клавиатурой и мышью. Результат содержит
+проверки состояния, границы строк и замеры кадров игровой камеры.
+В папках `Logs/I-120/final-ru/` и `Logs/I-120/final-en/` сохранены
+отчёты обеих фаз и кадры. Сценарий запуска, комплект Release и ограничения
+описаны в [отчёте I-120](sessions/2026-11-27-i120-windows-acceptance.md).
+
 ## Официальные инструкции
 
 - [Unity CLI](https://docs.unity.com/en-us/unity-cli/use-unity-cli)

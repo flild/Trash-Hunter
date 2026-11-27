@@ -169,7 +169,7 @@ try
     await Keys(0.78f, Key.S);
     await Keys(0f, Key.E);
     Check(hud.Expedition.gameObject.activeSelf &&
-        hud.Expedition.GetComponentsInChildren<Text>().Any(text => text.text == "Уйти домой?"),
+        hud.Expedition.GetComponentsInChildren<Text>().Any(text => text.text == (english ? "Go home?" : "Уйти домой?")),
         "The yard exit opens the return confirmation");
 
     return new { locale = english ? "en" : "ru", passed = checks.Count, checks };

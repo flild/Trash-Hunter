@@ -87,7 +87,7 @@ try
     var originalInstances = Object.FindObjectsByType<SearchItem>(FindObjectsInactive.Include).ToDictionary(item => item.Id);
     var stripItem = originalInstances[strip];
     var heading = hud.Expedition.GetComponentsInChildren<Text>(true).Single(t => t.name == "Heading");
-    Check(heading.text == "Продолжить", "The isolated autoslot opens through Continue");
+    Check(heading.text == (english ? "Continue" : "Продолжить"), "The isolated autoslot opens through Continue");
     await Tap(Key.Enter);
     Check(Cursor.lockState == CursorLockMode.Locked, "Continue returns to search");
     if (phase == "bag-resume")

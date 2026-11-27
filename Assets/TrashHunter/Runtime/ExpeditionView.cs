@@ -44,7 +44,7 @@ namespace TrashHunter
             feedback.color = isWarning ? Warning : Neutral;
         }
 
-        public void ShowHome(GameState state, int selection, string receipt)
+        internal void ShowHome(GameState state, int selection, string receipt, UiStrings strings)
         {
             const int visibleRows = 5;
             var rows = new StringBuilder();
@@ -53,15 +53,18 @@ namespace TrashHunter
             for (var i = first; i < last; i++)
             {
                 var offer = state.Quote(state.Home[i]);
+                var name = strings.ItemName(offer.Item.key, offer.Name);
                 if (i == selection)
-                    rows.AppendLine($"<color=#F0C776>›  {offer.Name}</color>");
+                    rows.AppendLine($"<color=#F0C776>›  {name}</color>");
                 else
-                    rows.AppendLine($"    {offer.Name}");
+                    rows.AppendLine($"    {name}");
             }
 
-            var details = state.Home.Count == 0 ? "Дома нет вещей для продажи." : rows.ToString().TrimEnd();
-            var sell = state.Home.Count == 0 ? string.Empty : "↑ / ↓  Выбрать     Enter  Узнать цену     ";
-            Show("Дома", $"Баланс  {state.Balance} ₽", details, sell + "E  Новая вылазка     Esc  Пауза",
+            var details = state.Home.Count == 0 ? strings.Get("home.empty") : rows.ToString().TrimEnd();
+            var keys = strings.Get("home.actions");
+            if (state.Home.Count > 0)
+                keys = $"{strings.Get("home.offer")}     {keys}";
+            Show(strings.Get("home.title"), string.Format(strings.Get("home.balance"), state.Balance), details, keys,
                 state.Error ?? receipt, state.Error != null);
         }
     }

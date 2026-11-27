@@ -17,7 +17,7 @@ namespace TrashHunter
 
         private static readonly Color IdleTint = new Color32(255, 246, 222, 255);
         private static readonly Color TargetTint = new Color32(240, 199, 118, 255);
-        private bool hasTarget;
+        private bool? previousHasTarget;
 
         public BagView Bag => bag;
         public ExpeditionView Expedition => expedition;
@@ -25,8 +25,9 @@ namespace TrashHunter
 
         public void Show(string action, string bindings, bool showReticle, SearchItem target = null, string nearby = "")
         {
-            var targetChanged = hasTarget != (target != null);
-            hasTarget = target != null;
+            var hasTarget = target != null;
+            var targetChanged = previousHasTarget != hasTarget;
+            previousHasTarget = hasTarget;
             var isPackage = hasTarget && target.IsPackage;
             if (targetChanged)
             {
@@ -35,7 +36,7 @@ namespace TrashHunter
                 prompt.rectTransform.anchorMin = position;
                 prompt.rectTransform.anchorMax = position;
                 prompt.rectTransform.anchoredPosition = offset;
-                nearbyAction.rectTransform.anchoredPosition = new Vector2(0f, hasTarget ? 83f : 118f);
+                nearbyAction.rectTransform.anchoredPosition = new Vector2(0f, hasTarget ? 83f : 126f);
                 reticle.rectTransform.sizeDelta = Vector2.one * (hasTarget ? 8f : 5f);
                 reticle.rectTransform.localRotation = Quaternion.Euler(0f, 0f, hasTarget ? 45f : 0f);
                 reticle.color = hasTarget ? TargetTint : IdleTint;
