@@ -6,6 +6,9 @@ I-060–I-120 закрыты.
 
 ## Порядок чтения
 
+Активная эстафета — [локации и квесты](relay/world/PLAN.md).
+[Передача](relay/world/HANDOFF.md) · [Отчёт подготовки](sessions/2026-11-27-world-relay.md).
+
 1. [AGENTS.md](../AGENTS.md) — постоянные правила работы.
 2. [PROJECT_STATE.md](PROJECT_STATE.md) — что существует сейчас.
 3. [NEXT_SESSION.md](NEXT_SESSION.md) — одна актуальная задача.
