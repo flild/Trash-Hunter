@@ -6,7 +6,7 @@ namespace TrashHunter
     [Serializable]
     internal sealed class RunSnapshot
     {
-        public const int CurrentFormat = 2;
+        public const int CurrentFormat = 3;
 
         public int format;
         public string runId;
@@ -24,12 +24,24 @@ namespace TrashHunter
         public PlayerPose player;
         public HomeItem[] home;
         public long cash;
+        public bool hasSold;
+        public QuestProgress[] quests = Array.Empty<QuestProgress>();
+        public string[] contacts = Array.Empty<string>();
 
         public RunSnapshot Copy()
         {
             var copy = (RunSnapshot)MemberwiseClone();
             copy.world = (WorldItem[])world.Clone();
+            copy.quests = (QuestProgress[])quests.Clone();
             return copy;
+        }
+
+        public void RemoveHomeItem(int index)
+        {
+            var remaining = new HomeItem[home.Length - 1];
+            Array.Copy(home, 0, remaining, 0, index);
+            Array.Copy(home, index + 1, remaining, index, home.Length - index - 1);
+            home = remaining;
         }
     }
 

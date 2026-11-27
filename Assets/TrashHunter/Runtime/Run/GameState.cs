@@ -16,14 +16,16 @@ namespace TrashHunter
         private SaveSlot slot;
         private BagInventory bag = new();
 
-        internal GameState(LootCatalog catalog)
+        internal GameState(LootCatalog catalog, QuestCatalog quests)
         {
             this.catalog = catalog;
             Trade = new TradeCounter(this, catalog);
+            Quests = new QuestJournal(this, quests);
         }
 
         internal bool SlotLoaded => slot != null;
         internal bool HasRun => current != null;
+        internal RunSnapshot Snapshot => current;
         internal bool ResumePending { get; private set; }
         public BagInventory Bag => bag;
         public bool HasBag => current.hasBag;
@@ -36,6 +38,7 @@ namespace TrashHunter
         public long Balance => current.cash;
         public IReadOnlyList<HomeItem> Home => current.home;
         public TradeCounter Trade { get; }
+        public QuestJournal Quests { get; }
         public string Error { get; private set; }
         public string RecoveryNotice => slot?.RecoveryNotice;
         internal PlayerPose Player => current.player;
@@ -267,11 +270,10 @@ namespace TrashHunter
                 return false;
 
             var next = current.Copy();
-            var remaining = new List<HomeItem>(current.home);
-            remaining.RemoveAt(index);
-            next.home = remaining.ToArray();
+            next.RemoveHomeItem(index);
             next.cash += price;
-            return Publish(next);
+            next.hasSold = true;
+            return Quests.ApplyFact(next, QuestAction.Sell, item.key) && Publish(next);
         }
 
         internal bool Depart(int previousExpedition, SearchPile pile, PlayerPose spawn)
@@ -301,7 +303,7 @@ namespace TrashHunter
             slot = null;
         }
 
-        private bool Publish(RunSnapshot next)
+        internal bool Publish(RunSnapshot next)
         {
             next.revision = current.revision + 1;
             next.utcTicks = DateTime.UtcNow.Ticks;
@@ -338,7 +340,8 @@ namespace TrashHunter
                 data.expedition < 1 || data.cash < 0 || data.home == null || data.world == null ||
                 data.pileGeneratorVersion is < 0 or > SearchPile.GeneratorVersion ||
                 !Finite(data.player.position) || !float.IsFinite(data.player.yaw) ||
-                !float.IsFinite(data.player.pitch) || Mathf.Abs(data.player.pitch) > 82f)
+                !float.IsFinite(data.player.pitch) || Mathf.Abs(data.player.pitch) > 82f ||
+                !Quests.Validate(data))
                 return false;
 
             var stored = new HashSet<HomeItem>();

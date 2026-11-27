@@ -13,6 +13,12 @@ namespace TrashHunter
 
         public SaleOffer Quote(HomeItem item) => new(item, catalog[item.key].Definition);
 
+        public bool Present(string questId, string stepId, HomeItem item) =>
+            state.Quests.Confirm(questId, stepId, QuestAction.Present, item);
+
+        public bool Deliver(string questId, string stepId, HomeItem item) =>
+            state.Quests.Confirm(questId, stepId, QuestAction.Deliver, item);
+
         public bool Sell(SaleOffer offer)
         {
             if (!catalog.TryGetDefinition(offer.Item.key ?? string.Empty, out var definition) ||

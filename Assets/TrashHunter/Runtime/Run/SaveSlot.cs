@@ -189,6 +189,12 @@ namespace TrashHunter
                     {
                         snapshot.location = JsonUtility.FromJson<LegacyLocation>(envelope.payload).atHome
                             ? RunLocation.Home : RunLocation.Search;
+                    }
+                    if (snapshot?.format is 1 or 2)
+                    {
+                        snapshot.hasSold = snapshot.cash > 0;
+                        snapshot.quests = Array.Empty<QuestProgress>();
+                        snapshot.contacts = Array.Empty<string>();
                         snapshot.format = RunSnapshot.CurrentFormat;
                     }
                     if (snapshot != null && validate(snapshot))

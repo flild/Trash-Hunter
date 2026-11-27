@@ -230,6 +230,12 @@ namespace TrashHunter
                     EndInspection();
                 else
                 {
+                    if (state.Quests.HasInspectionStep(state.HeldItemId))
+                    {
+                        CaptureWorld();
+                        state.Quests.RecordInspection(state.HeldItemId);
+                        UpdateError();
+                    }
                     inspecting = true;
                     inspectRotation = Quaternion.identity;
                     held.BeginInspection();

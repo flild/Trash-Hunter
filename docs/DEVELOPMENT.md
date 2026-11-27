@@ -516,6 +516,20 @@ script run с файлом AgentScripts/Authoring/AuthorWorldScenes.cs и точ
 входа AuthorWorldScenes.Create.
 [Результаты I-160](sessions/2026-11-27-i160-world-locations.md).
 
+## Проверка квестов
+
+Запустить в Edit Mode. [VerifyQuestJournal.cs](../AgentScripts/Verification/VerifyQuestJournal.cs)
+создаёт изолированные слоты в Logs/I-170/, загружает [два определения](../AgentScripts/Fixtures/i170-quests.json)
+и вызывает команды журнала, осмотра и торговли. Скрипт сам восстанавливает
+переменную слота. Порядок полей и действий описан в
+[архитектуре](ARCHITECTURE.md#квесты-i-170).
+
+~~~powershell
+$projectPath = 'F:\UnityProjects\Trash-Hunter'
+$pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
+unity command script eval @pipeline -- --file AgentScripts/Verification/VerifyQuestJournal.cs --timeout 30
+~~~
+
 ## Структура проекта
 
 | Путь от корня | Содержание |
@@ -523,7 +537,7 @@ script run с файлом AgentScripts/Authoring/AuthorWorldScenes.cs и точ
 | `Assets/TrashHunter/Scenes/` | Игровые сцены. `Startup` начинает загрузку игрового сеанса, `ContainerSearch` содержит площадку поиска, `Home` содержит домашний запас и выходы, `Trader` — место торговли и выход домой. |
 | `Assets/TrashHunter/Content/Search/` | Ассеты поиска в `Materials/`, `Meshes/`, `Prefabs/` и `Textures/`. |
 | `Assets/TrashHunter/Runtime/` | `World/` для загрузки и областей сцен, `Run/` для состояния и автослота, `Search/` для поиска и игрока, `Inventory/` для сумки и каталога, `Ui/` для представлений и строк. |
-| `Assets/TrashHunter/Resources/` | Каталог добычи и строки RU/EN. Пути относительно `Resources` используются при загрузке. |
+| `Assets/TrashHunter/Resources/` | Каталоги добычи и квестов, строки RU/EN. Пути относительно `Resources` используются при загрузке. |
 | `Assets/Diagnostics/` | Техническая сцена `SetupCheck`. Шаблонная `SampleScene` находится в `Assets/Scenes/`. |
 | `Assets/Settings/` | Профили рендера Unity и общий Input Actions в `Input/`. |
 | `AgentScripts/` | `Authoring/` для авторинга, `Diagnostics/` для проверки установки, `Verification/` для проверок и замеров, `Fixtures/` для их входных данных. |

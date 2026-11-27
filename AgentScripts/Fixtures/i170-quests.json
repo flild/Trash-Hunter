@@ -1,0 +1,22 @@
+{
+  "quests": [
+    {
+      "id": "inspect-radio",
+      "requiresSale": false,
+      "steps": [
+        { "id": "inspect", "action": 1, "items": ["radio-a"] },
+        { "id": "present", "action": 2, "items": ["radio-a"] }
+      ],
+      "contact": "test-technician"
+    },
+    {
+      "id": "sell-and-deliver",
+      "requiresSale": true,
+      "steps": [
+        { "id": "sell", "action": 4, "items": ["strip-a"] },
+        { "id": "deliver", "action": 3, "items": ["radio-a"] }
+      ],
+      "reward": 15
+    }
+  ]
+}
