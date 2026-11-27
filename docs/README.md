@@ -6,6 +6,8 @@
 
 ## Порядок чтения
 
+Активная эстафета первой игровой главы начинается с I-200. [Следующая сессия](NEXT_SESSION.md), [очередь](BACKLOG.md#первая-игровая-глава), [план](relay/chapter-one/PLAN.md), [контекст](relay/chapter-one/CONTEXT.md), [передача](relay/chapter-one/HANDOFF.md) и [учёт временных файлов](relay/chapter-one/FILES.md). [Отчёт подготовки](sessions/2026-11-28-chapter-one-relay.md) сохраняет цель цикла.
+
 [Закрытие эстафеты локаций и квестов](sessions/2026-11-27-world-relay-closure.md)
 фиксирует сохранённые сборки, уборку и ограничения приёмки.
 [Отчёт подготовки](sessions/2026-11-27-world-relay.md) описывает исходный объём.
