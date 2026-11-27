@@ -19,13 +19,13 @@ const string quest = "trader-turntable";
 const string step = "show-turntable";
 const string model = "turntable-rp07";
 const BindingFlags members = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-var folder = Environment.GetEnvironmentVariable("TRASH_HUNTER_EDITOR_SAVE_DIR");
+var folder = Option("-trash-hunter-save-dir", "TRASH_HUNTER_EDITOR_SAVE_DIR");
 if (!Application.isPlaying || string.IsNullOrEmpty(folder) || !Path.IsPathRooted(folder))
     throw new InvalidOperationException("Enter Play Mode with an isolated slot.");
 
 var primary = Path.Combine(folder, "slot.json");
-var phase = Environment.GetEnvironmentVariable("TRASH_HUNTER_CHECK");
-var english = Environment.GetEnvironmentVariable("TRASH_HUNTER_LOCALE") == "en";
+var phase = Option("-trash-hunter-check", "TRASH_HUNTER_CHECK");
+var english = Option("-trash-hunter-locale", "TRASH_HUNTER_LOCALE") == "en";
 var original = File.ReadAllText(primary);
 var run = Object.FindObjectsByType<LifetimeScope>().Single(scope => scope.name == "Run Scope");
 var coordinator = Object.FindObjectsByType<LifetimeScope>().Single(scope => scope.name == "Application Scope")
@@ -339,3 +339,12 @@ JObject Saved() => Payload(File.ReadAllText(primary));
 JObject Payload(string envelope) => JObject.Parse((string)JObject.Parse(envelope)["payload"]);
 Vector3 Position(JToken data) => new((float)data["x"], (float)data["y"], (float)data["z"]);
 Quaternion Rotation(JToken data) => new((float)data["x"], (float)data["y"], (float)data["z"], (float)data["w"]);
+
+string Option(string argument, string variable)
+{
+    if (Application.isEditor)
+        return Environment.GetEnvironmentVariable(variable);
+    var args = Environment.GetCommandLineArgs();
+    var index = Array.IndexOf(args, argument);
+    return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
+}

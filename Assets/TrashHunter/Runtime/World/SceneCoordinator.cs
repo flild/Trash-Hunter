@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -9,6 +10,9 @@ namespace TrashHunter
 {
     internal sealed class SceneCoordinator : MonoBehaviour
     {
+        private static readonly ProfilerMarker PrepareDepartureMarker = new("TrashHunter.PrepareDeparture");
+        private static readonly ProfilerMarker CommitDepartureMarker = new("TrashHunter.CommitDeparture");
+
         private readonly Dictionary<RunLocation, string> paths = new()
         {
             [RunLocation.Search] = "Assets/TrashHunter/Scenes/ContainerSearch.unity",
@@ -125,8 +129,17 @@ namespace TrashHunter
 
             if (departure.HasValue)
             {
-                var pile = scope.Session.PreparePile(catalog);
-                if (!state.Depart(departure.Value, pile, scope.EntryPose))
+                RunSnapshot next;
+                using (PrepareDepartureMarker.Auto())
+                {
+                    var pile = scope.Session.PreparePile(catalog);
+                    next = state.PrepareDeparture(departure.Value, pile, scope.EntryPose);
+                }
+
+                bool saved;
+                using (CommitDepartureMarker.Auto())
+                    saved = next != null && state.Publish(next);
+                if (!saved)
                 {
                     yield return SceneManager.UnloadSceneAsync(destination);
                     busy = false;

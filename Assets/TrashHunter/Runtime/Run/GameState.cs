@@ -276,18 +276,18 @@ namespace TrashHunter
             return Quests.ApplyFact(next, QuestAction.Sell, item.key) && Publish(next);
         }
 
-        internal bool Depart(int previousExpedition, SearchPile pile, PlayerPose spawn)
+        internal RunSnapshot PrepareDeparture(int previousExpedition, SearchPile pile, PlayerPose spawn)
         {
             if (!AtHome || Expedition != previousExpedition || Expedition == int.MaxValue)
-                return false;
+                return null;
 
             var next = current.Copy();
             next.expedition++;
             next.location = RunLocation.Search;
             if (!TryGeneratePile(next, pile))
-                return false;
+                return null;
             next.player = spawn;
-            return Publish(next);
+            return next;
         }
 
         internal bool Save()

@@ -540,6 +540,39 @@ unity command script eval @pipeline -- --file AgentScripts/Verification/VerifyQu
 для `offer-early` — с двумя появлениями. Команды, подготовка и результаты
 даны в [отчёте I-180](sessions/2026-11-27-i180-trader-turntable.md).
 
+## Проверка переходов и квеста в Windows Player
+
+Для измерения в Editor открыть Startup через playModeStartScene. В свежий
+каталог под `Logs/I-190/` скопировать
+[слот I-110](../AgentScripts/Fixtures/i110-pile-measurement.json) как
+`slot.json`. Установить `TRASH_HUNTER_EDITOR_SAVE_DIR` в процессе Editor
+и проверить путь до входа в Play. Скрипт проходит F5 и шесть кругов через
+поиск, дом и старьёвщика. Снять отдельный холодный захват до входа в Play и
+захват маршрута через `diagnostics profiler_record` с CPU и Memory.
+После проверки восстановить настройки Editor.
+
+~~~powershell
+$pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path','F:/UnityProjects/Trash-Hunter','--format','json')
+unity command script eval @pipeline -- --file AgentScripts/Verification/MeasureWorldTransitions.cs --timeout 35
+~~~
+
+Для проверки квеста собрать отдельный StandaloneWindows64 Development
+Player `TrashHunterWorldQA.exe` с Pipeline Runtime и четырьмя сценами
+Startup, ContainerSearch, Home и Trader в указанном порядке. Поместить
+[стартовый слот квеста](../AgentScripts/Fixtures/i190-trader-start.json) под
+именем `slot.json` в свежий каталог. Запустить три отдельных процесса
+из корня проекта с одним `-trash-hunter-save-dir <каталог>` и фазами
+`-trash-hunter-check offer`, `resume`, `finished` по очереди.
+После каждого запуска выполнить проверку, затем штатно закрыть процесс.
+
+~~~powershell
+unity command script eval @pipeline --runtime TrashHunterWorldQA -- --file AgentScripts/Verification/VerifySearchPlayer.cs --timeout 85
+~~~
+
+Итоговый Release сохраняется отдельно в `Builds/I-190/` с выключенным
+Pipeline Runtime и копией уведомления о лицензии. Результаты и условия
+замеров приведены в [отчёте I-190](sessions/2026-11-27-i190-world-acceptance.md).
+
 ## Структура проекта
 
 | Путь от корня | Содержание |

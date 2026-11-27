@@ -9,6 +9,8 @@ var checkIndex = Array.IndexOf(checkArgs, "-trash-hunter-check");
 var check = checkIndex >= 0 && checkIndex + 1 < checkArgs.Length ? checkArgs[checkIndex + 1] : null;
 var routeFile = check?.StartsWith("i120-", StringComparison.Ordinal) == true
     ? "AgentScripts/Verification/VerifySearchAcceptance.cs"
+    : check is "offer" or "offer-early" or "resume" or "finished"
+    ? "AgentScripts/Verification/VerifyTraderTurntable.cs"
     : check?.StartsWith("playtest-", StringComparison.Ordinal) == true
     ? "AgentScripts/Verification/VerifyPlaytest.cs"
     : checkIndex >= 0

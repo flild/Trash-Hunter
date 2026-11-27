@@ -26,6 +26,7 @@ namespace TrashHunter
         private readonly float floorHeight;
         private readonly Collider[] hits = new Collider[32];
         private readonly RaycastHit[] supports = new RaycastHit[16];
+        private readonly List<(Vector2 Point, float Score)> candidates = new();
 
         public SearchPile(SearchItem[] items, BoxCollider floorCollider, Vector3 entry)
         {
@@ -132,7 +133,6 @@ namespace TrashHunter
             Vector2 focus, Random random, List<Placement> placed, out Placement best)
         {
             best = default;
-            var bestScore = float.PositiveInfinity;
             var halfSize = size * 0.5f;
             var extents = HorizontalExtents(halfSize, rotation);
 
@@ -140,27 +140,42 @@ namespace TrashHunter
             var offset = new Vector2(Between(random, 0, GridStep), Between(random, 0, GridStep));
             var target = focus + new Vector2(Between(random, -0.75f, 0.75f), Between(random, -0.65f, 0.65f));
 
+            candidates.Clear();
             for (var x = area.xMin + extents.x + offset.x; x + extents.x <= area.xMax; x += GridStep)
             {
                 for (var z = area.yMin + extents.y + offset.y; z + extents.y <= area.yMax; z += GridStep)
                 {
-                    var score = (new Vector2(x, z) - target).sqrMagnitude;
-                    if (score >= bestScore)
-                        continue;
-
-                    var bottom = (surface ?? FindSurface(x, z)) + Clearance;
-                    var y = bottom + halfSize.y;
-                    var position = new Vector3(x, y, z);
-                    var footprint = Footprint(position, extents + Vector2.one * Clearance);
-                    if (OverlapsFind(footprint, bottom, y + halfSize.y, placed) || HitsScenery(position, halfSize, rotation))
-                        continue;
-
-                    bestScore = score;
-                    best = new Placement(new WorldItem { key = id, position = position, rotation = rotation },
-                        Footprint(position, extents), size.y);
+                    var point = new Vector2(x, z);
+                    candidates.Add((point, (point - target).sqrMagnitude));
                 }
             }
-            return !float.IsPositiveInfinity(bestScore);
+
+            // The old grid traversal preferred the first point at equal distance.
+            // Visiting the same candidates nearest first keeps that layout and avoids
+            // physics queries on candidates farther away than the first valid point.
+            candidates.Sort(static (left, right) =>
+            {
+                var comparison = left.Score.CompareTo(right.Score);
+                if (comparison != 0)
+                    return comparison;
+                comparison = left.Point.x.CompareTo(right.Point.x);
+                return comparison != 0 ? comparison : left.Point.y.CompareTo(right.Point.y);
+            });
+
+            foreach (var (point, _) in candidates)
+            {
+                var bottom = (surface ?? FindSurface(point.x, point.y)) + Clearance;
+                var position = new Vector3(point.x, bottom + halfSize.y, point.y);
+                var footprint = Footprint(position, extents + Vector2.one * Clearance);
+                if (OverlapsFind(footprint, bottom, position.y + halfSize.y, placed) ||
+                    HitsScenery(position, halfSize, rotation))
+                    continue;
+
+                best = new Placement(new WorldItem { key = id, position = position, rotation = rotation },
+                    Footprint(position, extents), size.y);
+                return true;
+            }
+            return false;
         }
 
         private float FindSurface(float x, float z)
