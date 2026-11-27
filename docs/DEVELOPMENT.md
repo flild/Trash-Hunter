@@ -413,10 +413,10 @@ unity command script eval @pipeline -- --file AgentScripts/VerifyLootPackages.cs
 
 [MeasureSearchPile.cs](../AgentScripts/MeasureSearchPile.cs) измеряет три
 отрезка на копии одного автослота с 23 активными телами и закрытыми
-упаковками. В I-110 использован слот seed 706296053. Исходная копия лежит
-в `Logs/I-110/fixture.json`, в каждом новом каталоге прогона её имя
-`slot.json`. Установить `TRASH_HUNTER_EDITOR_SAVE_DIR` на этот каталог
-в процессе Editor и начать Play Mode в ContainerSearch.
+упаковками. Скопировать [тестовый автослот I-110](../AgentScripts/Fixtures/i110-pile-measurement.json)
+с seed 706296053 под именем `slot.json` в новый каталог прогона.
+Установить `TRASH_HUNTER_EDITOR_SAVE_DIR` на этот каталог в процессе Editor
+и начать Play Mode в ContainerSearch.
 
 ~~~powershell
 $projectPath = 'F:\UnityProjects\Trash-Hunter'
@@ -438,11 +438,12 @@ unity command script eval @pipeline -- --file AgentScripts/MeasureSearchPile.cs 
 по умолчанию, для английского передать `-trash-hunter-locale en`.
 `-trash-hunter-save-dir <абсолютный-путь>` изолирует автослот прогона.
 
-Для инструментального повтора использовать Development Player
-`Builds/I-120-QA/TrashHunterPileQA.exe` с Pipeline Runtime. Скопировать
-`Logs/I-120/fixture.json` под именем `slot.json` в новый каталог для
-каждой локали. В обеих фазах локали использовать этот же каталог.
-Запускать Player с рабочей папкой проекта.
+Для инструментального повтора собрать `StandaloneWindows64` Development
+Player `TrashHunterPileQA.exe` с одной сценой ContainerSearch и включённым
+Pipeline Runtime. Для замеров сохранить условия стенда и настройки из
+отчёта I-120. Скопировать [тестовый автослот I-120](../AgentScripts/Fixtures/i120-search-acceptance.json)
+под именем `slot.json` в новый каталог для каждой локали. В обеих фазах
+локали использовать этот же каталог. Запускать Player с рабочей папкой проекта.
 
 ~~~powershell
 $projectPath = 'F:\UnityProjects\Trash-Hunter'
@@ -457,8 +458,7 @@ unity command script eval --runtime TrashHunterPileQA --caller plugin --skill un
 [VerifySearchAcceptance.cs](../AgentScripts/VerifySearchAcceptance.cs)
 управляет Player виртуальными клавиатурой и мышью. Результат содержит
 проверки состояния, границы строк и замеры кадров игровой камеры.
-В папках `Logs/I-120/final-ru/` и `Logs/I-120/final-en/` сохранены
-отчёты обеих фаз и кадры. Сценарий запуска, комплект Release и ограничения
+Результаты обеих фаз, настройки замера, комплект Release и ограничения
 описаны в [отчёте I-120](sessions/2026-11-27-i120-windows-acceptance.md).
 
 ## Официальные инструкции
