@@ -6,7 +6,7 @@ namespace TrashHunter
     [Serializable]
     internal sealed class RunSnapshot
     {
-        public const int CurrentFormat = 1;
+        public const int CurrentFormat = 2;
 
         public int format;
         public string runId;
@@ -15,7 +15,7 @@ namespace TrashHunter
         public int expedition;
         public int pileSeed;
         public int pileGeneratorVersion;
-        public bool atHome;
+        public RunLocation location;
         public bool hasBag;
         public WorldItem[] world;
         public string held;

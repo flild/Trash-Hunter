@@ -9,7 +9,7 @@ namespace TrashHunter
 {
     public sealed class SearchSession : MonoBehaviour
     {
-        private enum Mode { Search, Return, Home, Sale, Pause, Continue, LoadError, Package }
+        private enum Mode { Search, Return, Pause, Continue, LoadError, Package }
 
         [SerializeField] private Transform outside;
         [SerializeField] private Transform inside;
@@ -43,15 +43,12 @@ namespace TrashHunter
         private bool inspecting;
         private bool bagOpen;
         private SceneCoordinator scenes;
-        private SearchSceneScope scope;
+        private PlayerPose entryPose;
         private bool searchPrepared;
         private bool quitting;
         private float blockedUntil;
         private float holdDistance;
-        private int selection;
         private int returnExpedition;
-        private SaleOffer offer;
-        private string receipt;
 
         internal Transform SearchEntry => outside;
 
@@ -79,29 +76,26 @@ namespace TrashHunter
         }
 
         internal void Initialize(GameState gameState, LootCatalog catalog, SceneCoordinator coordinator,
-            SearchSceneScope sceneScope, SearchPlayer scenePlayer, SearchHud sceneHud)
+            PlayerPose spawn, SearchPlayer scenePlayer, SearchHud sceneHud)
         {
             state = gameState;
             scenes = coordinator;
-            scope = sceneScope;
+            entryPose = spawn;
             player = scenePlayer;
             hud = sceneHud;
             strings = new UiStrings();
             hud.Bag.SetStrings(strings);
-            if (scope.Location == RunLocation.Search)
+            BindSearchItems(catalog);
+            aimProperties = new MaterialPropertyBlock();
+            knowsLootTiers = HasRecognitionForPrototype();
+            foreach (var item in items)
             {
-                BindSearchItems(catalog);
-                aimProperties = new MaterialPropertyBlock();
-                knowsLootTiers = HasRecognitionForPrototype();
-                foreach (var item in items)
-                {
-                    var name = ItemName(item);
-                    aimLabels.Add(item, item.IsPackage
-                        ? (string.Format(strings.Get("package.openAim"), name), string.Format(strings.Get("package.checkAim"), name))
-                        : (string.Format(strings.Get("search.take"), name), null));
-                }
+                var name = ItemName(item);
+                aimLabels.Add(item, item.IsPackage
+                    ? (string.Format(strings.Get("package.openAim"), name), string.Format(strings.Get("package.checkAim"), name))
+                    : (string.Format(strings.Get("search.take"), name), null));
             }
-            player.Restore(scope.EntryPose);
+            player.Restore(entryPose);
             Application.wantsToQuit += SaveBeforeQuit;
             Open();
         }
@@ -119,14 +113,13 @@ namespace TrashHunter
 
         private void Open()
         {
-            if (!state.SlotLoaded || (!state.HasRun && !state.StartNewRun(Pile(), scope.EntryPose)))
+            if (!state.SlotLoaded || (!state.HasRun && !state.StartNewRun(Pile(), entryPose)))
             {
                 ShowLoadError();
                 return;
             }
 
-            if (scope.Location == RunLocation.Search)
-                ApplySnapshot();
+            ApplySnapshot();
             if (!state.ResumePending)
             {
                 CloseOverlay();
@@ -136,18 +129,17 @@ namespace TrashHunter
             mode = Mode.Continue;
             foreach (var item in items)
                 item.FreezeWorld(true);
-            var summary = state.AtHome ? strings.Get("home.title") :
-                string.Format(strings.Get("continue.expedition"), state.Expedition);
+            var summary = string.Format(strings.Get("continue.expedition"), state.Expedition);
             ShowOverlay(strings.Get("continue.title"), summary, string.Empty,
                 strings.Get("continue.actions"), state.RecoveryNotice);
         }
 
-        private SearchPile Pile() => pile ??= new SearchPile(items, containerFloor.bounds, inside.position);
+        private SearchPile Pile() => pile ??= new SearchPile(items, containerFloor, inside.position);
 
         private void ApplySnapshot()
         {
             held = null;
-            starterBag.gameObject.SetActive(!state.HasBag && !state.AtHome);
+            starterBag.gameObject.SetActive(!state.HasBag);
             foreach (var item in items)
             {
                 item.Restore(state);
@@ -471,41 +463,6 @@ namespace TrashHunter
                             ShowReturn();
                     }
                     break;
-                case Mode.Home:
-                    if (cancel)
-                        Pause();
-                    else if (keyboard.eKey.wasPressedThisFrame)
-                        scenes.Depart();
-                    else if (state.Home.Count > 0 && (confirm || keyboard.upArrowKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame))
-                    {
-                        if (keyboard.upArrowKey.wasPressedThisFrame)
-                            selection = Mathf.Max(0, selection - 1);
-                        else if (keyboard.downArrowKey.wasPressedThisFrame)
-                            selection = Mathf.Min(state.Home.Count - 1, selection + 1);
-                        else if (confirm)
-                        {
-                            offer = state.Quote(state.Home[selection]);
-                            mode = Mode.Sale;
-                            ShowSale();
-                            break;
-                        }
-                        ShowHome();
-                    }
-                    break;
-                case Mode.Sale:
-                    if (cancel)
-                        CloseOverlay();
-                    else if (confirm)
-                    {
-                        if (state.Sell(offer))
-                        {
-                            receipt = $"{strings.ItemName(offer.Item.key, offer.Name)}  +{offer.Price} ₽\n{OfferCondition()}";
-                            CloseOverlay();
-                        }
-                        else
-                            ShowSale();
-                    }
-                    break;
                 case Mode.Pause:
                     if (cancel || confirm)
                         CloseOverlay();
@@ -523,22 +480,6 @@ namespace TrashHunter
             ShowOverlay(strings.Get("return.title"), summary, details, strings.Get("return.actions"), state.Error, true);
         }
 
-        internal void ShowHome(string error = null)
-        {
-            mode = Mode.Home;
-            hud.ShowError(null);
-            selection = Mathf.Clamp(selection, 0, Mathf.Max(0, state.Home.Count - 1));
-            hud.Show(string.Empty, string.Empty, false);
-            hud.Expedition.ShowHome(state, selection, receipt, strings, error);
-            UnlockCursor();
-        }
-
-        private void ShowSale() => ShowOverlay(strings.Get("sale.title"), $"{offer.Price} ₽",
-            $"{strings.ItemName(offer.Item.key, offer.Name)}\n{OfferCondition()}",
-            strings.Get("sale.actions"), state.Error, state.Error != null);
-
-        private string OfferCondition() => strings.Get($"item.{offer.Item.key}.saleCondition", offer.Condition);
-
         private void ShowLoadError()
         {
             mode = Mode.LoadError;
@@ -553,7 +494,7 @@ namespace TrashHunter
             EndInspection();
             mode = Mode.Pause;
             ShowOverlay(strings.Get("pause.title"), string.Empty,
-                strings.Get(state.AtHome ? "pause.home" : "pause.expedition"),
+                strings.Get("pause.expedition"),
                 strings.Get("pause.actions"), state.Error, state.Error != null);
         }
 
@@ -568,14 +509,9 @@ namespace TrashHunter
 
         private void CloseOverlay()
         {
-            if (state.AtHome)
-                ShowHome();
-            else
-            {
-                mode = Mode.Search;
-                hud.Expedition.gameObject.SetActive(false);
-                LockCursor();
-            }
+            mode = Mode.Search;
+            hud.Expedition.gameObject.SetActive(false);
+            LockCursor();
         }
 
         private void CloseBag()
@@ -753,8 +689,6 @@ namespace TrashHunter
 
         private void CaptureWorld()
         {
-            if (state.AtHome)
-                return;
             state.RecordPlayer(player.Capture(IsInContainer()));
             state.RecordHeldInWorld(held != null && held.HeldInWorld);
             foreach (var item in items)
@@ -886,14 +820,8 @@ namespace TrashHunter
             return offset.sqrMagnitude > clearance * clearance;
         }
 
-        internal void ShowTransition(bool failed, bool departure = false)
+        internal void ShowTransition(bool failed)
         {
-            if (failed && departure)
-            {
-                ShowHome(strings.Get("transition.failed"));
-                return;
-            }
-
             ShowOverlay(strings.Get(failed ? "transition.failed" : "transition.loading"),
                 string.Empty, string.Empty, failed ? strings.Get("transition.actions") : string.Empty, null);
         }

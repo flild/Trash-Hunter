@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Random = System.Random;
 
 namespace TrashHunter
@@ -18,12 +19,13 @@ namespace TrashHunter
         private readonly WorldItem cabinetStart;
         private readonly (string Id, Vector3 Size, string[] Contents)[] packages;
         private readonly (string Id, Vector3 Size)[] looseFinds;
+        private readonly Scene scene;
         private readonly Rect pileArea;
         private readonly float floorHeight;
         private readonly Collider[] hits = new Collider[32];
         private readonly RaycastHit[] supports = new RaycastHit[16];
 
-        public SearchPile(SearchItem[] items, Bounds floor, Vector3 entry)
+        public SearchPile(SearchItem[] items, BoxCollider floorCollider, Vector3 entry)
         {
             // Capture the authored dimensions and cabinet pose before the finds move.
             var cabinet = items.Single(item => item.Id == "cabinet-a");
@@ -38,6 +40,8 @@ namespace TrashHunter
                 .Select(item => (item.Id, Size: item.GetComponent<BoxCollider>().size)).ToArray();
             crate = finds.Single(find => find.Id == "crate-a");
             looseFinds = finds.Where(find => find.Id != crate.Id).ToArray();
+            scene = floorCollider.gameObject.scene;
+            var floor = floorCollider.bounds;
             floorHeight = floor.max.y;
             // Leave the entry landing and an aisle on the left. The cabinet faces the entry
             // from the right, with free space above and in front of it for the first pull.
@@ -154,7 +158,7 @@ namespace TrashHunter
 
         private float FindSurface(float x, float z)
         {
-            // Reuse the flat low scrap under the pile, including the pallet and rubber mat.
+            // During departure, the home scene is still loaded while the pile is prepared.
             var start = new Vector3(x, floorHeight + SupportSearchHeight, z);
             var count = Physics.RaycastNonAlloc(start, Vector3.down, supports, SupportSearchHeight,
                 Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
@@ -162,7 +166,7 @@ namespace TrashHunter
             for (var i = 0; i < count; i++)
             {
                 var hit = supports[i];
-                if (hit.rigidbody == null && hit.normal.y > 0.99f)
+                if (hit.collider.gameObject.scene == scene && hit.rigidbody == null && hit.normal.y > 0.99f)
                     surface = Mathf.Max(surface, hit.point.y);
             }
             return surface;
@@ -181,7 +185,7 @@ namespace TrashHunter
             var count = Physics.OverlapBoxNonAlloc(position, halfSize, hits, rotation,
                 Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
             for (var i = 0; i < count; i++)
-                if (hits[i].attachedRigidbody == null)
+                if (hits[i].gameObject.scene == scene && hits[i].attachedRigidbody == null)
                     return true;
             return count == hits.Length;
         }

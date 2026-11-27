@@ -11,14 +11,25 @@ namespace TrashHunter
         [SerializeField] private RunLocation location;
         [SerializeField] private Transform entry;
         [SerializeField] private SearchSession session;
+        [SerializeField] private SettlementSession settlement;
         [SerializeField] private SearchPlayer playerPrefab;
         [SerializeField] private SearchHud hudPrefab;
 
         private readonly List<GameObject> eventSystems = new();
 
         internal RunLocation Location => location;
+
+        internal void ShowTransition(bool failed, bool departure)
+        {
+            if (location == RunLocation.Search)
+                session.ShowTransition(failed);
+            else
+                settlement.ShowTransition(failed, departure);
+        }
+
+        internal void RestoreSettlement() => settlement.ShowStock();
         internal SearchSession Session => session;
-        private Transform Entry => location == RunLocation.Search ? session.SearchEntry : entry;
+        private Transform Entry => location == RunLocation.Search ? session?.SearchEntry : entry;
         internal PlayerPose EntryPose => SearchPlayer.PoseAt(Entry);
 
         protected override void Awake()
@@ -53,13 +64,18 @@ namespace TrashHunter
             {
                 var player = resolver.Instantiate(playerPrefab, transform);
                 var hud = resolver.Instantiate(hudPrefab, transform);
-                session.Initialize(resolver.Resolve<GameState>(), resolver.Resolve<LootCatalog>(),
-                    RunBootstrap.Scenes, this, player, hud);
+                var state = resolver.Resolve<GameState>();
+                var catalog = resolver.Resolve<LootCatalog>();
+                if (location == RunLocation.Search)
+                    session.Initialize(state, catalog, RunBootstrap.Scenes, EntryPose, player, hud);
+                else
+                    settlement.Initialize(state, catalog, RunBootstrap.Scenes, location, EntryPose, player, hud);
             });
         }
 
         internal bool IsConfiguredFor(RunLocation expected) =>
-            location == expected && isActiveAndEnabled && eventSystems.Count <= 1 && session != null && Entry != null &&
-            playerPrefab != null && hudPrefab != null && (location != RunLocation.Search || session.HasSearchSetup);
+            location == expected && isActiveAndEnabled && eventSystems.Count <= 1 && Entry != null &&
+            playerPrefab != null && hudPrefab != null &&
+            (location == RunLocation.Search ? session.HasSearchSetup : settlement != null);
     }
 }

@@ -15,6 +15,12 @@ namespace TrashHunter
             public string checksum;
         }
 
+        [Serializable]
+        private sealed class LegacyLocation
+        {
+            public bool atHome = false;
+        }
+
         private sealed class UnsupportedFormat : Exception
         {
             public UnsupportedFormat() : base("Для этого автосохранения нужна другая версия игры.") { }
@@ -179,6 +185,12 @@ namespace TrashHunter
                     var snapshot = JsonUtility.FromJson<RunSnapshot>(envelope.payload);
                     if (snapshot != null && snapshot.format > RunSnapshot.CurrentFormat)
                         throw new UnsupportedFormat();
+                    if (snapshot?.format == 1)
+                    {
+                        snapshot.location = JsonUtility.FromJson<LegacyLocation>(envelope.payload).atHome
+                            ? RunLocation.Home : RunLocation.Search;
+                        snapshot.format = RunSnapshot.CurrentFormat;
+                    }
                     if (snapshot != null && validate(snapshot))
                     {
                         checksum = envelope.checksum;

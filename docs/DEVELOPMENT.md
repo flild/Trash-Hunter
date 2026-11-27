@@ -490,19 +490,18 @@ Mode, восстановить исходную сцену, переменные
 
 ## Проверка координатора сцен
 
-В Editor открыть одну сцену, указанную для фазы. На каждый прогон использовать
-новый абсолютный каталог из `Logs/I-150/`. В процессе Editor задать
-`TRASH_HUNTER_EDITOR_SAVE_DIR` на этот каталог, `TRASH_HUNTER_CHECK` на фазу
-и `TRASH_HUNTER_LOCALE` на локаль. Старый файл копировать под именем
-`slot.json`. Запустить Play Mode и выполнить скрипт.
+В Editor открыть одну сохранённую игровую сцену или Startup. Для каждого прогона
+задать новый абсолютный каталог из Logs/I-160/ в переменной
+TRASH_HUNTER_EDITOR_SAVE_DIR процесса Editor, фазу в TRASH_HUNTER_CHECK
+и локаль в TRASH_HUNTER_LOCALE. Для загрузки положить копию старого файла
+под именем slot.json. Запустить Play Mode и выполнить скрипт.
 
-| Фаза | Открытая сцена | Каталог и результат |
-|---|---|---|
-| `route` | Startup | Копия `Logs/I-140/expedition/slot.json`. F5, возврат, продажа и новая вылазка. |
-| `failures` | Startup | Та же копия в отдельном каталоге. Блокировка записи и повтор загрузки проверяются автоматически. |
-| `cold` | ContainerSearch | Копия `Logs/I-140/home/slot.json`. Открывается дом из сохранения. |
-| `cold` | Home | Копия `Logs/I-140/i040/slot.json`. Открывается сохранённая вылазка I-040. |
-| `new` | Home | Пустой каталог. Поиск начинается у первой сумки. |
+| Фаза | Исходный слот и проверка |
+|---|---|
+| route | Слот поиска с упакованными вещами. F5, возврат, поездка к старьёвщику, продажа, возвращение и новая вылазка. Скрипт сохраняет три копии слота для cold. |
+| failures | Такой же исходный слот. Отказы записи возврата, поездки, продажи и отправления. Недоступная сцена с повтором загрузки. |
+| cold | Копия формата 1 либо одна из копий route. Сверка зоны, точки входа, поз и имущества. |
+| new | Пустой каталог. Первая вылазка и экипировка стартовой сумки. |
 
 ~~~powershell
 $projectPath = 'F:\UnityProjects\Trash-Hunter'
@@ -510,17 +509,18 @@ $pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$p
 unity command script eval @pipeline -- --file AgentScripts/Verification/VerifySceneTransitions.cs --timeout 50
 ~~~
 
-После каждого прогона выйти из Play Mode. После серии вернуть переменные и
-открытую до проверки сцену. Для авторинга Startup и Home открыть сохранённый
-ContainerSearch в Edit Mode и использовать `script run --file
-AgentScripts/Authoring/AuthorWorldScenes.cs --entry AuthorWorldScenes.Create`.
-[Результаты и замеры I-150](sessions/2026-11-27-i150-scene-coordinator.md).
+После каждого прогона выйти из Play Mode. После серии вернуть переменные,
+исходную сцену и временные параметры Editor. Для авторинга Home и Trader
+открыть только сохранённый ContainerSearch в Edit Mode и вызвать
+script run с файлом AgentScripts/Authoring/AuthorWorldScenes.cs и точкой
+входа AuthorWorldScenes.Create.
+[Результаты I-160](sessions/2026-11-27-i160-world-locations.md).
 
 ## Структура проекта
 
 | Путь от корня | Содержание |
 |---|---|
-| `Assets/TrashHunter/Scenes/` | Игровые сцены. `Startup` начинает загрузку игрового сеанса, `ContainerSearch` содержит площадку поиска, `Home` содержит домашнюю область и точку входа. |
+| `Assets/TrashHunter/Scenes/` | Игровые сцены. `Startup` начинает загрузку игрового сеанса, `ContainerSearch` содержит площадку поиска, `Home` содержит домашний запас и выходы, `Trader` — место торговли и выход домой. |
 | `Assets/TrashHunter/Content/Search/` | Ассеты поиска в `Materials/`, `Meshes/`, `Prefabs/` и `Textures/`. |
 | `Assets/TrashHunter/Runtime/` | `World/` для загрузки и областей сцен, `Run/` для состояния и автослота, `Search/` для поиска и игрока, `Inventory/` для сумки и каталога, `Ui/` для представлений и строк. |
 | `Assets/TrashHunter/Resources/` | Каталог добычи и строки RU/EN. Пути относительно `Resources` используются при загрузке. |
@@ -532,8 +532,7 @@ AgentScripts/Authoring/AuthorWorldScenes.cs --entry AuthorWorldScenes.Create`.
 выход, точки входа и стартовая сумка в `Interaction Points`, экземпляры
 предметов в `Search Items`, маркеры прежних укладок в `Legacy Layouts`.
 `Search Scope` и `EventSystem` находятся в корне. Координатор и область
-сцены находят их среди корневых объектов. В `Home` точка `Home Entry`
-лежит под `Home Scope`. Сохраняйте точки входа и выходы в сериализованных
+сцены находят их среди корневых объектов. В Home и Trader точки Home Entry и Trader Entry лежат под своими областями. Сохраняйте точки входа и выходы в сериализованных
 ссылках, перемещайте ассеты и сцены через Editor с сохранением GUID.
 
 ## Официальные инструкции

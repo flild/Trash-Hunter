@@ -18,6 +18,7 @@ using Object = UnityEngine.Object;
 
 const string search = "Assets/TrashHunter/Scenes/ContainerSearch.unity";
 const string home = "Assets/TrashHunter/Scenes/Home.unity";
+const string trader = "Assets/TrashHunter/Scenes/Trader.unity";
 const BindingFlags members = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 var phase = Environment.GetEnvironmentVariable("TRASH_HUNTER_CHECK");
 var folder = Environment.GetEnvironmentVariable("TRASH_HUNTER_EDITOR_SAVE_DIR");
@@ -37,7 +38,7 @@ var checks = new List<string>();
 var timings = new Dictionary<string, object>();
 await Until(() => Ready(), "initial zone");
 var initial = SceneManager.GetActiveScene().path;
-VerifyScene(state.AtHome ? home : search);
+VerifyScene(routes[state.Location]);
 timings.Add("startup", Timing());
 
 var settings = InputSystem.settings;
@@ -58,7 +59,7 @@ try
     {
         var saved = Snapshot(original);
         Check(File.ReadAllText(primary) == original && state.Expedition == (int)saved["expedition"] &&
-            state.Location == ((bool)saved["atHome"] ? RunLocation.Home : RunLocation.Search) &&
+            state.Location == SavedLocation(saved) &&
             state.Balance == (long)saved["cash"] && Mode() == "Continue",
             "Cold start selects the saved zone and preserves slot bytes before continuing");
         var expectedPacked = saved["world"].Where(item => (bool)item["packed"]).ToArray();
@@ -74,6 +75,7 @@ try
             Quaternion.Angle(pose.Rotation, Rotation(item["rotation"])) < 0.01f),
             "Saved world poses and stable IDs survive scene selection");
         await Tap(Key.Enter);
+        Check(Mode() != "Continue", "Enter enables controls in the saved zone");
     }
 
     switch (phase)
@@ -93,14 +95,23 @@ try
             Check(state.HasBag && File.Exists(primary), "E equips the first bag and publishes the first snapshot");
             break;
         case "cold":
-            if (initial == home)
+            if (state.Location is RunLocation.Home or RunLocation.Trader)
             {
-                VerifyEntry("Home Entry");
-                Check(Mode() == "Home" && Object.FindObjectsByType<SearchItem>(FindObjectsInactive.Include).Length == 0,
-                    "Cold home entry presents the existing home screen without loading the search pile");
+                VerifyEntry(state.Location + " Entry");
+                Check(Mode() == state.Location.ToString() &&
+                    Object.FindObjectsByType<SearchItem>(FindObjectsInactive.Include).Length == 0,
+                    "Cold settlement entry uses its own session without loading the search pile");
+                VerifyOverlay();
             }
             else
-                Check(Mode() == "Search" && Player().ViewCamera.isActiveAndEnabled, "Cold search entry enables the player and camera");
+            {
+                var saved = Snapshot(original);
+                var actor = Player();
+                Check(Mode() == "Search" && actor.ViewCamera.isActiveAndEnabled &&
+                    Vector3.Distance(actor.transform.position, Position(saved["player"]["position"])) < .15f &&
+                    Mathf.Abs(Mathf.DeltaAngle(actor.transform.eulerAngles.y, (float)saved["player"]["yaw"])) < .1f,
+                    "Cold search entry restores the saved player pose and enables the camera");
+            }
             Check(File.ReadAllText(primary) == original, "Continue does not write the slot");
             break;
         case "route":
@@ -114,6 +125,7 @@ try
 finally
 {
     routes[RunLocation.Home] = home;
+    routes[RunLocation.Trader] = trader;
     routes[RunLocation.Search] = search;
     InputSystem.RemoveDevice(mouse);
     InputSystem.RemoveDevice(keyboard);
@@ -140,8 +152,10 @@ async Task Route(bool failures)
     await Tap(Key.F5);
     await Until(() => Ready() && SceneManager.GetActiveScene() != previous, "F5 reload");
     VerifyScene(search);
-    Check(Revision() == ++revision && state.Expedition == expedition && state.Bag.Count == packed.Length,
-        "F5 saves once and reloads the same zone with the same expedition and bag");
+    var reload = Snapshot(File.ReadAllText(primary));
+    Check((int)reload["format"] == 2 && SavedLocation(reload) == RunLocation.Search &&
+        Revision() == ++revision && state.Expedition == expedition && state.Bag.Count == packed.Length,
+        "F5 writes format 2 once and reloads with the same expedition and bag");
     timings.Add("reload", Timing());
 
     previous = SceneManager.GetActiveScene();
@@ -195,12 +209,64 @@ async Task Route(bool failures)
         "The previous player is disposed and return transfers each packed item exactly once");
     timings.Add("return", Timing());
 
-    var offer = state.Quote(state.Home[0]);
+    VerifyOverlay();
+    var offer = state.Trade.Quote(state.Home[^1]);
+    Check(!state.Trade.Sell(offer), "Selling directly from home is rejected");
     await Tap(Key.Enter);
-    Check(Mode() == "Sale", "The existing home screen still quotes the selected item");
+    Check(Mode() == "Home" && Revision() == revision, "Home shows storage without a sale confirmation");
+
+    if (failures)
+    {
+        var beforeTravel = File.ReadAllText(primary);
+        using (new FileStream(staged, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+            await Tap(Key.T);
+        VerifyScene(home);
+        Check(Ready() && Mode() == "Home" && state.Error != null && File.ReadAllText(primary) == beforeTravel,
+            "A failed travel write keeps the home scene, stock and controls");
+    }
+
+    await Tap(Key.T, Key.Enter);
+    await Until(() => Ready() && SceneManager.GetActiveScene().path == trader, "travel to trader");
+    VerifyScene(trader);
+    VerifyEntry("Trader Entry");
+    VerifyOverlay();
+    Check(state.Location == RunLocation.Trader && state.Expedition == expedition && state.Balance == balance &&
+        state.Home.SequenceEqual(stock) && Revision() == ++revision && Mode() == "Trader",
+        "Travel preserves trip number, balance and every stored instance");
+    timings.Add("trader", Timing());
+
+    for (var i = 1; i < stock.Length; i++)
+        await Tap(Key.DownArrow);
+    await Tap(Key.Enter);
+    Check(Mode() == "Sale" && Revision() == revision, "Trader quotes the selected instance without publishing");
+    VerifyOverlay();
+    if (failures)
+    {
+        var beforeSale = File.ReadAllText(primary);
+        using (new FileStream(staged, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+            await Tap(Key.Enter, Key.NumpadEnter);
+        Check(Mode() == "Sale" && state.Error != null && state.Home.SequenceEqual(stock) &&
+            state.Balance == balance && File.ReadAllText(primary) == beforeSale,
+            "A failed sale write preserves the offer, both instances and cash");
+    }
+
     await Tap(Key.Enter, Key.NumpadEnter);
     Check(Revision() == ++revision && state.Balance == balance + offer.Price &&
-        state.Home.SequenceEqual(stock.Skip(1)), "Sale credits the exact selected item once");
+        state.Home.SequenceEqual(stock.Take(stock.Length - 1)), "One confirmation sells exactly the selected instance");
+    var afterSale = File.ReadAllText(primary);
+    Check(!state.Trade.Sell(offer) && File.ReadAllText(primary) == afterSale &&
+        state.Balance == balance + offer.Price, "Replaying the sold instance does not charge or remove anything");
+    File.Copy(primary, Path.Combine(folder, "trader-resume.json"));
+
+    await Tap(Key.E, Key.Enter);
+    await Until(() => Ready() && SceneManager.GetActiveScene().path == home, "trader return");
+    VerifyScene(home);
+    VerifyEntry("Home Entry");
+    Check(state.AtHome && state.Expedition == expedition && state.Balance == balance + offer.Price &&
+        state.Home.SequenceEqual(stock.Take(stock.Length - 1)) && Revision() == ++revision,
+        "Trader return preserves trip number, credited cash and remaining stock");
+    timings.Add("traderReturn", Timing());
+    File.Copy(primary, Path.Combine(folder, "home-resume.json"));
 
     if (failures)
     {
@@ -225,6 +291,7 @@ async Task Route(bool failures)
         state.TryGetPose("sack-a", out _) && Mode() == "Search" && !state.AtHome,
         "Departure writes one new expedition with its prepared pile and restores ready search controls");
     timings.Add("depart", Timing());
+    File.Copy(primary, Path.Combine(folder, "search-resume.json"));
 }
 
 void VerifyScene(string path)
@@ -261,8 +328,10 @@ object Timing()
 async Task Tap(params Key[] keys)
 {
     InputSystem.QueueStateEvent(keyboard, new KeyboardState(keys));
+    await Until(() => keys.All(key => keyboard[key].isPressed), "key down: " + string.Join(", ", keys));
     await Frames();
     InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+    await Until(() => keys.All(key => !keyboard[key].isPressed), "key up: " + string.Join(", ", keys));
     await Frames();
 }
 
@@ -277,7 +346,9 @@ async Task Until(Func<bool> predicate, string description)
     var deadline = Time.realtimeSinceStartupAsDouble + 10;
     await Wait.Until(() => predicate() || Time.realtimeSinceStartupAsDouble >= deadline);
     if (!predicate())
-        throw new InvalidOperationException($"Timed out waiting for {description}.");
+        throw new InvalidOperationException($"Timed out waiting for {description}. " +
+            $"Scene={SceneManager.GetActiveScene().name}, location={state.Location}, control={Ready()}, error={state.Error}. " +
+            $"Keyboard={Keyboard.current?.deviceId}.");
 }
 
 void Check(bool condition, string message)
@@ -293,8 +364,24 @@ JObject Snapshot(string bytes) => JObject.Parse((string)JObject.Parse(bytes)["pa
 LifetimeScope Scope(string name) => Object.FindObjectsByType<LifetimeScope>().Single(scope => scope.name == name);
 SearchPlayer Player() => Object.FindObjectsByType<SearchPlayer>().Single();
 SearchHud Hud() => Object.FindObjectsByType<SearchHud>().Single();
-SearchSession Session() => Object.FindObjectsByType<SearchSession>().Single();
+MonoBehaviour Session() => SceneManager.GetActiveScene().path == search
+    ? Object.FindObjectsByType<SearchSession>().Single()
+    : Object.FindObjectsByType<SettlementSession>().Single();
 string Mode() => Field<object>(Session(), "mode").ToString();
+RunLocation SavedLocation(JObject saved) => (int)saved["format"] == 1
+    ? ((bool)saved["atHome"] ? RunLocation.Home : RunLocation.Search)
+    : saved["location"].ToObject<RunLocation>();
+
+void VerifyOverlay()
+{
+    Canvas.ForceUpdateCanvases();
+    var texts = Hud().Expedition.GetComponentsInChildren<Text>().Where(text => !string.IsNullOrEmpty(text.text)).ToArray();
+    Check(texts.Length > 0 && texts.All(text =>
+        text.preferredWidth <= text.rectTransform.rect.width + 1f &&
+        text.preferredHeight <= text.rectTransform.rect.height + 1f),
+        $"Overlay text fits its bounds in {Mode()}: " + string.Join(", ", texts.Select(text =>
+            $"{text.name}={text.preferredWidth:F0}x{text.preferredHeight:F0}/{text.rectTransform.rect.width:F0}x{text.rectTransform.rect.height:F0}")));
+}
 T Field<T>(object instance, string name) => (T)instance.GetType().GetField(name, members).GetValue(instance);
 Vector3 Position(JToken token) => new((float)token["x"], (float)token["y"], (float)token["z"]);
 Quaternion Rotation(JToken token) => new((float)token["x"], (float)token["y"], (float)token["z"], (float)token["w"]);

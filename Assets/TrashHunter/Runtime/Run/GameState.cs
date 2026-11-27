@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace TrashHunter
 {
-    public enum RunLocation { Search = 0, Home = 1 }
+    public enum RunLocation { Search = 0, Home = 1, Trader = 2 }
 
     public sealed class GameState : IDisposable
     {
@@ -16,7 +16,11 @@ namespace TrashHunter
         private SaveSlot slot;
         private BagInventory bag = new();
 
-        internal GameState(LootCatalog catalog) => this.catalog = catalog;
+        internal GameState(LootCatalog catalog)
+        {
+            this.catalog = catalog;
+            Trade = new TradeCounter(this, catalog);
+        }
 
         internal bool SlotLoaded => slot != null;
         internal bool HasRun => current != null;
@@ -27,10 +31,11 @@ namespace TrashHunter
         internal bool HeldInWorld => current.heldInWorld;
         public bool HeldItemRotated { get; set; }
         public int Expedition => current.expedition;
-        public RunLocation Location => current?.atHome == true ? RunLocation.Home : RunLocation.Search;
+        public RunLocation Location => current?.location ?? RunLocation.Search;
         public bool AtHome => Location == RunLocation.Home;
         public long Balance => current.cash;
         public IReadOnlyList<HomeItem> Home => current.home;
+        public TradeCounter Trade { get; }
         public string Error { get; private set; }
         public string RecoveryNotice => slot?.RecoveryNotice;
         internal PlayerPose Player => current.player;
@@ -110,7 +115,7 @@ namespace TrashHunter
 
         internal bool EquipBag()
         {
-            if (AtHome || HasBag)
+            if (Location != RunLocation.Search || HasBag)
                 return false;
 
             var next = current.Copy();
@@ -217,7 +222,7 @@ namespace TrashHunter
 
         internal bool ReturnHome(int expedition)
         {
-            if (AtHome || !HasBag || Expedition != expedition)
+            if (Location != RunLocation.Search || !HasBag || Expedition != expedition)
                 return false;
 
             var next = current.Copy();
@@ -233,19 +238,31 @@ namespace TrashHunter
             next.held = null;
             next.heldRotated = false;
             next.heldInWorld = false;
-            next.atHome = true;
+            next.location = RunLocation.Home;
+            next.player = default;
             return Publish(next);
         }
 
-        public SaleOffer Quote(HomeItem item) => new(item, catalog[item.key].Definition);
-
-        public bool Sell(SaleOffer offer)
+        internal bool TravelBetweenSettlements(RunLocation destination)
         {
-            if (!AtHome || !catalog.TryGetDefinition(offer.Item.key ?? string.Empty, out var definition) ||
-                definition.Price <= 0 || definition.Price != offer.Price || Balance > long.MaxValue - offer.Price)
+            if (!((Location == RunLocation.Home && destination == RunLocation.Trader) ||
+                (Location == RunLocation.Trader && destination == RunLocation.Home)))
                 return false;
 
-            var index = Array.IndexOf(current.home, offer.Item);
+            var next = current.Copy();
+            next.location = destination;
+            return Publish(next);
+        }
+
+        public SaleOffer Quote(HomeItem item) => Trade.Quote(item);
+        public bool Sell(SaleOffer offer) => Trade.Sell(offer);
+
+        internal bool CompleteSale(HomeItem item, int price)
+        {
+            if (Location != RunLocation.Trader || price <= 0 || Balance > long.MaxValue - price)
+                return false;
+
+            var index = Array.IndexOf(current.home, item);
             if (index < 0)
                 return false;
 
@@ -253,7 +270,7 @@ namespace TrashHunter
             var remaining = new List<HomeItem>(current.home);
             remaining.RemoveAt(index);
             next.home = remaining.ToArray();
-            next.cash += offer.Price;
+            next.cash += price;
             return Publish(next);
         }
 
@@ -264,7 +281,7 @@ namespace TrashHunter
 
             var next = current.Copy();
             next.expedition++;
-            next.atHome = false;
+            next.location = RunLocation.Search;
             if (!TryGeneratePile(next, pile))
                 return false;
             next.player = spawn;
@@ -317,6 +334,7 @@ namespace TrashHunter
         {
             if (data.format != RunSnapshot.CurrentFormat || !Guid.TryParseExact(data.runId, "N", out _) ||
                 data.revision <= 0 || data.utcTicks <= 0 || data.utcTicks > DateTime.MaxValue.Ticks ||
+                data.location is not (RunLocation.Search or RunLocation.Home or RunLocation.Trader) ||
                 data.expedition < 1 || data.cash < 0 || data.home == null || data.world == null ||
                 data.pileGeneratorVersion is < 0 or > SearchPile.GeneratorVersion ||
                 !Finite(data.player.position) || !float.IsFinite(data.player.yaw) ||
@@ -328,12 +346,12 @@ namespace TrashHunter
             {
                 if (string.IsNullOrEmpty(item.key) || !catalog.TryGetDefinition(item.key, out var definition) ||
                     definition.Price <= 0 || item.expedition <= 0 || item.expedition > data.expedition ||
-                    (!data.atHome && item.expedition == data.expedition) || !stored.Add(item))
+                    (data.location == RunLocation.Search && item.expedition == data.expedition) || !stored.Add(item))
                     return false;
             }
 
             var hasHand = !string.IsNullOrEmpty(data.held);
-            if (data.atHome)
+            if (data.location != RunLocation.Search)
                 return data.hasBag && data.world.Length == 0 && !hasHand && !data.heldRotated && !data.heldInWorld;
             if ((!data.hasBag && (hasHand || data.player.inside)) ||
                 (!hasHand && (data.heldRotated || data.heldInWorld)))

@@ -12,7 +12,8 @@ namespace TrashHunter
         private readonly Dictionary<RunLocation, string> paths = new()
         {
             [RunLocation.Search] = "Assets/TrashHunter/Scenes/ContainerSearch.unity",
-            [RunLocation.Home] = "Assets/TrashHunter/Scenes/Home.unity"
+            [RunLocation.Home] = "Assets/TrashHunter/Scenes/Home.unity",
+            [RunLocation.Trader] = "Assets/TrashHunter/Scenes/Trader.unity"
         };
 
         private GameState state;
@@ -82,7 +83,7 @@ namespace TrashHunter
         {
             busy = true;
             pending = departure.HasValue ? null : location;
-            active?.Session.ShowTransition(false);
+            active?.ShowTransition(false, departure.HasValue);
             StartCoroutine(Move(location, departure, start ?? Time.realtimeSinceStartupAsDouble, writeMs));
         }
 
@@ -118,7 +119,7 @@ namespace TrashHunter
                     yield return SceneManager.UnloadSceneAsync(destination);
                 busy = false;
                 retryAfterFrame = Time.frameCount;
-                active?.Session.ShowTransition(true, departure.HasValue);
+                active?.ShowTransition(true, departure.HasValue);
                 yield break;
             }
 
@@ -129,7 +130,7 @@ namespace TrashHunter
                 {
                     yield return SceneManager.UnloadSceneAsync(destination);
                     busy = false;
-                    active.Session.ShowHome();
+                    active.RestoreSettlement();
                     yield break;
                 }
                 writeMs = state.LastWriteMs;
