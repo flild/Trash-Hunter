@@ -1,5 +1,8 @@
 {
   "entries": [
+    {"key": "transition.loading", "value": "Loading location"},
+    {"key": "transition.failed", "value": "Could not load the location"},
+    {"key": "transition.actions", "value": "Enter  Retry loading     Esc  Quit"},
     {"key": "continue.title", "value": "Continue"},
     {"key": "continue.expedition", "value": "Expedition {0}"},
     {"key": "continue.actions", "value": "Enter  Continue     Esc  Quit"},

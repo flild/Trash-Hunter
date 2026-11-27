@@ -1,5 +1,8 @@
 {
   "entries": [
+    {"key": "transition.loading", "value": "Загрузка локации"},
+    {"key": "transition.failed", "value": "Не удалось загрузить локацию"},
+    {"key": "transition.actions", "value": "Enter  Повторить загрузку     Esc  Выйти"},
     {"key": "continue.title", "value": "Продолжить"},
     {"key": "continue.expedition", "value": "Вылазка {0}"},
     {"key": "continue.actions", "value": "Enter  Продолжить     Esc  Выйти"},

@@ -7,9 +7,14 @@ namespace TrashHunter
     internal static class RunBootstrap
     {
         public static LifetimeScope RunScope { get; private set; }
+        internal static SceneCoordinator Scenes { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Reset() => RunScope = null;
+        private static void Reset()
+        {
+            RunScope = null;
+            Scenes = null;
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Start()
@@ -19,7 +24,8 @@ namespace TrashHunter
             Object.DontDestroyOnLoad(application.gameObject);
             RunScope = application.CreateChild(builder =>
                 builder.Register(resolver => new GameState(resolver.Resolve<LootCatalog>()), Lifetime.Singleton), "Run Scope");
-            RunScope.Container.Resolve<GameState>().LoadSlot();
+            Scenes = application.gameObject.AddComponent<SceneCoordinator>();
+            Scenes.Initialize(RunScope.Container.Resolve<GameState>(), catalog);
         }
     }
 }

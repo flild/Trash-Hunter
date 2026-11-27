@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 
 namespace TrashHunter
 {
@@ -16,7 +15,7 @@ namespace TrashHunter
         [SerializeField] private Transform inside;
         [SerializeField] private BoxCollider containerFloor;
         [SerializeField] private Transform exit;
-        [SerializeField] private SearchItem[] items;
+        [SerializeField] private SearchItem[] items = Array.Empty<SearchItem>();
         [SerializeField] private Collider starterBag;
         [SerializeField] private float rimReach = 1.15f;
         [SerializeField] private float itemReach = 3f;
@@ -43,7 +42,9 @@ namespace TrashHunter
         private Mode mode;
         private bool inspecting;
         private bool bagOpen;
-        private bool reloading;
+        private SceneCoordinator scenes;
+        private SearchSceneScope scope;
+        private bool searchPrepared;
         private bool quitting;
         private float blockedUntil;
         private float holdDistance;
@@ -52,38 +53,80 @@ namespace TrashHunter
         private SaleOffer offer;
         private string receipt;
 
-        internal void Initialize(GameState gameState, LootCatalog catalog, SearchPlayer scenePlayer, SearchHud sceneHud)
+        internal Transform SearchEntry => outside;
+
+        internal bool HasSearchSetup =>
+            outside != null && inside != null && containerFloor != null && exit != null &&
+            starterBag != null && items.Length > 0 && items.All(item => item != null);
+
+        internal void StageSearch()
         {
-            state = gameState;
-            player = scenePlayer;
-            hud = sceneHud;
-            aimProperties = new MaterialPropertyBlock();
-            strings = new UiStrings();
-            knowsLootTiers = HasRecognitionForPrototype();
-            hud.Bag.SetStrings(strings);
-            var views = items.ToDictionary(item => item.Id, StringComparer.Ordinal);
+            if (!HasSearchSetup)
+                return;
+
             foreach (var item in items)
             {
-                item.Bind(catalog[item.Id], views);
                 item.CacheLayout();
-                var name = ItemName(item);
-                aimLabels.Add(item, item.IsPackage
-                    ? (string.Format(strings.Get("package.openAim"), name), string.Format(strings.Get("package.checkAim"), name))
-                    : (string.Format(strings.Get("search.take"), name), null));
+                item.gameObject.SetActive(false);
             }
+        }
+
+        internal SearchPile PreparePile(LootCatalog catalog)
+        {
+            BindSearchItems(catalog);
+            Physics.SyncTransforms();
+            return Pile();
+        }
+
+        internal void Initialize(GameState gameState, LootCatalog catalog, SceneCoordinator coordinator,
+            SearchSceneScope sceneScope, SearchPlayer scenePlayer, SearchHud sceneHud)
+        {
+            state = gameState;
+            scenes = coordinator;
+            scope = sceneScope;
+            player = scenePlayer;
+            hud = sceneHud;
+            strings = new UiStrings();
+            hud.Bag.SetStrings(strings);
+            if (scope.Location == RunLocation.Search)
+            {
+                BindSearchItems(catalog);
+                aimProperties = new MaterialPropertyBlock();
+                knowsLootTiers = HasRecognitionForPrototype();
+                foreach (var item in items)
+                {
+                    var name = ItemName(item);
+                    aimLabels.Add(item, item.IsPackage
+                        ? (string.Format(strings.Get("package.openAim"), name), string.Format(strings.Get("package.checkAim"), name))
+                        : (string.Format(strings.Get("search.take"), name), null));
+                }
+            }
+            player.Restore(scope.EntryPose);
             Application.wantsToQuit += SaveBeforeQuit;
             Open();
         }
 
+        private void BindSearchItems(LootCatalog catalog)
+        {
+            if (searchPrepared)
+                return;
+
+            var views = items.ToDictionary(item => item.Id, StringComparer.Ordinal);
+            foreach (var item in items)
+                item.Bind(catalog[item.Id], views);
+            searchPrepared = true;
+        }
+
         private void Open()
         {
-            if (!state.SlotLoaded || (!state.HasRun && !state.StartNewRun(Pile(), SearchPlayer.PoseAt(outside))))
+            if (!state.SlotLoaded || (!state.HasRun && !state.StartNewRun(Pile(), scope.EntryPose)))
             {
                 ShowLoadError();
                 return;
             }
 
-            ApplySnapshot();
+            if (scope.Location == RunLocation.Search)
+                ApplySnapshot();
             if (!state.ResumePending)
             {
                 CloseOverlay();
@@ -127,7 +170,7 @@ namespace TrashHunter
         private void Update()
         {
             aimedItem = null;
-            if (player == null || reloading)
+            if (player == null || !scenes.HasControl)
                 return;
 
             var keyboard = Keyboard.current;
@@ -140,10 +183,8 @@ namespace TrashHunter
             var mouse = Mouse.current;
             if (keyboard?.f5Key.wasPressedThisFrame == true)
             {
-                CaptureWorld();
-                if (state.Save())
-                    Reload();
-                UpdateError();
+                if (!scenes.SaveAndTravel(SaveWorld))
+                    UpdateError();
                 return;
             }
 
@@ -411,8 +452,8 @@ namespace TrashHunter
                 case Mode.LoadError:
                     if (confirm)
                     {
-                        state.LoadSlot();
-                        Open();
+                        if (scenes.RetrySlot())
+                            Open();
                     }
                     else if (cancel)
                         Application.Quit();
@@ -422,15 +463,11 @@ namespace TrashHunter
                         CloseOverlay();
                     else if (confirm)
                     {
-                        CaptureWorld();
-                        if (state.ReturnHome(returnExpedition))
+                        if (!scenes.SaveAndTravel(() =>
                         {
-                            receipt = null;
-                            selection = 0;
-                            ApplySnapshot();
-                            CloseOverlay();
-                        }
-                        else
+                            CaptureWorld();
+                            return state.ReturnHome(returnExpedition);
+                        }))
                             ShowReturn();
                     }
                     break;
@@ -438,12 +475,7 @@ namespace TrashHunter
                     if (cancel)
                         Pause();
                     else if (keyboard.eKey.wasPressedThisFrame)
-                    {
-                        if (state.Depart(state.Expedition, Pile(), SearchPlayer.PoseAt(outside)))
-                            Reload();
-                        else
-                            ShowHome();
-                    }
+                        scenes.Depart();
                     else if (state.Home.Count > 0 && (confirm || keyboard.upArrowKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame))
                     {
                         if (keyboard.upArrowKey.wasPressedThisFrame)
@@ -491,13 +523,13 @@ namespace TrashHunter
             ShowOverlay(strings.Get("return.title"), summary, details, strings.Get("return.actions"), state.Error, true);
         }
 
-        private void ShowHome()
+        internal void ShowHome(string error = null)
         {
             mode = Mode.Home;
             hud.ShowError(null);
             selection = Mathf.Clamp(selection, 0, Mathf.Max(0, state.Home.Count - 1));
             hud.Show(string.Empty, string.Empty, false);
-            hud.Expedition.ShowHome(state, selection, receipt, strings);
+            hud.Expedition.ShowHome(state, selection, receipt, strings, error);
             UnlockCursor();
         }
 
@@ -562,13 +594,18 @@ namespace TrashHunter
 
         private void UpdateError() => hud.ShowError(state.Error);
 
+        private bool SaveWorld()
+        {
+            CaptureWorld();
+            return state.Save();
+        }
+
         private bool SaveBeforeQuit()
         {
-            if (quitting || mode == Mode.LoadError || mode == Mode.Continue || reloading)
+            if (quitting || mode == Mode.LoadError || mode == Mode.Continue || !scenes.HasControl)
                 return true;
 
-            CaptureWorld();
-            if (!state.Save())
+            if (!SaveWorld())
             {
                 Pause();
                 return false;
@@ -726,7 +763,7 @@ namespace TrashHunter
 
         private void FixedUpdate()
         {
-            if (held == null || mode != Mode.Search || inspecting || bagOpen || reloading ||
+            if (held == null || mode != Mode.Search || inspecting || bagOpen || !scenes.HasControl ||
                 Cursor.lockState != CursorLockMode.Locked)
                 return;
 
@@ -775,7 +812,7 @@ namespace TrashHunter
 
         private void PresentHand()
         {
-            if (held == null || reloading || (held.HeldInWorld && !inspecting))
+            if (held == null || !scenes.HasControl || (held.HeldInWorld && !inspecting))
                 return;
 
             var view = player.ViewCamera.transform;
@@ -849,14 +886,16 @@ namespace TrashHunter
             return offset.sqrMagnitude > clearance * clearance;
         }
 
-        private void Reload()
+        internal void ShowTransition(bool failed, bool departure = false)
         {
-            var scenePath = gameObject.scene.path;
-            if (SceneUtility.GetBuildIndexByScenePath(scenePath) < 0)
-                throw new InvalidOperationException($"Add {scenePath} to the build scene list.");
+            if (failed && departure)
+            {
+                ShowHome(strings.Get("transition.failed"));
+                return;
+            }
 
-            reloading = true;
-            SceneManager.LoadSceneAsync(scenePath, LoadSceneMode.Single);
+            ShowOverlay(strings.Get(failed ? "transition.failed" : "transition.loading"),
+                string.Empty, string.Empty, failed ? strings.Get("transition.actions") : string.Empty, null);
         }
 
         private static void LockCursor()

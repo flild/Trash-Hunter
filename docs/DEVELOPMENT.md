@@ -463,8 +463,9 @@ unity command script eval --runtime TrashHunterPileQA --caller plugin --skill un
 
 ## Проверка запуска прохождения
 
-[VerifyRunStartup.cs](../AgentScripts/VerifyRunStartup.cs) запускается с пустой
-сценой Editor. Для каждого прогона назначить новый абсолютный каталог в
+[VerifyRunStartup.cs](../AgentScripts/VerifyRunStartup.cs) проверяет холодный
+старт на ревизии I-140 (`e23dae7`) с пустой сценой Editor. Для текущей ревизии
+использовать проверку координатора ниже. Для каждого прогона назначить новый абсолютный каталог в
 `TRASH_HUNTER_EDITOR_SAVE_DIR` в процессе Editor. Оставить каталог пустым
 для новой игры или скопировать старый файл под именем `slot.json`.
 После входа в Play Mode запустить проверку.
@@ -486,6 +487,34 @@ Mode, восстановить исходную сцену, переменные
 Представления ContainerSearch связываются с записями по `itemId`.
 Поля прежнего авторинга сохраняют совместимость со сценариями создания
 прототипа в Editor.
+
+## Проверка координатора сцен
+
+В Editor открыть одну сцену, указанную для фазы. На каждый прогон использовать
+новый абсолютный каталог из `Logs/I-150/`. В процессе Editor задать
+`TRASH_HUNTER_EDITOR_SAVE_DIR` на этот каталог, `TRASH_HUNTER_CHECK` на фазу
+и `TRASH_HUNTER_LOCALE` на локаль. Старый файл копировать под именем
+`slot.json`. Запустить Play Mode и выполнить скрипт.
+
+| Фаза | Открытая сцена | Каталог и результат |
+|---|---|---|
+| `route` | Startup | Копия `Logs/I-140/expedition/slot.json`. F5, возврат, продажа и новая вылазка. |
+| `failures` | Startup | Та же копия в отдельном каталоге. Блокировка записи и повтор загрузки проверяются автоматически. |
+| `cold` | ContainerSearch | Копия `Logs/I-140/home/slot.json`. Открывается дом из сохранения. |
+| `cold` | Home | Копия `Logs/I-140/i040/slot.json`. Открывается сохранённая вылазка I-040. |
+| `new` | Home | Пустой каталог. Поиск начинается у первой сумки. |
+
+~~~powershell
+$projectPath = 'F:\UnityProjects\Trash-Hunter'
+$pipeline = @('--caller','plugin','--skill','unity-pipeline','--project-path',$projectPath,'--format','json')
+unity command script eval @pipeline -- --file AgentScripts/VerifySceneTransitions.cs --timeout 50
+~~~
+
+После каждого прогона выйти из Play Mode. После серии вернуть переменные и
+открытую до проверки сцену. Для авторинга Startup и Home открыть сохранённый
+ContainerSearch в Edit Mode и использовать `script run --file
+AgentScripts/AuthorWorldScenes.cs --entry AuthorWorldScenes.Create`.
+[Результаты и замеры I-150](sessions/2026-11-27-i150-scene-coordinator.md).
 
 ## Официальные инструкции
 

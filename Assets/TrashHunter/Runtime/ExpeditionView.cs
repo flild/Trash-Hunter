@@ -44,7 +44,7 @@ namespace TrashHunter
             feedback.color = isWarning ? Warning : Neutral;
         }
 
-        internal void ShowHome(GameState state, int selection, string receipt, UiStrings strings)
+        internal void ShowHome(GameState state, int selection, string receipt, UiStrings strings, string error = null)
         {
             const int visibleRows = 5;
             var rows = new StringBuilder();
@@ -64,8 +64,9 @@ namespace TrashHunter
             var keys = strings.Get("home.actions");
             if (state.Home.Count > 0)
                 keys = $"{strings.Get("home.offer")}     {keys}";
+            error ??= state.Error;
             Show(strings.Get("home.title"), string.Format(strings.Get("home.balance"), state.Balance), details, keys,
-                state.Error ?? receipt, state.Error != null);
+                error ?? receipt, error != null);
         }
     }
 }

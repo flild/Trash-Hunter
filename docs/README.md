@@ -10,6 +10,8 @@ I-060–I-120 закрыты.
 [Передача](relay/world/HANDOFF.md) · [Отчёт подготовки](sessions/2026-11-27-world-relay.md).
 [Отчёт I-140](sessions/2026-11-27-i140-run-startup.md) описывает проверку холодного
 старта в Unity и совместимости старых файлов.
+[Отчёт I-150](sessions/2026-11-27-i150-scene-coordinator.md) содержит
+проверки переходов и исходные замеры.
 
 1. [AGENTS.md](../AGENTS.md) — постоянные правила работы.
 2. [PROJECT_STATE.md](PROJECT_STATE.md) — что существует сейчас.

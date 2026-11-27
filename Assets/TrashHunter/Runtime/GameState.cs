@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace TrashHunter
 {
-    public enum RunLocation { Search, Home }
+    public enum RunLocation { Search = 0, Home = 1 }
 
     public sealed class GameState : IDisposable
     {
@@ -34,6 +34,7 @@ namespace TrashHunter
         public string Error { get; private set; }
         public string RecoveryNotice => slot?.RecoveryNotice;
         internal PlayerPose Player => current.player;
+        internal double LastWriteMs { get; private set; }
 
         internal bool LoadSlot()
         {
@@ -287,7 +288,9 @@ namespace TrashHunter
         {
             next.revision = current.revision + 1;
             next.utcTicks = DateTime.UtcNow.Ticks;
+            var writeStart = Time.realtimeSinceStartupAsDouble;
             var saved = slot.TryWrite(next, out var error);
+            LastWriteMs = (Time.realtimeSinceStartupAsDouble - writeStart) * 1000;
             Error = error;
             if (!saved)
                 return false;
