@@ -11,6 +11,7 @@ namespace TrashHunter
         private enum Mode { Search, Return, Pause, Continue, LoadError, Quest }
 
         [SerializeField] private Transform outside;
+        [SerializeField] private Transform yardEntry;
         [SerializeField] private Transform inside;
         [SerializeField] private BoxCollider containerFloor;
         [SerializeField] private Transform exit;
@@ -41,6 +42,7 @@ namespace TrashHunter
         private string rejectedDrop;
         private UiStrings strings;
         private Quaternion inspectRotation;
+        private StoryFact visibleEvidence;
         private Mode mode;
         private bool inspecting;
         private bool bagOpen;
@@ -53,7 +55,7 @@ namespace TrashHunter
         private float holdDistance;
         private int returnExpedition;
 
-        internal Transform SearchEntry => outside;
+        internal Transform SearchEntry => yardEntry != null ? yardEntry : outside;
 
         internal bool HasSearchSetup =>
             outside != null && inside != null && containerFloor != null && exit != null &&
@@ -71,11 +73,11 @@ namespace TrashHunter
             }
         }
 
-        internal SearchPile PreparePile(LootCatalog catalog)
+        internal SearchPile PreparePile(LootCatalog catalog, bool secondYard = false)
         {
             BindSearchItems(catalog);
             Physics.SyncTransforms();
-            return Pile();
+            return Pile(secondYard);
         }
 
         internal void Initialize(GameState gameState, LootCatalog catalog, SceneCoordinator coordinator,
@@ -131,12 +133,14 @@ namespace TrashHunter
             mode = Mode.Continue;
             foreach (var item in items)
                 item.FreezeWorld(true);
-            var summary = string.Format(strings.Get("continue.expedition"), state.Expedition);
+            var summary = state.AtSecondYard ? strings.Get("story.yard")
+                : string.Format(strings.Get("continue.expedition"), state.Expedition);
             ShowOverlay(strings.Get("continue.title"), summary, string.Empty,
                 strings.Get("continue.actions"), state.RecoveryNotice);
         }
 
-        private SearchPile Pile() => pile ??= new SearchPile(items, containerFloor, inside.position);
+        private SearchPile Pile(bool secondYard = false) =>
+            pile ??= new SearchPile(items, containerFloor, inside.position, secondYard);
 
         private void ApplySnapshot()
         {
@@ -253,6 +257,10 @@ namespace TrashHunter
             if (inspecting)
             {
                 inspectRotation = Quaternion.Euler(delta.y * 0.55f, -delta.x * 0.55f, 0f) * inspectRotation;
+                if (held.Id == GameState.HomeTag && keyboard?.rKey.wasPressedThisFrame == true)
+                    inspectRotation = Vector3.Dot(inspectRotation * Vector3.forward, Vector3.forward) >= 0
+                        ? Quaternion.Euler(0f, 180f, 0f) : Quaternion.identity;
+                InspectEvidence();
                 return;
             }
 
@@ -351,15 +359,38 @@ namespace TrashHunter
             }
 
             inspecting = true;
-            inspectRotation = held.InspectionStartRotation();
+            visibleEvidence = StoryFact.None;
+            inspectRotation = GameState.IsEvidence(held.Id) ? Quaternion.identity : held.InspectionStartRotation();
             held.BeginInspection();
             var label = ItemName(held);
             if (knowsLootTiers && held.Definition.Tier > 0)
                 label = string.Format(strings.Get("search.inspectedTier"), label, held.Definition.Tier);
             hud.Inspection.Show(label, strings.Get($"item.{held.Id}.condition", string.Empty));
-            hud.Show(string.Empty, strings.Get("search.inspectControls"), false);
+            hud.Show(string.Empty, strings.Get(held.Id == GameState.HomeTag
+                ? "story.tagControls" : "search.inspectControls"), false);
+            InspectEvidence();
         }
 
+        private void InspectEvidence()
+        {
+            if (!GameState.IsEvidence(held.Id))
+                return;
+
+            var facing = Vector3.Dot(inspectRotation * Vector3.forward, Vector3.forward);
+            var face = facing >= 0.82f ? held.Id == GameState.HomeTag ? StoryFact.Address : StoryFact.Recorder
+                : facing <= -0.82f && held.Id == GameState.HomeTag ? StoryFact.Batch : StoryFact.None;
+            if (visibleEvidence == face)
+                return;
+
+            visibleEvidence = face;
+            if (face != StoryFact.None && !state.Knows(face))
+            {
+                CaptureWorld();
+                state.ReadHeldEvidence(face);
+                UpdateError();
+            }
+            hud.Inspection.ShowEvidence(state, strings, ItemName(held), held.Id, face);
+        }
         private void EndInspection()
         {
             if (!inspecting)
@@ -861,7 +892,8 @@ namespace TrashHunter
             var view = player.ViewCamera.transform;
             var offset = inspecting ? new Vector3(0f, -0.035f, Mathf.Max(0.88f, 2f * held.HalfSize.magnitude)) :
                 new Vector3(0.37f, -0.27f, 0.82f);
-            held.Present(view.TransformPoint(offset), view.rotation * (inspecting ? inspectRotation : Quaternion.identity));
+            var rotation = inspecting ? ItemInspectionView.EvidenceRotation(held.Id, inspectRotation) : Quaternion.identity;
+            held.Present(view.TransformPoint(offset), view.rotation * rotation);
         }
 
         private bool Near(Transform marker, float reach) =>

@@ -197,8 +197,11 @@ namespace TrashHunter
                         snapshot.contacts = Array.Empty<string>();
                     }
                     if (snapshot?.format is >= 1 and <= 4)
-                    {
                         snapshot.hasBackpack = false;
+                    if (snapshot?.format is >= 1 and <= 5)
+                    {
+                        snapshot.secondYard = false;
+                        snapshot.story = StoryFact.None;
                         snapshot.format = RunSnapshot.CurrentFormat;
                     }
                     if (snapshot != null && validate(snapshot))

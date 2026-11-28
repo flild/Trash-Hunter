@@ -24,6 +24,21 @@ namespace TrashHunter
             gameObject.SetActive(true);
         }
 
+        internal void ShowEvidence(GameState state, UiStrings strings, string label, string key, StoryFact face)
+        {
+            var text = !state.Knows(face) ? "story.factSaveFailed" : face switch
+            {
+                StoryFact.Address => "story.address",
+                StoryFact.Batch => "story.batch",
+                StoryFact.Recorder => "story.recorder",
+                _ => $"item.{key}.condition"
+            };
+            Show(label, strings.Get(text), twoLines: true);
+        }
+
+        internal static Quaternion EvidenceRotation(string key, Quaternion rotation) =>
+            key == GameState.HomeTag ? rotation * Quaternion.Euler(-90f, 0f, 0f) : rotation;
+
         public void Hide() => gameObject.SetActive(false);
     }
 }

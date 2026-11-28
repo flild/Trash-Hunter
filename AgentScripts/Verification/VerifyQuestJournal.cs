@@ -21,7 +21,9 @@ var questType = assembly.GetType("TrashHunter.QuestCatalog", true);
 var loot = lootType.GetMethod("Load").Invoke(null, null);
 var catalog = questType.GetMethod("Parse", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null,
     new[] { File.ReadAllText("AgentScripts/Fixtures/i170-quests.json"), loot });
-var root = Path.GetFullPath(Path.Combine("Logs/I-170", Guid.NewGuid().ToString("N")));
+var root = Path.GetFullPath(Path.Combine(
+    System.Environment.GetEnvironmentVariable("TRASH_HUNTER_QUEST_CHECK_ROOT") ?? "Logs/I-170",
+    Guid.NewGuid().ToString("N")));
 var folder = Path.Combine(root, "journal");
 Directory.CreateDirectory(folder);
 var slot = Path.Combine(folder, "slot.json");
@@ -132,10 +134,29 @@ try
     using (var state = Load(folder))
     {
         var saved = Payload(File.ReadAllText(slot));
-        Check((int)saved["format"] == 5 && (bool)saved["hasSold"] && saved["contacts"].Count() == 1 &&
+        Check((int)saved["format"] == 6 && (bool)saved["hasSold"] && saved["contacts"].Count() == 1 &&
             AtStep(state, inspectionQuest, "") && AtStep(state, deliveryQuest, "") &&
             state.Quests.HasContact("test-technician") && state.Home.SequenceEqual(new[] { olderRadio }) &&
-            state.Balance == (long)saved["cash"], "Format 5 restores both completed quests and their results");
+            state.Balance == (long)saved["cash"], "The current format restores both completed quests and their results");
+    }
+    seed = Payload(File.ReadAllText(slot));
+    seed["format"] = 5;
+    seed["hasBackpack"] = true;
+    seed.Remove("story");
+    seed.Remove("secondYard");
+    var format5Folder = Path.Combine(root, "format5");
+    Directory.CreateDirectory(format5Folder);
+    var format5Slot = Path.Combine(format5Folder, "slot.json");
+    WriteSeed(format5Slot, seed);
+    using (var state = Load(format5Folder))
+    {
+        Check(state.Location == RunLocation.Trader && state.HasBackpack && state.Bag.Height == 3 &&
+            state.Quests.HasContact("test-technician") && state.Home.SequenceEqual(new[] { olderRadio }),
+            "Format 5 preserves the backpack, location, stock and contacts");
+        Check(Call(state, "Save"), "The migrated slot can be published");
+        var saved = Payload(File.ReadAllText(format5Slot));
+        Check((int)saved["format"] == 6 && (int)saved["story"] == 0 && !(bool)saved["secondYard"],
+            "Format 5 migrates without inventing clues or moving the player");
     }
 }
 finally

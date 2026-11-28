@@ -128,7 +128,7 @@ public static class VerifyWorkbench
                 await At(RunLocation.Home);
                 Check(state.Home.Last().Equals(dirty) && state.Home.Count == 6 && state.Bag.Count == 0,
                     "The confirmed return transfers the packed lamp once with trip 3.");
-                Check((int)Snapshot(slot)["format"] == 5 && state.Quote(dirty).Price == 34 &&
+                Check((int)Snapshot(slot)["format"] == 6 && state.Quote(dirty).Price == 34 &&
                     state.Quote(oldIntact).Price == 42, "New dust discounts the delivered lamp only.");
                 await Select(dirty);
                 var bench = Object.FindAnyObjectByType<Workbench>();

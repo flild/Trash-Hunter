@@ -185,6 +185,27 @@
     {"key": "item.strip-b", "value": "Strip"},
     {"key": "item.strip-b.name", "value": "Metal strip"},
     {"key": "item.tin-a", "value": "Tin"},
-    {"key": "item.tin-b", "value": "Tin"}
+    {"key": "item.tin-b", "value": "Tin"},
+    {"key": "item.home-tag", "value": "House tag"},
+    {"key": "item.home-tag.condition", "value": "A scuffed tag with writing on both sides."},
+    {"key": "item.batch-recorder", "value": "Cassette recorder"},
+    {"key": "item.batch-recorder.name", "value": "Damaged cassette recorder"},
+    {"key": "item.batch-recorder.condition", "value": "The cassette door is jammed."},
+    {"key": "story.title", "value": "House tag"},
+    {"key": "story.address", "value": "6 Quiet Lane. That's my note: “under the stairs.”"},
+    {"key": "story.batch", "value": "A stamp on the back. Batch 17-Б."},
+    {"key": "story.recorder", "value": "Batch 17-Б, like the tag. The cassette door is jammed."},
+    {"key": "story.tagControls", "value": "Mouse — rotate · R — flip · Q — close"},
+    {"key": "story.stockTagControls", "value": "R — flip · Q — close"},
+    {"key": "story.stockInspect", "value": "Q — close"},
+    {"key": "story.inspectKey", "value": "Q — inspect"},
+    {"key": "story.askKey", "value": "G — ask about the tag"},
+    {"key": "story.askActions", "value": "Enter — show the details · Esc — back"},
+    {"key": "story.directions", "value": "The trader recognizes the number.\nThis batch went to the workshop yard."},
+    {"key": "story.yard", "value": "Workshop yard"},
+    {"key": "story.yardKey", "value": "V — workshop yard"},
+    {"key": "story.saleTagBlocked", "value": "Read both sides of the tag first."},
+    {"key": "story.saleRecorderBlocked", "value": "Listen to the cassette recording first."},
+    {"key": "story.factSaveFailed", "value": "The clue wasn't saved. Inspect that side again."}
   ]
 }

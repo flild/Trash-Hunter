@@ -6,7 +6,7 @@ namespace TrashHunter
     [Serializable]
     internal sealed class RunSnapshot
     {
-        public const int CurrentFormat = 5;
+        public const int CurrentFormat = 6;
 
         public int format;
         public string runId;
@@ -26,6 +26,8 @@ namespace TrashHunter
         public HomeItem[] home;
         public long cash;
         public bool hasSold;
+        public bool secondYard;
+        public StoryFact story;
         public QuestProgress[] quests = Array.Empty<QuestProgress>();
         public string[] contacts = Array.Empty<string>();
 
@@ -50,6 +52,17 @@ namespace TrashHunter
             Array.Copy(home, index + 1, remaining, index, home.Length - index - 1);
             home = remaining;
         }
+    }
+
+    [Flags]
+    internal enum StoryFact
+    {
+        None = 0,
+        Address = 1,
+        Batch = 2,
+        Tag = Address | Batch,
+        Lead = 4,
+        Recorder = 8
     }
 
     [Serializable]

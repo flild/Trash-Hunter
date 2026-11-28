@@ -19,6 +19,7 @@ namespace TrashHunter
         private Vector2 defaultPanelAnchor;
         private Vector2 defaultPanelPosition;
         private Vector2 defaultActionsSize;
+        private Vector2 defaultActionsPosition;
 
         private void Awake()
         {
@@ -26,6 +27,7 @@ namespace TrashHunter
             defaultPanelAnchor = panel.anchorMin;
             defaultPanelPosition = panel.anchoredPosition;
             defaultActionsSize = actions.rectTransform.sizeDelta;
+            defaultActionsPosition = actions.rectTransform.anchoredPosition;
             defaultBodyPosition = body.rectTransform.anchoredPosition;
             defaultBodySize = body.rectTransform.sizeDelta;
         }
@@ -48,8 +50,11 @@ namespace TrashHunter
             heading.text = title;
             subtitle.text = summary;
             body.text = details;
-            actions.rectTransform.sizeDelta = keys.Contains('\n')
-                ? new Vector2(defaultActionsSize.x, 52f) : defaultActionsSize;
+            var firstBreak = keys.IndexOf('\n');
+            var thirdRow = firstBreak >= 0 && firstBreak != keys.LastIndexOf('\n');
+            actions.rectTransform.sizeDelta = firstBreak < 0 ? defaultActionsSize
+                : new Vector2(defaultActionsSize.x, thirdRow ? 66f : 52f);
+            actions.rectTransform.anchoredPosition = defaultActionsPosition - (thirdRow ? Vector2.up * 9f : Vector2.zero);
             actions.text = keys;
             feedback.text = message ?? string.Empty;
             feedback.color = isWarning ? Warning : Neutral;

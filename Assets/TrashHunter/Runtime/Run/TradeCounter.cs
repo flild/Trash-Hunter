@@ -36,6 +36,8 @@ namespace TrashHunter
 
         public bool BuyBackpack() => state.CompleteBackpackPurchase(BackpackPrice);
 
+        internal string SaleBlock(HomeItem item) => state.SaleBlock(item);
+
         public bool Sell(SaleOffer offer)
         {
             var current = Quote(offer.Item);

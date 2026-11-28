@@ -12,6 +12,7 @@ namespace TrashHunter
     {
         private static readonly ProfilerMarker PrepareDepartureMarker = new("TrashHunter.PrepareDeparture");
         private static readonly ProfilerMarker CommitDepartureMarker = new("TrashHunter.CommitDeparture");
+        private const string SecondYardPath = "Assets/TrashHunter/Scenes/SecondYard.unity";
 
         private readonly Dictionary<RunLocation, string> paths = new()
         {
@@ -45,7 +46,8 @@ namespace TrashHunter
         private void Start()
         {
             var scene = SceneManager.GetActiveScene();
-            if (scene.path == paths[state.Location] && TryGetScope(scene, state.Location, out var scope))
+            if (scene.path == PathFor(state.Location, state.AtSecondYard) &&
+                TryGetScope(scene, state.Location, out var scope))
                 Activate(scope);
             else
                 BeginMove(state.Location);
@@ -68,10 +70,10 @@ namespace TrashHunter
             return true;
         }
 
-        internal void Depart()
+        internal void Depart(bool secondYard = false)
         {
-            if (HasControl && state.AtHome)
-                BeginMove(RunLocation.Search, state.Expedition);
+            if (HasControl && state.AtHome && (!secondYard || state.Knows(StoryFact.Lead)))
+                BeginMove(RunLocation.Search, state.Expedition, secondYard: secondYard);
         }
 
         internal bool RetrySlot()
@@ -83,18 +85,23 @@ namespace TrashHunter
             return false;
         }
 
-        private void BeginMove(RunLocation location, int? departure = null, double? start = null, double writeMs = 0)
+        private string PathFor(RunLocation location, bool secondYard) =>
+            location == RunLocation.Search && secondYard ? SecondYardPath : paths[location];
+
+        private void BeginMove(RunLocation location, int? departure = null, double? start = null, double writeMs = 0,
+            bool secondYard = false)
         {
             busy = true;
             pending = departure.HasValue ? null : location;
             active?.ShowTransition(false, departure.HasValue);
-            StartCoroutine(Move(location, departure, start ?? Time.realtimeSinceStartupAsDouble, writeMs));
+            var yard = departure.HasValue ? secondYard : state.AtSecondYard;
+            StartCoroutine(Move(location, departure, yard, start ?? Time.realtimeSinceStartupAsDouble, writeMs));
         }
 
-        private IEnumerator Move(RunLocation location, int? departure, double start, double writeMs)
+        private IEnumerator Move(RunLocation location, int? departure, bool secondYard, double start, double writeMs)
         {
             var source = SceneManager.GetActiveScene();
-            var path = paths[location];
+            var path = PathFor(location, secondYard);
             var destination = default(Scene);
             var loadStart = Time.realtimeSinceStartupAsDouble;
 
@@ -132,8 +139,8 @@ namespace TrashHunter
                 RunSnapshot next;
                 using (PrepareDepartureMarker.Auto())
                 {
-                    var pile = scope.Session.PreparePile(catalog);
-                    next = state.PrepareDeparture(departure.Value, pile, scope.EntryPose);
+                    var pile = scope.Session.PreparePile(catalog, secondYard);
+                    next = state.PrepareDeparture(departure.Value, pile, scope.EntryPose, secondYard);
                 }
 
                 bool saved;

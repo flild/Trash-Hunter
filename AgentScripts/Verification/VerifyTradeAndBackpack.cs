@@ -214,8 +214,8 @@ public static class VerifyTradeAndBackpack
                 case "resume":
                     Check(Mode() == "Continue" && state.Balance == 2 && state.HasBackpack &&
                         state.Home.SequenceEqual(new[] { Player, OtherLamp }) && state.Quote(Player).Price == 72 &&
-                        state.Quests.HasContact(Repairer) && (int)Read(slot)["format"] == 5,
-                        "A separate Play session restores format 5, cash, ownership and the same repaired stock.");
+                        state.Quests.HasContact(Repairer) && (int)Read(slot)["format"] == 6,
+                        "A separate Play session restores cash, ownership and the same repaired stock in the current format.");
                     await Tap(Key.Enter);
                     Check(!Text("Actions").Contains("K  "), "The trader no longer offers the bought backpack.");
                     await Sell(Player, 72);

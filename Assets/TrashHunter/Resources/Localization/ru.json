@@ -185,6 +185,27 @@
     {"key": "item.strip-b", "value": "Рейка"},
     {"key": "item.strip-b.name", "value": "Металлическая рейка"},
     {"key": "item.tin-a", "value": "Коробка"},
-    {"key": "item.tin-b", "value": "Коробка"}
+    {"key": "item.tin-b", "value": "Коробка"},
+    {"key": "item.home-tag", "value": "Домашняя метка"},
+    {"key": "item.home-tag.condition", "value": "Потёртая метка с надписями с обеих сторон."},
+    {"key": "item.batch-recorder", "value": "Кассетник"},
+    {"key": "item.batch-recorder.name", "value": "Повреждённый кассетник"},
+    {"key": "item.batch-recorder.condition", "value": "Крышка кассетного отсека заклинила."},
+    {"key": "story.title", "value": "Домашняя метка"},
+    {"key": "story.address", "value": "Тихий переулок, 6. Рядом моя пометка: «под лестницей»."},
+    {"key": "story.batch", "value": "На обороте штамп. Партия 17-Б."},
+    {"key": "story.recorder", "value": "Партия 17-Б, как на метке. Кассета за заклинившей крышкой."},
+    {"key": "story.tagControls", "value": "Мышь — повернуть · R — перевернуть · Q — закрыть"},
+    {"key": "story.stockTagControls", "value": "R — перевернуть · Q — закрыть"},
+    {"key": "story.stockInspect", "value": "Q — закрыть"},
+    {"key": "story.inspectKey", "value": "Q — осмотреть"},
+    {"key": "story.askKey", "value": "G — спросить про метку"},
+    {"key": "story.askActions", "value": "Enter — показать сведения · Esc — назад"},
+    {"key": "story.directions", "value": "Старьёвщик узнал номер.\nЭту партию свозили во двор мастерских."},
+    {"key": "story.yard", "value": "Двор мастерских"},
+    {"key": "story.yardKey", "value": "V — во двор мастерских"},
+    {"key": "story.saleTagBlocked", "value": "Сначала прочти обе стороны метки."},
+    {"key": "story.saleRecorderBlocked", "value": "Сначала нужно прослушать запись на кассете."},
+    {"key": "story.factSaveFailed", "value": "Сведение не записалось. Осмотри сторону ещё раз."}
   ]
 }

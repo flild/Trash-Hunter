@@ -25,6 +25,7 @@ namespace TrashHunter
             public Vector2Int size;
             public bool legacyLayoutOnly;
             public bool optionalLayout;
+            public bool firstYardOnly;
             public string[] contents = Array.Empty<string>();
 
             public LootDefinition Definition => new(name, tier, baseValue, conditionDiscount, condition, size);
@@ -39,6 +40,7 @@ namespace TrashHunter
         private readonly Dictionary<string, Entry> entries = new(StringComparer.Ordinal);
 
         public HashSet<string> LayoutKeys { get; } = new(StringComparer.Ordinal);
+        public HashSet<string> SecondYardKeys { get; } = new(StringComparer.Ordinal);
         public HashSet<string> OptionalLayoutKeys { get; } = new(StringComparer.Ordinal);
         public HashSet<string> PackageKeys { get; } = new(StringComparer.Ordinal);
         public Dictionary<string, string> InitialPackages { get; } = new(StringComparer.Ordinal);
@@ -57,11 +59,15 @@ namespace TrashHunter
                 else if (item.optionalLayout)
                     OptionalLayoutKeys.Add(item.id);
                 else if (!item.legacyLayoutOnly)
+                {
                     LayoutKeys.Add(item.id);
+                    if (!item.firstYardOnly)
+                        SecondYardKeys.Add(item.id);
+                }
             }
 
             foreach (var id in InitialPackages.Keys)
-                if (!LayoutKeys.Contains(id))
+                if (!SecondYardKeys.Contains(id))
                     throw new InvalidOperationException($"Invalid package content in LootCatalog: '{id}'.");
         }
 

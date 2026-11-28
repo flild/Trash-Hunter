@@ -93,7 +93,8 @@ namespace TrashHunter
 
         internal bool Confirm(string id, string step, QuestAction action, HomeItem item)
         {
-            if (state.Location != RunLocation.Trader || !state.HasRun)
+            if (state.Location != RunLocation.Trader || !state.HasRun ||
+                action == QuestAction.Deliver && state.SaleBlock(item) != null)
                 return false;
 
             var itemIndex = Array.IndexOf(state.Snapshot.home, item);

@@ -8,7 +8,7 @@ namespace TrashHunter
     {
         private const int VisibleRows = 5;
         private const string QuestId = QuestCatalog.TraderTurntable;
-        private enum Mode { Home, Trader, Sale, Pause, Continue, Quest, Present, Bench, Repair, Backpack }
+        private enum Mode { Home, Trader, Sale, Pause, Continue, Quest, Present, Bench, Repair, Backpack, Lead, Evidence }
 
         [SerializeField] private Workbench workbench;
         [SerializeField] private CounterDisplay counter;
@@ -28,6 +28,7 @@ namespace TrashHunter
         private HomeItem presentedItem;
         private string presentationStep;
         private string receipt;
+        private bool reverseEvidence;
         private bool quitting;
 
         private bool AtTrader => location == RunLocation.Trader;
@@ -96,6 +97,24 @@ namespace TrashHunter
                         ShowQuest();
                     }
                     break;
+                case Mode.Lead:
+                    if (cancel || confirm && state.Knows(StoryFact.Lead))
+                        ShowStock();
+                    else if (confirm)
+                    {
+                        state.AskAboutBatch();
+                        ShowLead();
+                    }
+                    break;
+                case Mode.Evidence:
+                    if (cancel || keyboard.qKey.wasPressedThisFrame)
+                        ShowStock();
+                    else if (keyboard.rKey.wasPressedThisFrame && state.Home[selection].key == GameState.HomeTag)
+                    {
+                        reverseEvidence = !reverseEvidence;
+                        ShowEvidence();
+                    }
+                    break;
                 case Mode.Present:
                     if (cancel)
                         ShowStock();
@@ -144,7 +163,7 @@ namespace TrashHunter
                 case Mode.Sale:
                     if (cancel)
                         ShowStock();
-                    else if (confirm)
+                    else if (confirm && state.Trade.SaleBlock(offer.Item) == null)
                     {
                         if (state.Trade.Sell(offer))
                         {
@@ -160,6 +179,8 @@ namespace TrashHunter
                                 ShowStock();
                         }
                     }
+                    else if (keyboard.qKey.wasPressedThisFrame && GameState.IsEvidence(offer.Item.key))
+                        BeginStockInspection();
                     else if (keyboard.mKey.wasPressedThisFrame && state.Trade.RepairPrice(offer.Item) > 0)
                         ShowRepair();
                     break;
@@ -180,6 +201,8 @@ namespace TrashHunter
             }
             else if (keyboard.jKey.wasPressedThisFrame && CanViewQuest)
                 ShowQuest();
+            else if (AtTrader && state.Knows(StoryFact.Tag) && keyboard.gKey.wasPressedThisFrame)
+                ShowLead();
             else if (AtTrader && keyboard.pKey.wasPressedThisFrame && state.Home.Count > 0 &&
                 state.Quests.TryGetPresentationStep(QuestId, state.Home[selection], out presentationStep))
             {
@@ -194,6 +217,8 @@ namespace TrashHunter
                 Travel(RunLocation.Trader);
             else if (!AtTrader && keyboard.eKey.wasPressedThisFrame)
                 scenes.Depart();
+            else if (!AtTrader && keyboard.vKey.wasPressedThisFrame && state.Knows(StoryFact.Lead))
+                scenes.Depart(secondYard: true);
             else if (!AtTrader && CanUseBench && (keyboard.bKey.wasPressedThisFrame || ClickedBench()))
             {
                 benchItem = state.Home[selection];
@@ -203,6 +228,11 @@ namespace TrashHunter
             }
             else if (state.Home.Count > 0)
             {
+                if (AtTrader && keyboard.qKey.wasPressedThisFrame && GameState.IsEvidence(state.Home[selection].key))
+                {
+                    BeginStockInspection();
+                    return;
+                }
                 if (keyboard.upArrowKey.wasPressedThisFrame)
                     selection--;
                 else if (keyboard.downArrowKey.wasPressedThisFrame)
@@ -328,6 +358,38 @@ namespace TrashHunter
                 strings.Get("quest.presentActions"), state.Error, state.Error != null, homeStock: counter != null);
         }
 
+        private void ShowLead()
+        {
+            mode = Mode.Lead;
+            var hasLead = state.Knows(StoryFact.Lead);
+            var details = $"{strings.Get("story.address")}\n{strings.Get("story.batch")}";
+            if (hasLead)
+                details += $"\n{strings.Get("story.directions")}";
+            view.Show(strings.Get("story.title"), string.Empty, details,
+                strings.Get(hasLead ? "quest.closeActions" : "story.askActions"), state.Error, state.Error != null);
+        }
+
+        private void BeginStockInspection()
+        {
+            mode = Mode.Evidence;
+            reverseEvidence = false;
+            view.gameObject.SetActive(false);
+            counter?.Show(state.Home[selection]);
+            ShowEvidence();
+        }
+
+        private void ShowEvidence()
+        {
+            var item = state.Home[selection];
+            var face = item.key == GameState.HomeTag
+                ? reverseEvidence ? StoryFact.Batch : StoryFact.Address : StoryFact.Recorder;
+            counter?.Inspect(viewCamera, item.key, reverseEvidence);
+            state.ReadStockEvidence(item, face);
+            hud.Inspection.ShowEvidence(state, strings, ItemLabel(item), item.key, face);
+            hud.Show(string.Empty, strings.Get(item.key == GameState.HomeTag
+                ? "story.stockTagControls" : "story.stockInspect"), false);
+        }
+
         private void Travel(RunLocation destination)
         {
             if (!scenes.SaveAndTravel(() => state.TravelBetweenSettlements(destination)))
@@ -337,6 +399,11 @@ namespace TrashHunter
         internal void ShowStock(string error = null)
         {
             CloseBench();
+            if (mode == Mode.Evidence)
+            {
+                hud.Inspection.Hide();
+                hud.Show(string.Empty, string.Empty, false);
+            }
             counter?.Hide();
             mode = AtTrader ? Mode.Trader : Mode.Home;
             var count = state.Home.Count;
@@ -353,6 +420,10 @@ namespace TrashHunter
             var keys = strings.Get(AtTrader ? "trader.actions" : "home.actions");
             if (AtTrader && !state.HasBackpack)
                 keys = $"{strings.Get("backpack.open")}     {keys}";
+            if (AtTrader && state.Knows(StoryFact.Tag))
+                keys = $"{strings.Get("story.askKey")}\n{keys}";
+            else if (!AtTrader && state.Knows(StoryFact.Lead))
+                keys = $"{strings.Get("story.yardKey")}\n{keys}";
             if (CanViewQuest)
                 keys = $"{strings.Get(state.Quests.IsAvailable(QuestId) ? "quest.offer" : "quest.view")}     {keys}";
             if (AtTrader && count > 0)
@@ -360,6 +431,8 @@ namespace TrashHunter
                 var itemAction = state.Quests.TryGetPresentationStep(QuestId, state.Home[selection], out _)
                     ? $"     {strings.Get("quest.present")}" : string.Empty;
                 var trade = $"{strings.Get("trader.offer")}{itemAction}";
+                if (GameState.IsEvidence(state.Home[selection].key))
+                    trade += $"     {strings.Get("story.inspectKey")}";
                 keys = $"{trade}\n{keys}";
             }
             else if (!AtTrader && count > 0)
@@ -394,10 +467,16 @@ namespace TrashHunter
             mode = Mode.Sale;
             counter?.Show(offer.Item);
             var condition = Describe(offer.Item, catalog[offer.Item.key], offer.Condition, false);
-            var keys = strings.Get("sale.actions");
+            var saleBlock = state.Trade.SaleBlock(offer.Item);
+            var keys = strings.Get(saleBlock == null ? "sale.actions" : "trade.cancel");
+            if (GameState.IsEvidence(offer.Item.key))
+                keys = $"{strings.Get("story.inspectKey")}     {keys}";
             if (state.Trade.RepairPrice(offer.Item) > 0)
                 keys = $"{strings.Get("repair.open")}     {keys}";
-            view.Show(strings.Get("sale.title"), $"{offer.Price} ₽", $"{ItemLabel(offer.Item)}\n{condition}",
+            var price = saleBlock == null ? $"{offer.Price} ₽" : string.Empty;
+            if (saleBlock != null)
+                condition = strings.Get(saleBlock);
+            view.Show(strings.Get("sale.title"), price, $"{ItemLabel(offer.Item)}\n{condition}",
                 keys, state.Error ?? message, state.Error != null, homeStock: counter != null);
         }
 

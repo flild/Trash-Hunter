@@ -59,6 +59,7 @@ namespace TrashHunter
         internal bool IsPackage => InitialContents is { Length: > 0 };
         internal SearchItem[] InitialContents => boundContents ?? packageContents;
         internal bool OptionalLayout => entry?.optionalLayout == true;
+        internal bool FirstYardOnly => entry?.firstYardOnly == true;
         internal bool LegacyLayoutOnly => entry?.legacyLayoutOnly ?? legacyLayoutOnly;
 
         internal void Bind(LootCatalog.Entry definition, IReadOnlyDictionary<string, SearchItem> views)

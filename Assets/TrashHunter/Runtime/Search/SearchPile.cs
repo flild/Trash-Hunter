@@ -20,7 +20,7 @@ namespace TrashHunter
         private readonly WorldItem cabinetStart;
         private readonly (string Id, Vector3 Size, string[] Contents)[] packages;
         private readonly (string Id, Vector3 Size)[] looseFinds;
-        private readonly Dictionary<string, Vector3> optionalFinds;
+        private readonly Dictionary<string, (Vector3 Size, WorldItem Pose)> optionalFinds;
         private readonly Scene scene;
         private readonly Rect pileArea;
         private readonly float floorHeight;
@@ -28,7 +28,7 @@ namespace TrashHunter
         private readonly RaycastHit[] supports = new RaycastHit[16];
         private readonly List<(Vector2 Point, float Score)> candidates = new();
 
-        public SearchPile(SearchItem[] items, BoxCollider floorCollider, Vector3 entry)
+        public SearchPile(SearchItem[] items, BoxCollider floorCollider, Vector3 entry, bool secondYard)
         {
             // Capture the authored dimensions and cabinet pose before the finds move.
             var cabinet = items.Single(item => item.Id == "cabinet-a");
@@ -39,10 +39,10 @@ namespace TrashHunter
                     item.InitialContents.Select(content => content.Id).ToArray())).ToArray();
             var nested = packages.SelectMany(package => package.Contents).ToHashSet();
             var finds = items.Where(item => !item.LegacyLayoutOnly && item != cabinet && !item.IsPackage && !item.OptionalLayout &&
-                    !nested.Contains(item.Id))
+                    !(secondYard && item.FirstYardOnly) && !nested.Contains(item.Id))
                 .Select(item => (item.Id, Size: item.GetComponent<BoxCollider>().size)).ToArray();
             optionalFinds = items.Where(item => item.OptionalLayout)
-                .ToDictionary(item => item.Id, item => item.GetComponent<BoxCollider>().size);
+                .ToDictionary(item => item.Id, item => (item.GetComponent<BoxCollider>().size, item.LayoutPose(0)));
             crate = finds.Single(find => find.Id == "crate-a");
             looseFinds = finds.Where(find => find.Id != crate.Id).ToArray();
             scene = floorCollider.gameObject.scene;
@@ -53,7 +53,7 @@ namespace TrashHunter
             pileArea = Rect.MinMaxRect(entry.x - 0.62f, entry.z + 0.55f, floor.max.x - 0.30f, floor.max.z - 0.55f);
         }
 
-        public WorldItem[] Generate(int seed, string optionalFind = null)
+        public WorldItem[] Generate(int seed, string questFind, string evidence)
         {
             var random = new Random(seed);
             // System.Random starts opposite signed seeds in the same state.
@@ -87,8 +87,14 @@ namespace TrashHunter
                 }
             }
 
-            if (optionalFind != null)
-                placed.Add(PlaceOnFloor(optionalFind, optionalFinds[optionalFind], focus, random, placed));
+            if (evidence != null)
+            {
+                var (size, pose) = optionalFinds[evidence];
+                placed.Add(new Placement(pose, Footprint(pose.position,
+                    HorizontalExtents(size * 0.5f, pose.rotation)), size.y));
+            }
+            if (questFind != null)
+                placed.Add(PlaceOnFloor(questFind, optionalFinds[questFind].Size, focus, random, placed));
 
             var top = cratePlacement.Area;
             // Use the inscribed rectangle of the slightly rotated crate for reliable support.

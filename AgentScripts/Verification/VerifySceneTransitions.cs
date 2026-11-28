@@ -153,9 +153,9 @@ async Task Route(bool failures)
     await Until(() => Ready() && SceneManager.GetActiveScene() != previous, "F5 reload");
     VerifyScene(search);
     var reload = Snapshot(File.ReadAllText(primary));
-    Check((int)reload["format"] == 5 && SavedLocation(reload) == RunLocation.Search &&
+    Check((int)reload["format"] == 6 && SavedLocation(reload) == RunLocation.Search &&
         Revision() == ++revision && state.Expedition == expedition && state.Bag.Count == packed.Length,
-        "F5 writes format 4 once and reloads with the same expedition and bag");
+        "F5 writes the current format once and reloads with the same expedition and bag");
     timings.Add("reload", Timing());
 
     previous = SceneManager.GetActiveScene();

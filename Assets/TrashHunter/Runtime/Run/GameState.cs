@@ -10,6 +10,8 @@ namespace TrashHunter
     public sealed class GameState : IDisposable
     {
         private const string CabinetId = "cabinet-a";
+        internal const string HomeTag = "home-tag";
+        internal const string BatchRecorder = "batch-recorder";
         private static readonly string[] LegacyLayout = { "crate-a", "lamp-a", "radio-a", "strip-a", "dial-a" };
         private readonly LootCatalog catalog;
         private RunSnapshot current;
@@ -32,6 +34,8 @@ namespace TrashHunter
         public bool HasBackpack => current.hasBackpack;
         public string HeldItemId => string.IsNullOrEmpty(current.held) ? null : current.held;
         internal bool HeldInWorld => current.heldInWorld;
+        internal bool AtSecondYard => current?.secondYard == true;
+        internal bool Knows(StoryFact fact) => HasRun && (current.story & fact) == fact;
         public bool HeldItemRotated { get; set; }
         public int Expedition => current.expedition;
         public RunLocation Location => current?.location ?? RunLocation.Search;
@@ -258,6 +262,7 @@ namespace TrashHunter
             next.heldRotated = false;
             next.heldInWorld = false;
             next.location = RunLocation.Home;
+            next.secondYard = false;
             next.player = default;
             return Publish(next);
         }
@@ -354,7 +359,8 @@ namespace TrashHunter
 
         internal bool CompleteSale(HomeItem item, int price)
         {
-            if (Location != RunLocation.Trader || price <= 0 || Balance > long.MaxValue - price)
+            if (Location != RunLocation.Trader || price <= 0 || Balance > long.MaxValue - price ||
+                SaleBlock(item) != null)
                 return false;
 
             var index = Array.IndexOf(current.home, item);
@@ -368,14 +374,58 @@ namespace TrashHunter
             return Quests.ApplyFact(next, QuestAction.Sell, item.key) && Publish(next);
         }
 
-        internal RunSnapshot PrepareDeparture(int previousExpedition, SearchPile pile, PlayerPose spawn)
+        internal string SaleBlock(HomeItem item) => item.key switch
         {
-            if (!AtHome || Expedition != previousExpedition || Expedition == int.MaxValue)
+            HomeTag when !Knows(StoryFact.Tag) => "story.saleTagBlocked",
+            BatchRecorder => "story.saleRecorderBlocked",
+            _ => null
+        };
+
+        internal static bool IsEvidence(string key) => key is HomeTag or BatchRecorder;
+
+        internal bool ReadHeldEvidence(StoryFact fact)
+        {
+            if (Location != RunLocation.Search || !EvidenceMatches(HeldItemId, fact))
+                return false;
+
+            return SaveStoryFact(fact, HeldItemRotated);
+        }
+
+        internal bool ReadStockEvidence(HomeItem item, StoryFact fact) =>
+            Location == RunLocation.Trader && TryGetHomeItem(item, out _) &&
+            EvidenceMatches(item.key, fact) && SaveStoryFact(fact, false);
+
+        internal bool AskAboutBatch() => Location == RunLocation.Trader && Knows(StoryFact.Tag) &&
+            SaveStoryFact(StoryFact.Lead, false);
+
+        private static bool EvidenceMatches(string key, StoryFact fact) => key switch
+        {
+            HomeTag => fact is StoryFact.Address or StoryFact.Batch,
+            BatchRecorder => fact == StoryFact.Recorder,
+            _ => false
+        };
+
+        private bool SaveStoryFact(StoryFact fact, bool heldRotated)
+        {
+            if (Knows(fact))
+                return true;
+
+            var next = current.Copy();
+            next.story |= fact;
+            next.heldRotated = heldRotated;
+            return Publish(next);
+        }
+
+        internal RunSnapshot PrepareDeparture(int previousExpedition, SearchPile pile, PlayerPose spawn, bool secondYard)
+        {
+            if (!AtHome || Expedition != previousExpedition || Expedition == int.MaxValue ||
+                (secondYard && !Knows(StoryFact.Lead)))
                 return null;
 
             var next = current.Copy();
             next.expedition++;
             next.location = RunLocation.Search;
+            next.secondYard = secondYard;
             if (!TryGeneratePile(next, pile))
                 return null;
             next.player = spawn;
@@ -433,7 +483,7 @@ namespace TrashHunter
                 data.pileGeneratorVersion is < 0 or > SearchPile.GeneratorVersion ||
                 !Finite(data.player.position) || !float.IsFinite(data.player.yaw) ||
                 !float.IsFinite(data.player.pitch) || Mathf.Abs(data.player.pitch) > 82f ||
-                !Quests.Validate(data))
+                !Quests.Validate(data) || !ValidStory(data))
                 return false;
 
             var stored = new HashSet<HomeItem>();
@@ -490,7 +540,7 @@ namespace TrashHunter
                 keys.ExceptWith(catalog.PackageKeys);
                 if (data.pileGeneratorVersion >= 3)
                     keys.ExceptWith(catalog.OptionalLayoutKeys);
-                return keys.SetEquals(catalog.LayoutKeys);
+                return keys.SetEquals(data.secondYard ? catalog.SecondYardKeys : catalog.LayoutKeys);
             }
 
             // I-040 expeditions predate the cabinet. Preserve their exact set of finds.
@@ -498,6 +548,22 @@ namespace TrashHunter
             var beforeCabinet = keys.Count + 1 == layoutKeys.Count && layoutKeys.Contains(CabinetId) &&
                 !keys.Contains(CabinetId) && keys.IsSubsetOf(layoutKeys);
             return keys.SetEquals(layoutKeys) || keys.SetEquals(LegacyLayout) || beforeCabinet;
+        }
+
+        private static bool ValidStory(RunSnapshot data)
+        {
+            var story = data.story;
+            var hasLead = (story & StoryFact.Lead) != 0;
+            return (story & ~(StoryFact.Tag | StoryFact.Lead | StoryFact.Recorder)) == 0 &&
+                (story == StoryFact.None || data.hasSold) &&
+                (!hasLead || (story & StoryFact.Tag) == StoryFact.Tag) &&
+                ((story & StoryFact.Recorder) == 0 || hasLead) &&
+                (!data.secondYard || (data.location == RunLocation.Search && hasLead &&
+                    data.pileGeneratorVersion >= 3)) &&
+                !Array.Exists(data.world, item => item.key == HomeTag && (!data.hasSold || data.secondYard) ||
+                    item.key == BatchRecorder && !data.secondYard) &&
+                !Array.Exists(data.home, item => item.key == HomeTag && !data.hasSold ||
+                    item.key == BatchRecorder && !hasLead);
         }
 
         private static bool Finite(Vector3 value) =>
@@ -515,11 +581,13 @@ namespace TrashHunter
             // A failed write and retry for the same expedition must produce the same pile.
             var runSeed = BitConverter.ToInt32(Guid.ParseExact(snapshot.runId, "N").ToByteArray(), 0);
             snapshot.pileSeed = unchecked(runSeed + snapshot.expedition * 1009);
-            var optionalFind = Quests.ExpeditionFind(snapshot);
-            snapshot.pileGeneratorVersion = optionalFind == null ? SearchPile.BaseGeneratorVersion : SearchPile.GeneratorVersion;
+            var questFind = snapshot.secondYard ? null : Quests.ExpeditionFind(snapshot);
+            var evidence = ExpeditionEvidence(snapshot);
+            snapshot.pileGeneratorVersion = questFind == null && evidence == null && !snapshot.secondYard
+                ? SearchPile.BaseGeneratorVersion : SearchPile.GeneratorVersion;
             try
             {
-                snapshot.world = pile.Generate(snapshot.pileSeed, optionalFind);
+                snapshot.world = pile.Generate(snapshot.pileSeed, questFind, evidence);
                 Error = null;
                 return true;
             }
@@ -528,6 +596,16 @@ namespace TrashHunter
                 Error = exception.Message;
                 return false;
             }
+        }
+
+        private static string ExpeditionEvidence(RunSnapshot snapshot)
+        {
+            if (snapshot.secondYard)
+                return Array.Exists(snapshot.home, item => item.key == BatchRecorder) ? null : BatchRecorder;
+            if (!snapshot.hasSold || (snapshot.story & StoryFact.Tag) == StoryFact.Tag ||
+                Array.Exists(snapshot.home, item => item.key == HomeTag))
+                return null;
+            return HomeTag;
         }
 
         internal static int LayoutIndex(int expedition) => (expedition - 1) % 3;
