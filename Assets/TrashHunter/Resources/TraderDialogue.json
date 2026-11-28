@@ -1,0 +1,19 @@
+{
+  "topics": [
+    {
+      "id": "trader-turntable-offer",
+      "textKey": "dialogue.trader.turntable",
+      "replyKey": "quest.condition",
+      "availableQuestId": "trader-turntable",
+      "action": 1
+    },
+    {
+      "id": "trader-home-tag",
+      "textKey": "dialogue.trader.homeTag",
+      "replyKey": "story.directions",
+      "requiresFacts": 3,
+      "excludesFacts": 4,
+      "action": 2
+    }
+  ]
+}

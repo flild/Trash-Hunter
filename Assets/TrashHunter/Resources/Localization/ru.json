@@ -1,5 +1,7 @@
 {
   "entries": [
+    {"key": "dialogue.trader.turntable", "value": "Поручение о РП-07"},
+    {"key": "dialogue.trader.homeTag", "value": "Спросить о метке"},
     {"key": "quest.offer", "value": "J  Новое поручение"},
     {"key": "quest.view", "value": "J  Поручение"},
     {"key": "quest.present", "value": "P  Показать вещь"},

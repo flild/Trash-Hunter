@@ -12,6 +12,7 @@
 | docs/relay/FILES.md | Реестр для уборки, удаляется последним |
 | Logs/I-240/ | Локальные журналы, результаты, хеши и изолированные автослоты проверки Windows Player |
 | Assets/TrashHunterI240Probe/ и Assets/TrashHunterI240Probe.meta | Копии сценариев для сборки I-240, удалены через Editor после сборки |
+| Logs/I-250/VerifyDialogueCatalog.cs | Сценарий проверки загрузки и видимости тем в подключённом Editor |
 
 ## Сохраняемые документы и материалы
 

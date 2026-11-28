@@ -1,5 +1,7 @@
 {
   "entries": [
+    {"key": "dialogue.trader.turntable", "value": "The RP-07 request"},
+    {"key": "dialogue.trader.homeTag", "value": "Ask about the tag"},
     {"key": "quest.offer", "value": "J  New request"},
     {"key": "quest.view", "value": "J  Request"},
     {"key": "quest.present", "value": "P  Show item"},
