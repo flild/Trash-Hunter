@@ -227,6 +227,13 @@ namespace TrashHunter
             SetWorldPose(position, rotation);
         }
 
+        internal void Spill(Vector3 position, Vector3 direction)
+        {
+            Place(position, Quaternion.identity);
+            body.linearVelocity = direction * 0.85f + Vector3.up * 0.3f;
+            body.angularVelocity = Vector3.Cross(Vector3.up, direction) * 3f;
+        }
+
         internal void Throw(Vector3 direction)
         {
             Release();
@@ -234,7 +241,7 @@ namespace TrashHunter
             body.AddForce(direction * Mathf.Min(MaximumThrowImpulse, body.mass * 8f), ForceMode.Impulse);
         }
 
-        private void Release()
+        internal void Release()
         {
             IsHeld = false;
             HeldInWorld = false;

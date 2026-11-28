@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,7 +8,7 @@ namespace TrashHunter
 {
     public sealed class SearchSession : MonoBehaviour
     {
-        private enum Mode { Search, Return, Pause, Continue, LoadError, Package, Quest }
+        private enum Mode { Search, Return, Pause, Continue, LoadError, Quest }
 
         [SerializeField] private Transform outside;
         [SerializeField] private Transform inside;
@@ -31,10 +30,8 @@ namespace TrashHunter
         private SearchItem highlightedItem;
         private MaterialPropertyBlock aimProperties;
         private SearchItem movingInBag;
-        private SearchItem browsingPackage;
-        private readonly List<SearchItem> remainingContents = new();
-        private readonly Dictionary<SearchItem, (string Action, string CheckContents)> aimLabels = new();
-        private int packageSelection;
+        private readonly Dictionary<string, Vector3> drops = new();
+        private readonly Dictionary<SearchItem, string> aimLabels = new();
         private bool knowsLootTiers;
         private bool moveRotated;
         private UiStrings strings;
@@ -91,9 +88,8 @@ namespace TrashHunter
             foreach (var item in items)
             {
                 var name = ItemName(item);
-                aimLabels.Add(item, item.IsPackage
-                    ? (string.Format(strings.Get("package.openAim"), name), string.Format(strings.Get("package.checkAim"), name))
-                    : (string.Format(strings.Get("search.take"), strings.Get($"item.{item.Id}.aim", name)), null));
+                aimLabels.Add(item, item.IsPackage ? string.Format(strings.Get("package.openAim"), name)
+                    : strings.Get($"item.{item.Id}.aim", name));
             }
             player.Restore(entryPose);
             Application.wantsToQuit += SaveBeforeQuit;
@@ -181,6 +177,8 @@ namespace TrashHunter
             }
 
             var cancel = keyboard?.escapeKey.wasPressedThisFrame == true;
+            if (!bagOpen && keyboard?.hKey.wasPressedThisFrame == true)
+                hud.ToggleControls();
             var toggleBag = keyboard?.tabKey.wasPressedThisFrame == true;
             if (bagOpen)
             {
@@ -306,25 +304,24 @@ namespace TrashHunter
                     holdDistance = Mathf.Clamp(holdDistance + Mathf.Sign(scroll) * 0.35f,
                         held.MinimumHoldDistance, itemReach);
             }
-            if (mouse?.leftButton.wasPressedThisFrame == true)
+            if (held != null)
             {
-                if (held != null)
-                    TryPlace(hit);
-                else if (target != null && target.IsPackage)
-                {
-                    if (BrowsePackage(target))
-                        return;
-                }
-                else if (target != null)
+                if (mouse?.rightButton.wasPressedThisFrame == true)
+                    ReleaseHand(true);
+                else if (mouse?.leftButton.isPressed != true && Time.unscaledTime >= blockedUntil)
+                    ReleaseHand(false);
+            }
+            else if (target != null && mouse?.leftButton.wasPressedThisFrame == true)
+            {
+                if (target.IsPackage)
+                    SpillPackage(target);
+                else
                     TakeInHand(target);
             }
-            else if (held != null && mouse?.rightButton.wasPressedThisFrame == true)
-                TryThrow();
 
             aimedItem = held == null ? target : null;
-            var action = held != null ? strings.Get("search.holdActions") :
-                target != null ? AimLabel(target) : string.Empty;
-            if (held != null && Time.unscaledTime < blockedUntil)
+            var action = aimedItem != null ? AimLabel(aimedItem) : string.Empty;
+            if (Time.unscaledTime < blockedUntil)
                 action = strings.Get("search.blockedPlacement");
             var nearby = atExit ? strings.Get("search.goHome") : atRim
                 ? strings.Get(inContainer ? "search.climbOut" : "search.climbIn") : string.Empty;
@@ -351,8 +348,14 @@ namespace TrashHunter
 
         private string AimLabel(SearchItem item)
         {
-            var labels = aimLabels[item];
-            return item.IsPackage && state.IsPackageOpen(item.Id) ? labels.CheckContents : labels.Action;
+            if (item.IsPackage && state.IsPackageOpen(item.Id))
+            {
+                foreach (var content in item.InitialContents)
+                    if (state.IsInPackage(content.Id))
+                        return aimLabels[item];
+                return strings.Get("package.empty");
+            }
+            return aimLabels[item];
         }
 
         private string InspectionLabel(SearchItem item)
@@ -373,61 +376,41 @@ namespace TrashHunter
             return Array.IndexOf(Environment.GetCommandLineArgs(), "-trash-hunter-recognition") >= 0;
         }
 
-        private bool BrowsePackage(SearchItem package)
+        private void SpillPackage(SearchItem package)
         {
-            CaptureWorld();
-            if (!state.OpenPackage(package.Id))
-                return false;
-
-            package.ShowPackageOpened(true);
-            browsingPackage = package;
-            remainingContents.Clear();
+            drops.Clear();
+            var mouth = package.Shape.bounds;
+            var towardsPlayer = Vector3.ProjectOnPlane(player.transform.position - mouth.center, Vector3.up).normalized;
+            if (towardsPlayer == Vector3.zero)
+                towardsPlayer = Vector3.forward;
+            var bottom = mouth.max.y + 0.04f;
             foreach (var item in package.InitialContents)
-                if (state.IsInPackage(item.Id))
-                    remainingContents.Add(item);
-            packageSelection = 0;
-            mode = Mode.Package;
-            ShowPackage();
-            return true;
-        }
-
-        private void ShowPackage()
-        {
-            var rows = new StringBuilder();
-            for (var i = 0; i < remainingContents.Count; i++)
             {
-                var name = ItemName(remainingContents[i]);
-                rows.AppendLine(i == packageSelection ? $"<color=#F0C776><b>›  {name}</b></color>" : $"    {name}");
+                if (!state.IsInPackage(item.Id))
+                    continue;
+                // Separate spawn volumes keep the contents clear of each other and the shell.
+                var position = new Vector3(mouth.center.x, bottom + item.HalfSize.y, mouth.center.z);
+                if (Physics.CheckBox(position, item.HalfSize, Quaternion.identity,
+                    Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                {
+                    blockedUntil = Time.unscaledTime + 1.25f;
+                    return;
+                }
+                drops.Add(item.Id, position);
+                bottom = position.y + item.HalfSize.y + 0.04f;
             }
-
-            var empty = remainingContents.Count == 0;
-            ShowOverlay(ItemName(browsingPackage), string.Empty,
-                empty ? strings.Get("package.empty") : rows.ToString().TrimEnd(),
-                strings.Get(empty ? "package.close" : "package.controls"), state.Error, state.Error != null, package: true);
-        }
-
-        private void UpdatePackage(Keyboard keyboard, bool confirm, bool cancel)
-        {
-            if (cancel)
+            if (drops.Count == 0 && state.IsPackageOpen(package.Id))
+                return;
+            CaptureWorld();
+            if (!state.OpenPackage(package.Id, drops))
+                return;
+            package.ShowPackageOpened(true);
+            for (var i = 0; i < package.InitialContents.Length; i++)
             {
-                CloseOverlay();
-                return;
+                var item = package.InitialContents[i];
+                if (drops.TryGetValue(item.Id, out var position))
+                    item.Spill(position, Quaternion.AngleAxis(i % 2 == 0 ? -34f : 34f, Vector3.up) * towardsPlayer);
             }
-            if (remainingContents.Count == 0)
-                return;
-
-            if (keyboard.upArrowKey.wasPressedThisFrame)
-                packageSelection = Mathf.Max(0, packageSelection - 1);
-            else if (keyboard.downArrowKey.wasPressedThisFrame)
-                packageSelection = Mathf.Min(remainingContents.Count - 1, packageSelection + 1);
-            else if (confirm && TakeInHand(remainingContents[packageSelection]))
-            {
-                CloseOverlay();
-                return;
-            }
-            else if (!confirm)
-                return;
-            ShowPackage();
         }
 
         private void UpdateOverlay(Keyboard keyboard)
@@ -439,9 +422,6 @@ namespace TrashHunter
             var cancel = keyboard.escapeKey.wasPressedThisFrame;
             switch (mode)
             {
-                case Mode.Package:
-                    UpdatePackage(keyboard, confirm, cancel);
-                    break;
                 case Mode.Continue:
                     if (confirm)
                     {
@@ -527,11 +507,11 @@ namespace TrashHunter
         }
 
         private void ShowOverlay(string title, string summary, string details, string keys, string message,
-            bool warning = false, bool package = false)
+            bool warning = false)
         {
             hud.Show(string.Empty, string.Empty, false);
             hud.ShowError(null);
-            hud.Expedition.Show(title, summary, details, keys, message, warning, package);
+            hud.Expedition.Show(title, summary, details, keys, message, warning);
             UnlockCursor();
         }
 
@@ -794,30 +774,6 @@ namespace TrashHunter
             return bounds.Contains(feet);
         }
 
-        private void TryPlace(RaycastHit hit)
-        {
-            if (hit.collider != null && hit.normal.y > 0.85f)
-            {
-                var rotation = Quaternion.Euler(0f, player.transform.eulerAngles.y, 0f);
-                var halfSize = held.HalfSize;
-                var position = hit.point + Vector3.up * (halfSize.y + 0.045f);
-                var clearance = 0.36f + new Vector2(halfSize.x, halfSize.z).magnitude;
-                if (HasClearance(position, player.transform.position, clearance) &&
-                    HasClearance(position, (IsInContainer() ? inside : outside).position, clearance) &&
-                    HasRoom(position, rotation))
-                {
-                    CaptureWorld();
-                    if (state.Place(position, rotation))
-                    {
-                        held.Place(position, rotation);
-                        ClearHand();
-                    }
-                    return;
-                }
-            }
-            blockedUntil = Time.unscaledTime + 1.25f;
-        }
-
         private bool HasRoom(Vector3 position, Quaternion rotation)
         {
             var count = Physics.OverlapBoxNonAlloc(position, held.HalfSize, placementHits, rotation,
@@ -825,7 +781,7 @@ namespace TrashHunter
             return count == 0 || (count == 1 && placementHits[0] == held.Shape);
         }
 
-        private void TryThrow()
+        private void ReleaseHand(bool throwing)
         {
             var view = player.ViewCamera.transform;
             if (!TryMaterializeHand(view, HoldTarget(view)))
@@ -837,15 +793,14 @@ namespace TrashHunter
             CaptureWorld();
             if (state.Place(held.BodyPosition, held.BodyRotation))
             {
-                held.Throw(view.forward);
+                if (throwing)
+                    held.Throw(view.forward);
+                else
+                    held.Release();
                 ClearHand();
             }
-        }
-
-        private static bool HasClearance(Vector3 position, Vector3 reserved, float clearance)
-        {
-            var offset = Vector3.ProjectOnPlane(position - reserved, Vector3.up);
-            return offset.sqrMagnitude > clearance * clearance;
+            else
+                blockedUntil = Time.unscaledTime + 1.25f;
         }
 
         internal void ShowTransition(bool failed)

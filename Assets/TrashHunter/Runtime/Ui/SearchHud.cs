@@ -23,6 +23,17 @@ namespace TrashHunter
         public ExpeditionView Expedition => expedition;
         public void ShowError(string error) => feedback.text = error ?? string.Empty;
 
+        internal void ToggleControls() => controls.enabled = !controls.enabled;
+
+        private void Awake()
+        {
+            var corner = controls.rectTransform;
+            corner.anchorMin = corner.anchorMax = corner.pivot = Vector2.zero;
+            corner.anchoredPosition = new Vector2(18f, 14f);
+            corner.sizeDelta = new Vector2(420f, 72f);
+            controls.alignment = TextAnchor.LowerLeft;
+        }
+
         public void Show(string action, string bindings, bool showReticle, SearchItem target = null, string nearby = "")
         {
             var hasTarget = target != null;
@@ -32,7 +43,9 @@ namespace TrashHunter
             if (targetChanged)
             {
                 var position = hasTarget ? new Vector2(0.5f, 0.5f) : new Vector2(0.5f, 0f);
-                var offset = new Vector2(0f, hasTarget ? -43f : 83f);
+                var offset = new Vector2(0f, hasTarget ? -62f : 83f);
+                prompt.fontSize = hasTarget ? 17 : 21;
+                promptBacking.anchoredPosition = new Vector2(0f, -62f);
                 prompt.rectTransform.anchorMin = position;
                 prompt.rectTransform.anchorMax = position;
                 prompt.rectTransform.anchoredPosition = offset;
@@ -47,7 +60,7 @@ namespace TrashHunter
                 prompt.text = action;
                 if (hasTarget)
                     promptBacking.sizeDelta = new Vector2(
-                        Mathf.Min(prompt.preferredWidth + 26f, prompt.rectTransform.rect.width), 38f);
+                        Mathf.Min(prompt.preferredWidth + 16f, prompt.rectTransform.rect.width), 26f);
             }
 
             prompt.enabled = action.Length != 0;

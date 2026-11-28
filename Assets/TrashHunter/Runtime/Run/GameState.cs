@@ -138,15 +138,26 @@ namespace TrashHunter
             return index >= 0 && !string.IsNullOrEmpty(current.world[index].package);
         }
 
-        internal bool OpenPackage(string id)
+        internal bool OpenPackage(string id, IReadOnlyDictionary<string, Vector3> drops)
         {
             var index = FindWorldItem(id);
             if (!HasBag || HeldItemId != null || index < 0 || !catalog.PackageKeys.Contains(id))
                 return false;
-            if (current.world[index].opened)
-                return true;
-
             var next = current.Copy();
+            var released = 0;
+            for (var i = 0; i < next.world.Length; i++)
+            {
+                if (next.world[i].package != id)
+                    continue;
+                if (!drops.TryGetValue(next.world[i].key, out var position))
+                    return false;
+                next.world[i].package = null;
+                next.world[i].position = position;
+                next.world[i].rotation = Quaternion.identity;
+                released++;
+            }
+            if (released != drops.Count || (released == 0 && next.world[index].opened))
+                return false;
             next.world[index].opened = true;
             return Publish(next);
         }
@@ -157,16 +168,13 @@ namespace TrashHunter
             if (!HasBag || HeldItemId != null || index < 0 || catalog.PackageKeys.Contains(id))
                 return false;
 
-            var package = current.world[index].package;
-            var nested = !string.IsNullOrEmpty(package);
-            if (nested && !IsPackageOpen(package))
+            if (!string.IsNullOrEmpty(current.world[index].package))
                 return false;
 
             var next = current.Copy();
             next.held = id;
             next.heldRotated = next.world[index].rotated;
-            next.heldInWorld = !nested && !next.world[index].packed;
-            next.world[index].package = null;
+            next.heldInWorld = !next.world[index].packed;
             next.world[index].packed = false;
             next.world[index].rotated = false;
             return Publish(next);

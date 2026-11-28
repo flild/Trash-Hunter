@@ -8,6 +8,8 @@ namespace TrashHunter
     public sealed class SearchPlayer : MonoBehaviour
     {
         private const float JumpHeight = 0.95f;
+        private const float GravityMultiplier = 2.4f;
+        private const float SprintMultiplier = 1.65f;
         private const float GroundSpeed = -2f;
 
         [SerializeField] private Camera viewCamera;
@@ -18,6 +20,7 @@ namespace TrashHunter
         private CharacterController controller;
         private float pitch;
         private float verticalSpeed;
+        private bool stableSupport;
 
         public Camera ViewCamera => viewCamera;
 
@@ -47,6 +50,7 @@ namespace TrashHunter
             controller.enabled = true;
             supports.Clear();
             verticalSpeed = 0f;
+            stableSupport = false;
             pitch = pose.pitch;
             viewCamera.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
         }
@@ -65,14 +69,18 @@ namespace TrashHunter
             }
             input = Vector2.ClampMagnitude(input, 1f);
             var grounded = controller.isGrounded && verticalSpeed <= 0f;
-            if (grounded && keys?.spaceKey.wasPressedThisFrame == true)
-                verticalSpeed = Mathf.Sqrt(-2f * Physics.gravity.y * JumpHeight);
+            var gravity = Physics.gravity.y * GravityMultiplier;
+            if (grounded && stableSupport && keys?.spaceKey.wasPressedThisFrame == true)
+                verticalSpeed = Mathf.Sqrt(-2f * gravity * JumpHeight);
             else
-                verticalSpeed = grounded ? GroundSpeed : verticalSpeed + Physics.gravity.y * Time.deltaTime;
+                verticalSpeed = grounded ? GroundSpeed : verticalSpeed + gravity * Time.deltaTime;
 
             var velocity = (transform.right * input.x + transform.forward * input.y) * moveSpeed;
+            if (keys?.leftShiftKey.isPressed == true || keys?.rightShiftKey.isPressed == true)
+                velocity *= SprintMultiplier;
             velocity.y = verticalSpeed;
             supports.Clear();
+            stableSupport = false;
             var contacts = controller.Move(velocity * Time.deltaTime);
             if ((contacts & CollisionFlags.Above) != 0 && verticalSpeed > 0f)
                 verticalSpeed = 0f;
@@ -82,9 +90,12 @@ namespace TrashHunter
 
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
-            if (hit.rigidbody != null && hit.moveDirection.y < 0f &&
-                hit.normal.y >= Mathf.Cos(controller.slopeLimit * Mathf.Deg2Rad))
+            if (hit.normal.y < Mathf.Cos(controller.slopeLimit * Mathf.Deg2Rad))
+                return;
+            var body = hit.rigidbody;
+            if (body != null)
                 supports.Add(hit.collider);
+            stableSupport |= body == null || body.isKinematic || body.GetPointVelocity(hit.point).sqrMagnitude < 0.09f;
         }
 
         private static float Axis(bool positive, bool negative) => (positive ? 1 : 0) - (negative ? 1 : 0);
