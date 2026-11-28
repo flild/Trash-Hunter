@@ -23,7 +23,7 @@
 
 Компиляция прошла, в консоли Unity нет ошибок и предупреждений. Восстановлены Edit Mode, размер Game View и переменные тестового слота. Проверены совпадение 155 ключей RU/EN и ссылки изменённых документов. Замечания `git diff --check` касаются концевых пробелов в пустых полях HUD-префаба, записанных Unity.
 
-Кадры `lamp-intact.png`, `lamp-cracked.png` и `bag-compact.png` сохранены в `Logs/I-130/`. На паре кадров видны одинаковая маркировка и разная конструкция ушка. Отдельный Windows Player и другие игровые укладки не проверялись. Прежние сборки и их результаты относятся к предыдущим этапам.
+На кадрах проверки читалась одинаковая маркировка и различалась конструкция ушка. Отдельный Windows Player и другие игровые укладки не проверялись. Прежние сборки и их результаты относятся к предыдущим этапам.
 
 При работе с Canvas и Editor сверены `UIBasicLayout.md`, `script-CanvasScaler.md`, `HOWTO-UIMultiResolution.md`, `playmode-verification-loop.md` и страницы Pipeline `prefabs.md`, `scripts.md`, `build-and-compilation.md`, `editor-lifecycle-and-observability.md`, `capture.md`.
 
