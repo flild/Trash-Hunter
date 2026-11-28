@@ -34,11 +34,17 @@ namespace TrashHunter
         private readonly Dictionary<SearchItem, string> aimLabels = new();
         private bool knowsLootTiers;
         private bool moveRotated;
+        private bool draggingInBag;
+        private bool crossedDragThreshold;
+        private Vector2 dragStart;
+        private Vector2Int grabOffset;
+        private string rejectedDrop;
         private UiStrings strings;
         private Quaternion inspectRotation;
         private Mode mode;
         private bool inspecting;
         private bool bagOpen;
+        private bool awaitingGrip;
         private SceneCoordinator scenes;
         private PlayerPose entryPose;
         private bool searchPrepared;
@@ -142,6 +148,7 @@ namespace TrashHunter
                 if (item.IsHeld)
                     held = item;
             }
+            awaitingGrip = held != null;
             player.Restore(state.Player);
             if (held != null)
             {
@@ -186,6 +193,11 @@ namespace TrashHunter
                     CloseBag();
                 else if (cancel)
                     CancelBagMove();
+                else if (keyboard?.qKey.wasPressedThisFrame == true && held != null && movingInBag == null)
+                {
+                    CloseBag();
+                    BeginInspection();
+                }
                 else
                     UpdateBag(keyboard, mouse);
                 UpdateError();
@@ -216,13 +228,15 @@ namespace TrashHunter
                 return;
             }
 
-            if (toggleBag && state.HasBag && !inspecting)
+            if (toggleBag && state.HasBag)
             {
+                EndInspection();
                 bagOpen = true;
+                held?.FreezeWorld(true);
                 hud.Show(string.Empty, string.Empty, false);
                 hud.Bag.gameObject.SetActive(true);
                 hud.Bag.ShowContents(state.Bag, items);
-                hud.Bag.ShowSelection(held, null, null, HandPlacement(-1, -1), BagFit.Fits, false, state.Bag.Count == 0);
+                UpdateBag(null, null);
                 UnlockCursor();
                 return;
             }
@@ -233,23 +247,12 @@ namespace TrashHunter
                 if (inspecting)
                     EndInspection();
                 else
-                {
-                    if (state.Quests.HasInspectionStep(state.HeldItemId))
-                    {
-                        CaptureWorld();
-                        state.Quests.RecordInspection(state.HeldItemId);
-                        UpdateError();
-                    }
-                    inspecting = true;
-                    inspectRotation = Quaternion.identity;
-                    held.BeginInspection();
-                }
+                    BeginInspection();
                 delta = Vector2.zero;
             }
             if (inspecting)
             {
                 inspectRotation = Quaternion.Euler(delta.y * 0.55f, -delta.x * 0.55f, 0f) * inspectRotation;
-                hud.Show(InspectionLabel(held), strings.Get("search.inspectControls"), false);
                 return;
             }
 
@@ -308,7 +311,9 @@ namespace TrashHunter
             {
                 if (mouse?.rightButton.wasPressedThisFrame == true)
                     ReleaseHand(true);
-                else if (mouse?.leftButton.isPressed != true && Time.unscaledTime >= blockedUntil)
+                else if (mouse?.leftButton.isPressed == true)
+                    awaitingGrip = false;
+                else if (!awaitingGrip && held.HeldInWorld && Time.unscaledTime >= blockedUntil)
                     ReleaseHand(false);
             }
             else if (target != null && mouse?.leftButton.wasPressedThisFrame == true)
@@ -330,9 +335,29 @@ namespace TrashHunter
                 action = nearby;
                 nearby = string.Empty;
             }
-            hud.Show(action, strings.Get(held == null ? "search.controlsWithBag" : "search.holdControls"),
+            hud.Show(action, strings.Get(held == null ? "search.controlsWithBag" : awaitingGrip
+                ? "search.storedHandControls" : "search.holdControls"),
                 true, aimedItem, nearby);
             UpdateError();
+        }
+
+        private void BeginInspection()
+        {
+            if (state.Quests.HasInspectionStep(state.HeldItemId))
+            {
+                CaptureWorld();
+                state.Quests.RecordInspection(state.HeldItemId);
+                UpdateError();
+            }
+
+            inspecting = true;
+            inspectRotation = held.InspectionStartRotation();
+            held.BeginInspection();
+            var label = ItemName(held);
+            if (knowsLootTiers && held.Definition.Tier > 0)
+                label = string.Format(strings.Get("search.inspectedTier"), label, held.Definition.Tier);
+            hud.Inspection.Show(label, strings.Get($"item.{held.Id}.condition", string.Empty));
+            hud.Show(string.Empty, strings.Get("search.inspectControls"), false);
         }
 
         private void EndInspection()
@@ -341,6 +366,7 @@ namespace TrashHunter
                 return;
             inspecting = false;
             held.EndInspection();
+            hud.Inspection.Hide();
         }
 
         private string ItemName(SearchItem item) =>
@@ -356,15 +382,6 @@ namespace TrashHunter
                 return strings.Get("package.empty");
             }
             return aimLabels[item];
-        }
-
-        private string InspectionLabel(SearchItem item)
-        {
-            var label = ItemName(item);
-            if (knowsLootTiers && item.Definition.Tier > 0)
-                label = string.Format(strings.Get("search.inspectedTier"), label, item.Definition.Tier);
-            var condition = strings.Get($"item.{item.Id}.condition", string.Empty);
-            return condition.Length == 0 ? label : $"{label}  ·  {condition}";
         }
 
         private static bool HasRecognitionForPrototype()
@@ -525,7 +542,8 @@ namespace TrashHunter
         private void CloseBag()
         {
             bagOpen = false;
-            movingInBag = null;
+            held?.FreezeWorld(false);
+            CancelBagMove();
             hud.Bag.gameObject.SetActive(false);
             LockCursor();
         }
@@ -533,7 +551,15 @@ namespace TrashHunter
         private void CancelBagMove()
         {
             movingInBag = null;
+            draggingInBag = false;
+            rejectedDrop = null;
             hud.Bag.ShowContents(state.Bag, items);
+        }
+
+        private void OnApplicationFocus(bool focused)
+        {
+            if (!focused && bagOpen && movingInBag != null)
+                CancelBagMove();
         }
 
         private void UpdateError() => hud.ShowError(state.Error);
@@ -561,91 +587,163 @@ namespace TrashHunter
 
         private void UpdateBag(Keyboard keyboard, Mouse mouse)
         {
-            var cell = mouse == null ? new Vector2Int(-1, -1) : hud.Bag.CellAt(mouse.position.ReadValue());
-            var overGrid = cell.x >= 0 && cell.y >= 0;
-            var hoveredPlacement = default(BagPlacement);
-            SearchItem hovered = null;
-            if (overGrid)
-            {
-                foreach (var item in items)
-                {
-                    if (state.Bag.TryGetPlacement(item.Id, out var packed) && packed.Contains(cell.x, cell.y))
-                    {
-                        hovered = item;
-                        hoveredPlacement = packed;
-                        break;
-                    }
-                }
-            }
+            var pointer = mouse?.position.ReadValue() ?? Vector2.zero;
+            var cell = mouse == null ? new Vector2Int(-1, -1) : hud.Bag.CellAt(pointer);
+            var overGrid = cell.x >= 0;
+            var overHand = mouse != null && hud.Bag.IsOverHand(pointer);
+            var hovered = PackedAt(cell, out var hoveredPlacement);
+            var left = mouse?.leftButton;
+            var rightPressed = mouse?.rightButton.wasPressedThisFrame == true;
+            var rotate = keyboard?.rKey.wasPressedThisFrame == true;
+            if (left?.wasPressedThisFrame == true || rightPressed || rotate)
+                rejectedDrop = null;
 
-            var rightClick = mouse?.rightButton.wasPressedThisFrame == true;
-            if (rightClick)
+            if (rightPressed)
             {
                 if (movingInBag != null)
                     CancelBagMove();
                 else if (hovered != null)
-                {
-                    movingInBag = hovered;
-                    moveRotated = hoveredPlacement.Rotated;
-                    hud.Bag.ShowContents(state.Bag, items, movingInBag);
-                }
+                    BeginBagMove(hovered, hoveredPlacement.Rotated, false, Vector2Int.zero, pointer);
+            }
+            else if (left?.wasPressedThisFrame == true && movingInBag == null)
+            {
+                if (overHand && held != null)
+                    BeginBagMove(held, state.HeldItemRotated, true, Vector2Int.zero, pointer);
+                else if (hovered != null)
+                    BeginBagMove(hovered, hoveredPlacement.Rotated, true,
+                        cell - new Vector2Int(hoveredPlacement.Column, hoveredPlacement.Row), pointer);
             }
 
-            if (keyboard?.rKey.wasPressedThisFrame == true)
+            if (rotate)
             {
                 if (movingInBag != null)
+                {
+                    if (draggingInBag && movingInBag != held)
+                    {
+                        var size = movingInBag.Placement(0, 0, moveRotated);
+                        grabOffset = moveRotated
+                            ? new Vector2Int(grabOffset.y, size.Width - 1 - grabOffset.x)
+                            : new Vector2Int(size.Height - 1 - grabOffset.y, grabOffset.x);
+                    }
                     moveRotated = !moveRotated;
+                    crossedDragThreshold = true;
+                }
                 else if (held != null)
                     state.HeldItemRotated = !state.HeldItemRotated;
             }
 
-            var placement = hoveredPlacement;
-            var fit = BagFit.Fits;
-            if (movingInBag != null)
+            var placement = PreviewPlacement(cell, out var fit);
+            if (draggingInBag)
             {
-                placement = movingInBag.Placement(cell.x, cell.y, moveRotated);
-                fit = state.Bag.Check(placement, movingInBag.Id);
+                crossedDragThreshold |= (pointer - dragStart).sqrMagnitude >= 25f;
+                if (left?.wasReleasedThisFrame == true)
+                {
+                    var rejection = DropInBag(overGrid, overHand, hovered, placement, fit);
+                    CancelBagMove();
+                    rejectedDrop = rejection;
+                    hovered = PackedAt(cell, out _);
+                    placement = PreviewPlacement(cell, out fit);
+                }
+                else if (left?.isPressed != true)
+                    CancelBagMove();
             }
-            else if (held != null)
+            else if (!rightPressed && overGrid && fit == BagFit.Fits && left?.wasPressedThisFrame == true)
             {
-                placement = HandPlacement(cell.x, cell.y);
-                fit = state.Bag.Check(placement);
-            }
-
-            if (overGrid && !rightClick && fit == BagFit.Fits && mouse?.leftButton.wasPressedThisFrame == true)
-            {
-                if (movingInBag != null)
-                {
-                    CaptureWorld();
-                    if (state.MovePacked(movingInBag.Id, placement))
-                    {
-                        CancelBagMove();
-                        return;
-                    }
-                }
-                else if (held != null)
-                {
-                    CaptureWorld();
-                    if (state.Pack(placement))
-                    {
-                        held.Store();
-                        ClearHand();
-                        hud.Bag.ShowContents(state.Bag, items);
-                        return;
-                    }
-                }
-                else if (hovered != null && TakeInHand(hovered))
-                {
-                    hud.Bag.ShowContents(state.Bag, items);
-                    return;
-                }
+                if (ApplyBagPlacement(placement))
+                    CancelBagMove();
             }
 
-            hud.Bag.ShowSelection(held, hovered, movingInBag, placement, fit, overGrid, state.Bag.Count == 0);
+            hud.Bag.ShowSelection(held, hovered, movingInBag, placement, fit, overGrid, overHand, pointer,
+                draggingInBag, rejectedDrop);
         }
 
-        private BagPlacement HandPlacement(int column, int row) =>
-            held == null ? default : held.Placement(column, row, state.HeldItemRotated);
+        private SearchItem PackedAt(Vector2Int cell, out BagPlacement placement)
+        {
+            if (cell.x >= 0)
+            {
+                foreach (var item in items)
+                    if (state.Bag.TryGetPlacement(item.Id, out placement) && placement.Contains(cell.x, cell.y))
+                        return item;
+            }
+
+            placement = default;
+            return null;
+        }
+
+        private void BeginBagMove(SearchItem item, bool rotated, bool drag, Vector2Int offset, Vector2 pointer)
+        {
+            movingInBag = item;
+            moveRotated = rotated;
+            draggingInBag = drag;
+            crossedDragThreshold = false;
+            grabOffset = offset;
+            dragStart = pointer;
+            hud.Bag.ShowContents(state.Bag, items, item);
+        }
+
+        private BagPlacement PreviewPlacement(Vector2Int cell, out BagFit fit)
+        {
+            var item = movingInBag != null ? movingInBag : held;
+            if (item == null)
+            {
+                fit = BagFit.Fits;
+                return default;
+            }
+
+            var anchor = movingInBag == null ? cell : cell - grabOffset;
+            var placement = item.Placement(anchor.x, anchor.y, movingInBag == null ? state.HeldItemRotated : moveRotated);
+            fit = state.Bag.Check(placement, item == held ? null : item.Id);
+            return placement;
+        }
+
+        private string DropInBag(bool overGrid, bool overHand, SearchItem hovered, BagPlacement placement, BagFit fit)
+        {
+            if (overHand)
+            {
+                if (movingInBag == held)
+                    return null;
+                if (held != null)
+                    return "bag.handOccupied";
+                TakeInHand(movingInBag);
+                return null;
+            }
+
+            if (!crossedDragThreshold && hovered == movingInBag)
+            {
+                if (held == null)
+                    TakeInHand(movingInBag);
+                return null;
+            }
+
+            if (!overGrid || fit != BagFit.Fits)
+                return BagView.FitMessage(overGrid ? fit : BagFit.Outside);
+            ApplyBagPlacement(placement);
+            return null;
+        }
+
+        private bool ApplyBagPlacement(BagPlacement placement)
+        {
+            var item = movingInBag != null ? movingInBag : held;
+            if (item == null)
+                return false;
+            if (item != held)
+            {
+                if (state.Bag.TryGetPlacement(item.Id, out var original) &&
+                    original.Column == placement.Column && original.Row == placement.Row &&
+                    original.Rotated == placement.Rotated)
+                    return true;
+
+                CaptureWorld();
+                return state.MovePacked(item.Id, placement);
+            }
+
+            CaptureWorld();
+            if (!state.Pack(placement))
+                return false;
+            held.Store();
+            ClearHand();
+            return true;
+        }
 
         private bool TakeInHand(SearchItem item)
         {
@@ -654,6 +752,7 @@ namespace TrashHunter
                 return false;
             item.TakeInHand(state.HeldInWorld);
             held = item;
+            awaitingGrip = !held.HeldInWorld;
             holdDistance = item.MinimumHoldDistance;
             blockedUntil = 0f;
             return true;
@@ -662,6 +761,7 @@ namespace TrashHunter
         private void ClearHand()
         {
             held = null;
+            awaitingGrip = false;
             blockedUntil = 0f;
         }
 
@@ -706,7 +806,8 @@ namespace TrashHunter
         private void FixedUpdate()
         {
             if (held == null || mode != Mode.Search || inspecting || bagOpen || !scenes.HasControl ||
-                Cursor.lockState != CursorLockMode.Locked)
+                Cursor.lockState != CursorLockMode.Locked ||
+                (!held.HeldInWorld && Mouse.current?.leftButton.isPressed != true))
                 return;
 
             var view = player.ViewCamera.transform;

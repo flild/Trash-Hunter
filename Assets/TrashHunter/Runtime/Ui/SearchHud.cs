@@ -12,6 +12,7 @@ namespace TrashHunter
         [SerializeField] private Graphic reticle;
         [SerializeField] private GameObject packageReticle;
         [SerializeField] private BagView bag;
+        [SerializeField] private ItemInspectionView inspection;
         [SerializeField] private ExpeditionView expedition;
         [SerializeField] private Text feedback;
 
@@ -20,6 +21,7 @@ namespace TrashHunter
         private bool? previousHasTarget;
 
         public BagView Bag => bag;
+        internal ItemInspectionView Inspection => inspection;
         public ExpeditionView Expedition => expedition;
         public void ShowError(string error) => feedback.text = error ?? string.Empty;
 

@@ -175,6 +175,16 @@ namespace TrashHunter
             body.AddForce(Vector3.ClampMagnitude(force, MaximumPullForce), ForceMode.Force);
         }
 
+        internal Quaternion InspectionStartRotation()
+        {
+            var marking = GetComponentInChildren<Canvas>();
+            if (marking == null || marking.renderMode != RenderMode.WorldSpace)
+                return Quaternion.identity;
+
+            var localFace = Quaternion.Inverse(transform.rotation) * marking.transform.rotation;
+            return Quaternion.Euler(8f, 12f, 0f) * Quaternion.Inverse(localFace);
+        }
+
         internal void BeginInspection()
         {
             if (!HeldInWorld)

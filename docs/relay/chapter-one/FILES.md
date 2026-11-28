@@ -8,6 +8,7 @@
 | `docs/relay/chapter-one/CONTEXT.md` | Связи этапов с кодом и решениями |
 | `docs/relay/chapter-one/HANDOFF.md` | Текущий этап и первое действие |
 | `docs/relay/chapter-one/FILES.md` | Учёт временных файлов, удаляется последним |
+| `Logs/I-130/` | Рабочие скрипты Pipeline, изолированные копии автослота, результаты и кадры проверки I-130 |
 
 Существующие постоянные документы — `AGENTS.md`, `docs/README.md`, `docs/PROJECT_STATE.md`, `docs/NEXT_SESSION.md`, `docs/BACKLOG.md`, `docs/DECISIONS.md`, `docs/design/ART_DIRECTION.md` и остальные источники проекта. Новый постоянный отчёт — `docs/sessions/2026-11-28-chapter-one-relay.md`. Архив `docs/relay/prototype/` относится к прежней эстафете.
 
