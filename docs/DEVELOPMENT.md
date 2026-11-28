@@ -573,6 +573,10 @@ unity command script eval @pipeline --runtime TrashHunterWorldQA -- --file Agent
 Pipeline Runtime и копией уведомления о лицензии. Результаты и условия
 замеров приведены в [отчёте I-190](sessions/2026-11-27-i190-world-acceptance.md).
 
+## Проверка главы в Windows Player
+
+Для исходного маршрута декабря использовать процедуру из [отчёта I-240](sessions/2026-11-28-i240-chapter-windows.md#воспроизведение). Два отдельных запуска Windows x64 Development Player проходят от новой игры до кассетника и продолжают во втором дворе. Для запуска нужен свежий изолированный слот в Logs/I-240/ и обычное окно Player.
+
 ## Структура проекта
 
 | Путь от корня | Содержание |

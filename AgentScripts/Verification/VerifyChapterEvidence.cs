@@ -7,8 +7,10 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using TrashHunter;
+#if UNITY_EDITOR
 using Unity.Pipeline.Scripting;
 using UnityEditor;
+#endif
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
@@ -26,6 +28,7 @@ public static class VerifyChapterEvidence
     private const string Recorder = "batch-recorder";
     private const BindingFlags Fields = BindingFlags.Instance | BindingFlags.NonPublic;
 
+#if UNITY_EDITOR
     public static object Prepare(string language)
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode || language is not ("ru" or "en"))
@@ -55,12 +58,19 @@ public static class VerifyChapterEvidence
         SessionState.EraseString(RestoreKey);
     }
 
+#endif
+
     public static async Task<object> Run(string phase)
     {
+#if UNITY_EDITOR
         var folder = Environment.GetEnvironmentVariable(SlotVariable);
         if (!Application.isPlaying || folder == null ||
             !folder.StartsWith(Path.GetFullPath("Logs/I-230") + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Start Play Mode with an isolated I-230 slot.");
+#else
+        var folder = RunChapterPlayer.SlotFolder;
+        await Wait.Until(() => Application.isFocused, because: "the interactive player window");
+#endif
 
         await Wait.Until(() => Object.FindObjectsByType<SearchHud>().Length == 1, because: "mounted chapter scene");
         await Frames();
@@ -93,7 +103,9 @@ public static class VerifyChapterEvidence
                     PositionPlayer(pos, starter.bounds.center);
                     Cursor.lockState = CursorLockMode.Locked;
                     await Tap(Key.E);
-                    Check(state.HasBag, "Looking at the starter bag and pressing E equips it.");
+                    Check(state.HasBag, state.HasBag
+                        ? "Looking at the starter bag and pressing E equips it."
+                        : $"Starter bag pickup failed: focus={Application.isFocused}, cursor={Cursor.lockState}, mode={Mode()}.");
                     await ClimbIn();
                     await Take("lamp-intact");
                     await Pack(0, 0);
@@ -126,9 +138,10 @@ public static class VerifyChapterEvidence
                     Fits();
                     break;
                 case "lead":
+                case "player-lead":
                     Check(state.Expedition == 2 && state.HeldItemId == Tag && WorldCount(Tag) == 1 &&
-                        HasStory(1) && !HasStory(2), "A new Play session restores the held tag and exactly one fact.");
-                    await Tap(Key.Enter);
+                        HasStory(1) && !HasStory(2), "The player holds the tag and knows exactly one fact.");
+                    await Tap(phase == "lead" ? Key.Enter : Key.Q);
                     await GoHome();
                     Check(state.Home.Count == 0 && HasStory(1), "Leaving without the tag keeps the address and loses the item.");
                     await GoTrader();
@@ -196,15 +209,27 @@ public static class VerifyChapterEvidence
                     Fits();
                     break;
                 case "resume":
+                case "player-resume":
                     Check(SceneManager.GetActiveScene().name == "SecondYard" &&
                         Mode() == "Continue" && state.HeldItemId == Recorder && WorldCount(Recorder) == 1 &&
                         HasStory(15) && state.Balance == 23 && state.Bag.Height == 3 && (int)Saved()["format"] == 6,
                         "A new Play session loads the workshop yard, held recorder, facts, money and backpack.");
+#if !UNITY_EDITOR
+                    var saved = Saved();
+                    var loaded = JObject.Parse(JsonUtility.ToJson(state.Snapshot));
+                    Check(new[] { "format", "runId", "revision", "expedition", "secondYard", "story", "world", "held", "home" }
+                        .All(key => JToken.DeepEquals(loaded[key], saved[key])),
+                        $"The loaded snapshot matches run {saved["runId"]}, revision {saved["revision"]}, story and all {saved["world"].Count()} world entries.");
+                    Check(Object.FindObjectsByType<SearchItem>().Count(item => item.Id == Recorder) == 1,
+                        "Exactly one physical recorder is mounted in the restored scene.");
+#endif
                     await Tap(Key.Enter);
                     Check(Mode() == "Search" && Hud().gameObject.activeInHierarchy, "Continue hands control back in the workshop yard.");
                     await Tap(Key.Q);
                     Check(InspectionText().Any(t => t.Contains("17-Б")), "The same recorder remains inspectable after reload.");
                     Fits();
+                    if (phase == "player-resume")
+                        break;
                     await Tap(Key.Q);
                     await Pack(0, 0);
                     await GoHome();
@@ -381,7 +406,8 @@ public static class VerifyChapterEvidence
         {
             Canvas.ForceUpdateCanvases();
             var texts = Hud().GetComponentsInChildren<Text>().Where(text => text.enabled && !string.IsNullOrEmpty(text.text)).ToArray();
-            Check(texts.Length > 0 && texts.All(text => text.preferredWidth <= text.rectTransform.rect.width + 1f &&
+            Check(texts.Length > 0 && texts.All(text => (text.horizontalOverflow == HorizontalWrapMode.Wrap ||
+                text.preferredWidth <= text.rectTransform.rect.width + 1f) &&
                 text.preferredHeight <= text.rectTransform.rect.height + 1f), "Visible text fits. " +
                 string.Join(", ", texts.Select(text => $"{text.name}={text.preferredWidth:0}×{text.preferredHeight:0}/{text.rectTransform.rect.size}")));
         }
@@ -391,6 +417,9 @@ public static class VerifyChapterEvidence
             if (!ok)
                 throw new InvalidOperationException(string.Join("\n", checks.Append("FAILED: " + message)));
             checks.Add(message);
+#if !UNITY_EDITOR
+            Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, "I-240 {0} [{1}] {2}", phase, checks.Count, message);
+#endif
         }
     }
 
@@ -418,6 +447,22 @@ public static class VerifyChapterEvidence
     }
 
     private static T Field<T>(object target, string name) => (T)target.GetType().GetField(name, Fields).GetValue(target);
+
+#if !UNITY_EDITOR
+    private static class Wait
+    {
+        public static async Task Until(Func<bool> predicate, string because)
+        {
+            var deadline = Time.realtimeSinceStartupAsDouble + 15d;
+            while (!predicate())
+            {
+                if (Time.realtimeSinceStartupAsDouble >= deadline)
+                    throw new TimeoutException($"Waiting for {because}.");
+                await Task.Yield();
+            }
+        }
+    }
+#endif
 
     private static async Task Frames()
     {
