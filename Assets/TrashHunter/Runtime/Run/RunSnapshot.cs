@@ -6,7 +6,7 @@ namespace TrashHunter
     [Serializable]
     internal sealed class RunSnapshot
     {
-        public const int CurrentFormat = 4;
+        public const int CurrentFormat = 5;
 
         public int format;
         public string runId;
@@ -17,6 +17,7 @@ namespace TrashHunter
         public int pileGeneratorVersion;
         public RunLocation location;
         public bool hasBag;
+        public bool hasBackpack;
         public WorldItem[] world;
         public string held;
         public bool heldRotated;
@@ -104,9 +105,24 @@ namespace TrashHunter
         {
             Item = item;
             Name = entry.name;
-            Price = (item.IsRepaired ? entry.baseValue : entry.Definition.Price) -
-                (item.IsDirty ? entry.dirtDiscount : 0);
-            Condition = item.IsRepaired ? "Крепление заменено. Плафон держится." : entry.condition;
+            var value = entry.Definition.Price;
+            var condition = entry.condition;
+            if (item.IsRepaired)
+            {
+                if (entry.benchCheck == BenchCheck.Specialist)
+                {
+                    value = entry.specialistSaleValue;
+                    condition = "Мотор вращает диск. Один режим скорости не работает.";
+                }
+                else
+                {
+                    value = entry.baseValue;
+                    condition = "Крепление заменено. Плафон держится.";
+                }
+            }
+
+            Price = value - (item.IsDirty ? entry.dirtDiscount : 0);
+            Condition = condition;
         }
     }
 

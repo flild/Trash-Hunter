@@ -377,6 +377,8 @@
       "baseValue": 120,
       "conditionDiscount": 90,
       "benchCheck": 3,
+      "specialistFee": 25,
+      "specialistSaleValue": 72,
       "condition": "Диск не вращается.",
       "size": { "x": 2, "y": 2 },
       "optionalLayout": true,

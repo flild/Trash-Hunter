@@ -19,6 +19,8 @@ namespace TrashHunter
             public int dirtDiscount;
             public BenchCheck benchCheck;
             public string repairPart;
+            public int specialistFee;
+            public int specialistSaleValue;
             public string condition;
             public Vector2Int size;
             public bool legacyLayoutOnly;

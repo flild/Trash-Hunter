@@ -196,8 +196,11 @@ namespace TrashHunter
                         snapshot.quests = Array.Empty<QuestProgress>();
                         snapshot.contacts = Array.Empty<string>();
                     }
-                    if (snapshot?.format is >= 1 and <= 3)
+                    if (snapshot?.format is >= 1 and <= 4)
+                    {
+                        snapshot.hasBackpack = false;
                         snapshot.format = RunSnapshot.CurrentFormat;
+                    }
                     if (snapshot != null && validate(snapshot))
                     {
                         checksum = envelope.checksum;

@@ -60,14 +60,14 @@ namespace TrashHunter
             }
 
             var alternate = GameState.LayoutIndex(item.expedition) == 1;
-            if (model == intactLamp)
+            if (model != null && model == intactLamp)
                 ApplyFinish(intactShell, alternate ? safetyPaint : lampEnamel, item.IsDirty);
-            else if (model == repairedLamp || model == crackedLamp)
+            else if (model != null && (model == repairedLamp || model == crackedLamp))
                 ApplyFinish(item.IsRepaired ? repairedShell : crackedShell,
                     alternate ? lampEnamel : safetyPaint, false);
         }
 
-        private static void ApplyFinish(Renderer[] renderers, Material finish, bool dirty)
+        internal static void ApplyFinish(Renderer[] renderers, Material finish, bool dirty)
         {
             var properties = new MaterialPropertyBlock();
             if (dirty)

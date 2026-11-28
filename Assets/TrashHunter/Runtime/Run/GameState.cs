@@ -29,6 +29,7 @@ namespace TrashHunter
         internal bool ResumePending { get; private set; }
         public BagInventory Bag => bag;
         public bool HasBag => current.hasBag;
+        public bool HasBackpack => current.hasBackpack;
         public string HeldItemId => string.IsNullOrEmpty(current.held) ? null : current.held;
         internal bool HeldInWorld => current.heldInWorld;
         public bool HeldItemRotated { get; set; }
@@ -326,6 +327,31 @@ namespace TrashHunter
 
         internal bool HasRepairPart(string key) => FindRepairPart(key) >= 0;
 
+        internal bool CompleteRepair(HomeItem item, int price)
+        {
+            if (price <= 0 || Balance < price)
+                return false;
+
+            var index = Array.IndexOf(current.home, item);
+            var repaired = current.home[index];
+            repaired.work |= HomeWork.Diagnosed | HomeWork.Repaired;
+            var next = current.Copy();
+            next.SetHomeItem(index, repaired);
+            next.cash -= price;
+            return Publish(next);
+        }
+
+        internal bool CompleteBackpackPurchase(int price)
+        {
+            if (Location != RunLocation.Trader || HasBackpack || Balance < price)
+                return false;
+
+            var next = current.Copy();
+            next.cash -= price;
+            next.hasBackpack = true;
+            return Publish(next);
+        }
+
         internal bool CompleteSale(HomeItem item, int price)
         {
             if (Location != RunLocation.Trader || price <= 0 || Balance > long.MaxValue - price)
@@ -387,7 +413,7 @@ namespace TrashHunter
 
         private void RestoreBag()
         {
-            bag = new BagInventory();
+            bag = new BagInventory(current.hasBackpack);
             foreach (var item in current.world)
             {
                 if (item.packed)
@@ -423,7 +449,7 @@ namespace TrashHunter
             var hasHand = !string.IsNullOrEmpty(data.held);
             if (data.location != RunLocation.Search)
                 return data.hasBag && data.world.Length == 0 && !hasHand && !data.heldRotated && !data.heldInWorld;
-            if ((!data.hasBag && (hasHand || data.player.inside)) ||
+            if ((!data.hasBag && (hasHand || data.player.inside || data.hasBackpack)) ||
                 (!hasHand && (data.heldRotated || data.heldInWorld)))
                 return false;
 
@@ -431,7 +457,7 @@ namespace TrashHunter
             var keys = new HashSet<string>();
             var opened = new HashSet<string>();
             var extracted = new HashSet<string>();
-            var packed = new BagInventory();
+            var packed = new BagInventory(data.hasBackpack);
             foreach (var item in data.world)
             {
                 var r = item.rotation;
@@ -480,8 +506,9 @@ namespace TrashHunter
         private static bool ValidHomeWork(HomeItem item, LootCatalog.Entry entry) =>
             (item.work & ~(HomeWork.Dirty | HomeWork.Diagnosed | HomeWork.Repaired)) == 0 &&
             (!item.IsDirty || entry.dirtDiscount > 0) &&
-            (!item.IsDiagnosed || entry.benchCheck is BenchCheck.Working or BenchCheck.LampHinge) &&
-            (!item.IsRepaired || item.IsDiagnosed && entry.benchCheck == BenchCheck.LampHinge);
+            (!item.IsDiagnosed || entry.benchCheck is BenchCheck.Working or BenchCheck.LampHinge ||
+                item.IsRepaired && entry.specialistFee > 0) &&
+            (!item.IsRepaired || item.IsDiagnosed && (entry.benchCheck == BenchCheck.LampHinge || entry.specialistFee > 0));
 
         private bool TryGeneratePile(RunSnapshot snapshot, SearchPile pile)
         {

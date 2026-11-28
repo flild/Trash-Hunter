@@ -38,9 +38,13 @@ namespace TrashHunter
     {
         public const int Columns = 3;
         public const int Rows = 2;
+        public const int BackpackRows = 3;
 
         private readonly Dictionary<string, BagPlacement> items = new();
 
+        public BagInventory(bool backpack = false) => Height = backpack ? BackpackRows : Rows;
+
+        public int Height { get; }
         public int Count => items.Count;
         public bool TryGetPlacement(string id, out BagPlacement placement) => items.TryGetValue(id, out placement);
 
@@ -48,7 +52,7 @@ namespace TrashHunter
         {
             if (placement.Width <= 0 || placement.Height <= 0 ||
                 placement.Column < 0 || placement.Row < 0 ||
-                placement.Column > Columns - placement.Width || placement.Row > Rows - placement.Height)
+                placement.Column > Columns - placement.Width || placement.Row > Height - placement.Height)
                 return BagFit.Outside;
 
             foreach (var item in items)

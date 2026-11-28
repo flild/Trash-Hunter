@@ -8,9 +8,10 @@ namespace TrashHunter
     {
         private const int VisibleRows = 5;
         private const string QuestId = QuestCatalog.TraderTurntable;
-        private enum Mode { Home, Trader, Sale, Pause, Continue, Quest, Present, Bench }
+        private enum Mode { Home, Trader, Sale, Pause, Continue, Quest, Present, Bench, Repair, Backpack }
 
         [SerializeField] private Workbench workbench;
+        [SerializeField] private CounterDisplay counter;
 
         private GameState state;
         private LootCatalog catalog;
@@ -45,6 +46,7 @@ namespace TrashHunter
             strings = new UiStrings();
             player.Restore(spawn);
             workbench?.FrameStock(viewCamera);
+            counter?.Frame(viewCamera);
             hud.Show(string.Empty, string.Empty, false);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -111,6 +113,34 @@ namespace TrashHunter
                     else
                         UpdateBench(keyboard);
                     break;
+                case Mode.Repair:
+                    if (cancel)
+                        ShowSale();
+                    else if (confirm && state.Balance >= state.Trade.RepairPrice(offer.Item))
+                    {
+                        if (state.Trade.Repair(offer.Item))
+                        {
+                            offer = state.Trade.Quote(offer.Item);
+                            ShowSale(strings.Get("repair.returned"));
+                        }
+                        else
+                            ShowRepair(state.Error != null);
+                    }
+                    break;
+                case Mode.Backpack:
+                    if (cancel)
+                        ShowStock();
+                    else if (confirm && state.Balance >= TradeCounter.BackpackPrice)
+                    {
+                        if (state.Trade.BuyBackpack())
+                        {
+                            receipt = strings.Get("backpack.bought");
+                            ShowStock();
+                        }
+                        else
+                            ShowBackpack(state.Error != null);
+                    }
+                    break;
                 case Mode.Sale:
                     if (cancel)
                         ShowStock();
@@ -130,6 +160,8 @@ namespace TrashHunter
                                 ShowStock();
                         }
                     }
+                    else if (keyboard.mKey.wasPressedThisFrame && state.Trade.RepairPrice(offer.Item) > 0)
+                        ShowRepair();
                     break;
                 default:
                     UpdateStock(keyboard, confirm, cancel);
@@ -154,6 +186,8 @@ namespace TrashHunter
                 presentedItem = state.Home[selection];
                 ShowPresentation();
             }
+            else if (AtTrader && !state.HasBackpack && keyboard.kKey.wasPressedThisFrame)
+                ShowBackpack();
             else if (AtTrader && keyboard.eKey.wasPressedThisFrame)
                 Travel(RunLocation.Home);
             else if (!AtTrader && keyboard.tKey.wasPressedThisFrame)
@@ -173,10 +207,9 @@ namespace TrashHunter
                     selection--;
                 else if (keyboard.downArrowKey.wasPressedThisFrame)
                     selection++;
-                else if (AtTrader && confirm)
+                else if (AtTrader && (confirm || ClickedCounter()))
                 {
                     offer = state.Trade.Quote(state.Home[selection]);
-                    mode = Mode.Sale;
                     ShowSale();
                     return;
                 }
@@ -185,6 +218,13 @@ namespace TrashHunter
 
                 ShowStock();
             }
+        }
+
+        private bool ClickedCounter()
+        {
+            var mouse = Mouse.current;
+            return counter != null && mouse != null && mouse.leftButton.wasPressedThisFrame &&
+                counter.IsPointedAt(viewCamera, mouse.position.ReadValue());
         }
 
         private bool CanUseBench => workbench != null && state.Home.Count > 0 &&
@@ -247,6 +287,9 @@ namespace TrashHunter
 
         private string Describe(HomeItem item, LootCatalog.Entry entry, string fallback, bool atBench)
         {
+            if (item.IsRepaired && entry.benchCheck == BenchCheck.Specialist)
+                return strings.Get("repair.condition");
+
             var visible = item.IsRepaired ? strings.Get("bench.repaired", fallback)
                 : strings.Get($"item.{item.key}.{(atBench ? "condition" : "saleCondition")}", fallback);
             if (item.IsDirty)
@@ -268,6 +311,7 @@ namespace TrashHunter
         private void ShowQuest()
         {
             mode = Mode.Quest;
+            counter?.Hide();
             var available = AtTrader && state.Quests.IsAvailable(QuestId);
             var finished = state.Quests.TryGetProgress(QuestId, out var step) && string.IsNullOrEmpty(step);
             view.Show(strings.Get("quest.title"), strings.Get(finished ? "quest.contact" : "quest.trader"),
@@ -279,8 +323,9 @@ namespace TrashHunter
         private void ShowPresentation()
         {
             mode = Mode.Present;
+            counter?.Show(presentedItem);
             view.Show(strings.Get("quest.title"), ItemLabel(presentedItem), strings.Get("quest.presentDetail"),
-                strings.Get("quest.presentActions"), state.Error, state.Error != null);
+                strings.Get("quest.presentActions"), state.Error, state.Error != null, homeStock: counter != null);
         }
 
         private void Travel(RunLocation destination)
@@ -292,6 +337,7 @@ namespace TrashHunter
         internal void ShowStock(string error = null)
         {
             CloseBench();
+            counter?.Hide();
             mode = AtTrader ? Mode.Trader : Mode.Home;
             var count = state.Home.Count;
             selection = Mathf.Clamp(selection, 0, Mathf.Max(0, count - 1));
@@ -305,6 +351,8 @@ namespace TrashHunter
 
             var details = count == 0 ? strings.Get("home.empty") : rows.ToString().TrimEnd();
             var keys = strings.Get(AtTrader ? "trader.actions" : "home.actions");
+            if (AtTrader && !state.HasBackpack)
+                keys = $"{strings.Get("backpack.open")}     {keys}";
             if (CanViewQuest)
                 keys = $"{strings.Get(state.Quests.IsAvailable(QuestId) ? "quest.offer" : "quest.view")}     {keys}";
             if (AtTrader && count > 0)
@@ -312,7 +360,7 @@ namespace TrashHunter
                 var itemAction = state.Quests.TryGetPresentationStep(QuestId, state.Home[selection], out _)
                     ? $"     {strings.Get("quest.present")}" : string.Empty;
                 var trade = $"{strings.Get("trader.offer")}{itemAction}";
-                keys = CanViewQuest ? $"{trade}\n{keys}" : $"{trade}     {keys}";
+                keys = $"{trade}\n{keys}";
             }
             else if (!AtTrader && count > 0)
             {
@@ -324,27 +372,66 @@ namespace TrashHunter
                     keys = $"{stockActions}\n{keys}";
             }
             error ??= state.Error;
-            view.Show(Title, string.Format(strings.Get("home.balance"), state.Balance), details, keys,
-                error ?? receipt, error != null, homeStock: workbench != null);
+            view.Show(Title, BalanceLabel(), details, keys,
+                error ?? receipt, error != null, homeStock: workbench != null || counter != null);
         }
 
         private string StockLabel(HomeItem item)
         {
             var label = ItemLabel(item);
-            var feature = item.IsDirty ? "bench.stockDirty" : item.IsRepaired ? "bench.stockRepaired"
-                : catalog[item.key].benchCheck == BenchCheck.LampHinge ? "bench.stockDamaged" : null;
+            var check = catalog[item.key].benchCheck;
+            var feature = item.IsDirty ? "bench.stockDirty" : item.IsRepaired
+                ? (check == BenchCheck.Specialist ? "repair.stockRepaired" : "bench.stockRepaired")
+                : check == BenchCheck.LampHinge ? "bench.stockDamaged" : null;
             return feature == null ? label : $"{label} · {strings.Get(feature)}";
         }
 
         private string ItemLabel(HomeItem item) => string.Format(strings.Get("stock.item"),
             strings.ItemName(item.key, catalog[item.key].Definition.Name), item.expedition);
 
-        private void ShowSale()
+        private void ShowSale(string message = null)
         {
+            mode = Mode.Sale;
+            counter?.Show(offer.Item);
             var condition = Describe(offer.Item, catalog[offer.Item.key], offer.Condition, false);
+            var keys = strings.Get("sale.actions");
+            if (state.Trade.RepairPrice(offer.Item) > 0)
+                keys = $"{strings.Get("repair.open")}     {keys}";
             view.Show(strings.Get("sale.title"), $"{offer.Price} ₽", $"{ItemLabel(offer.Item)}\n{condition}",
-                strings.Get("sale.actions"), state.Error, state.Error != null);
+                keys, state.Error ?? message, state.Error != null, homeStock: counter != null);
         }
+
+        private void ShowRepair(bool saveFailed = false)
+        {
+            var price = state.Trade.RepairPrice(offer.Item);
+            if (price <= 0)
+            {
+                ShowStock();
+                return;
+            }
+
+            mode = Mode.Repair;
+            var enough = state.Balance >= price;
+            var message = saveFailed ? strings.Get("trade.saveFailed") :
+                enough ? null : strings.Get("trade.insufficient");
+            view.Show(strings.Get("repair.title"), $"{price} ₽  ·  {BalanceLabel()}",
+                $"{ItemLabel(offer.Item)}\n{strings.Get("repair.detail")}",
+                strings.Get(enough ? "repair.actions" : "trade.cancel"), message,
+                message != null, homeStock: counter != null);
+        }
+
+        private void ShowBackpack(bool saveFailed = false)
+        {
+            mode = Mode.Backpack;
+            var enough = state.Balance >= TradeCounter.BackpackPrice;
+            var message = saveFailed ? strings.Get("trade.saveFailed") :
+                enough ? null : strings.Get("trade.insufficient");
+            view.Show(strings.Get("bag.backpack"), $"{TradeCounter.BackpackPrice} ₽  ·  {BalanceLabel()}",
+                strings.Get("backpack.detail"), strings.Get(enough ? "backpack.actions" : "trade.cancel"),
+                message, message != null, homeStock: counter != null);
+        }
+
+        private string BalanceLabel() => string.Format(strings.Get("home.balance"), state.Balance);
 
         private void CloseBench()
         {
@@ -360,6 +447,7 @@ namespace TrashHunter
         private void Pause()
         {
             CloseBench();
+            counter?.Hide();
             mode = Mode.Pause;
             view.Show(strings.Get("pause.title"), string.Empty,
                 strings.Get(AtTrader ? "pause.trader" : "pause.home"), strings.Get("pause.actions"),

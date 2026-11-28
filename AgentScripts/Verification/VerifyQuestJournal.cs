@@ -132,10 +132,10 @@ try
     using (var state = Load(folder))
     {
         var saved = Payload(File.ReadAllText(slot));
-        Check((int)saved["format"] == 4 && (bool)saved["hasSold"] && saved["contacts"].Count() == 1 &&
+        Check((int)saved["format"] == 5 && (bool)saved["hasSold"] && saved["contacts"].Count() == 1 &&
             AtStep(state, inspectionQuest, "") && AtStep(state, deliveryQuest, "") &&
             state.Quests.HasContact("test-technician") && state.Home.SequenceEqual(new[] { olderRadio }) &&
-            state.Balance == (long)saved["cash"], "Format 4 restores both completed quests and their results");
+            state.Balance == (long)saved["cash"], "Format 5 restores both completed quests and their results");
     }
 }
 finally

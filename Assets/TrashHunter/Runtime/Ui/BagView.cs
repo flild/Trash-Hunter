@@ -9,6 +9,7 @@ namespace TrashHunter
 
         [SerializeField] private RectTransform grid;
         [SerializeField] private RectTransform itemTile;
+        [SerializeField] private GameObject[] backpackRow;
         [SerializeField] private Image preview;
         [SerializeField] private Image[] previewEdges;
         [SerializeField] private Text title;
@@ -24,11 +25,12 @@ namespace TrashHunter
         private static readonly Color Neutral = new Color32(232, 225, 208, 255);
         private ItemTileView[] tiles;
         private UiStrings strings;
+        private int rows = BagInventory.Rows;
 
         private void Awake()
         {
             var template = itemTile.GetComponent<ItemTileView>();
-            tiles = new ItemTileView[BagInventory.Columns * BagInventory.Rows];
+            tiles = new ItemTileView[BagInventory.Columns * BagInventory.BackpackRows];
             for (var i = 0; i < tiles.Length; i++)
                 tiles[i] = Instantiate(template, itemTile.transform.parent);
             preview.transform.SetAsLastSibling();
@@ -55,6 +57,25 @@ namespace TrashHunter
             controls.text = strings.Get("bag.dragControls");
         }
 
+        private void SetRows(int height)
+        {
+            if (height == rows)
+                return;
+
+            var delta = Vector2.up * ((height - rows) * CellSize);
+            rows = height;
+            grid.sizeDelta += delta;
+            ((RectTransform)title.transform.parent).sizeDelta += delta;
+            selection.rectTransform.anchoredPosition -= delta;
+            feedback.rectTransform.anchoredPosition -= delta;
+            controls.rectTransform.anchoredPosition -= delta;
+            var backpack = height == BagInventory.BackpackRows;
+            foreach (var cell in backpackRow)
+                cell.SetActive(backpack);
+            title.text = strings.Get(backpack ? "bag.backpack" : "bag.title");
+            OnRectTransformDimensionsChange();
+        }
+
         internal bool IsOverHand(Vector2 screenPosition) =>
             RectTransformUtility.RectangleContainsScreenPoint(handSlot.Rect, screenPosition);
 
@@ -65,13 +86,14 @@ namespace TrashHunter
 
             var column = Mathf.FloorToInt((local.x - grid.rect.xMin) / CellSize);
             var row = Mathf.FloorToInt((grid.rect.yMax - local.y) / CellSize);
-            return column >= 0 && column < BagInventory.Columns && row >= 0 && row < BagInventory.Rows
+            return column >= 0 && column < BagInventory.Columns && row >= 0 && row < rows
                 ? new Vector2Int(column, row)
                 : new Vector2Int(-1, -1);
         }
 
         public void ShowContents(BagInventory bag, SearchItem[] items, SearchItem moving = null)
         {
+            SetRows(bag.Height);
             var used = 0;
             foreach (var item in items)
             {
