@@ -195,8 +195,9 @@ namespace TrashHunter
                         snapshot.hasSold = snapshot.cash > 0;
                         snapshot.quests = Array.Empty<QuestProgress>();
                         snapshot.contacts = Array.Empty<string>();
-                        snapshot.format = RunSnapshot.CurrentFormat;
                     }
+                    if (snapshot?.format is >= 1 and <= 3)
+                        snapshot.format = RunSnapshot.CurrentFormat;
                     if (snapshot != null && validate(snapshot))
                     {
                         checksum = envelope.checksum;

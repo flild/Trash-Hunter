@@ -6,7 +6,7 @@ namespace TrashHunter
     [Serializable]
     internal sealed class RunSnapshot
     {
-        public const int CurrentFormat = 3;
+        public const int CurrentFormat = 4;
 
         public int format;
         public string runId;
@@ -34,6 +34,12 @@ namespace TrashHunter
             copy.world = (WorldItem[])world.Clone();
             copy.quests = (QuestProgress[])quests.Clone();
             return copy;
+        }
+
+        public void SetHomeItem(int index, HomeItem item)
+        {
+            home = (HomeItem[])home.Clone();
+            home[index] = item;
         }
 
         public void RemoveHomeItem(int index)
@@ -68,11 +74,19 @@ namespace TrashHunter
         public bool inside;
     }
 
+    [Flags]
+    internal enum HomeWork { None = 0, Dirty = 1, Diagnosed = 2, Repaired = 4 }
+
     [Serializable]
     public struct HomeItem : IEquatable<HomeItem>
     {
         public int expedition;
         public string key;
+        [SerializeField] internal HomeWork work;
+
+        internal bool IsDirty => (work & HomeWork.Dirty) != 0;
+        internal bool IsDiagnosed => (work & HomeWork.Diagnosed) != 0;
+        internal bool IsRepaired => (work & HomeWork.Repaired) != 0;
 
         public bool Equals(HomeItem other) => expedition == other.expedition && key == other.key;
         public override bool Equals(object other) => other is HomeItem item && Equals(item);
@@ -86,12 +100,13 @@ namespace TrashHunter
         public int Price { get; }
         public string Condition { get; }
 
-        internal SaleOffer(HomeItem item, LootDefinition definition)
+        internal SaleOffer(HomeItem item, LootCatalog.Entry entry)
         {
             Item = item;
-            Name = definition.Name;
-            Price = definition.Price;
-            Condition = definition.Condition;
+            Name = entry.name;
+            Price = (item.IsRepaired ? entry.baseValue : entry.Definition.Price) -
+                (item.IsDirty ? entry.dirtDiscount : 0);
+            Condition = item.IsRepaired ? "Крепление заменено. Плафон держится." : entry.condition;
         }
     }
 

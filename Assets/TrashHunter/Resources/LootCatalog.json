@@ -20,6 +20,8 @@
       "tier": 3,
       "baseValue": 42,
       "conditionDiscount": 0,
+      "dirtDiscount": 8,
+      "benchCheck": 1,
       "condition": "Крепление целое, плафон держится.",
       "size": {
         "x": 2,
@@ -34,6 +36,8 @@
       "tier": 3,
       "baseValue": 42,
       "conditionDiscount": 24,
+      "benchCheck": 2,
+      "repairPart": "strip-b",
       "condition": "Ушко треснуло, плафон болтается.",
       "size": {
         "x": 2,
@@ -342,6 +346,8 @@
       "tier": 3,
       "baseValue": 42,
       "conditionDiscount": 24,
+      "benchCheck": 2,
+      "repairPart": "strip-b",
       "condition": "Ушко треснуло, плафон болтается.",
       "size": {
         "x": 1,
@@ -370,6 +376,7 @@
       "tier": 3,
       "baseValue": 120,
       "conditionDiscount": 90,
+      "benchCheck": 3,
       "condition": "Диск не вращается.",
       "size": { "x": 2, "y": 2 },
       "optionalLayout": true,

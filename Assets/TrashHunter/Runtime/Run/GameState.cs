@@ -241,7 +241,14 @@ namespace TrashHunter
             foreach (var item in current.world)
             {
                 if (item.packed)
-                    unpacked.Add(new HomeItem { expedition = Expedition, key = item.key });
+                {
+                    unpacked.Add(new HomeItem
+                    {
+                        expedition = Expedition,
+                        key = item.key,
+                        work = catalog[item.key].dirtDiscount > 0 ? HomeWork.Dirty : HomeWork.None
+                    });
+                }
             }
 
             next.home = unpacked.ToArray();
@@ -267,6 +274,57 @@ namespace TrashHunter
 
         public SaleOffer Quote(HomeItem item) => Trade.Quote(item);
         public bool Sell(SaleOffer offer) => Trade.Sell(offer);
+
+        internal bool TryGetHomeItem(HomeItem item, out HomeItem stored)
+        {
+            var index = Array.IndexOf(current.home, item);
+            stored = index < 0 ? default : current.home[index];
+            return index >= 0;
+        }
+
+        internal bool TreatHomeItem(HomeItem item, HomeWork operation)
+        {
+            if (!AtHome)
+                return false;
+
+            var index = Array.IndexOf(current.home, item);
+            if (index < 0)
+                return false;
+
+            var stored = current.home[index];
+            var entry = catalog[stored.key];
+            var partIndex = -1;
+            switch (operation)
+            {
+                case HomeWork.Dirty when stored.IsDirty:
+                    stored.work &= ~HomeWork.Dirty;
+                    break;
+                case HomeWork.Diagnosed when !stored.IsDiagnosed &&
+                    entry.benchCheck is BenchCheck.Working or BenchCheck.LampHinge:
+                    stored.work |= HomeWork.Diagnosed;
+                    break;
+                case HomeWork.Repaired when stored.IsDiagnosed && !stored.IsRepaired && entry.benchCheck == BenchCheck.LampHinge:
+                    partIndex = FindRepairPart(entry.repairPart);
+                    if (partIndex < 0)
+                        return false;
+
+                    stored.work |= HomeWork.Repaired;
+                    break;
+                default:
+                    return false;
+            }
+
+            var next = current.Copy();
+            next.SetHomeItem(index, stored);
+            if (partIndex >= 0)
+                next.RemoveHomeItem(partIndex);
+            return Publish(next);
+        }
+
+        private int FindRepairPart(string key) =>
+            Array.FindIndex(current.home, item => item.key == key);
+
+        internal bool HasRepairPart(string key) => FindRepairPart(key) >= 0;
 
         internal bool CompleteSale(HomeItem item, int price)
         {
@@ -357,7 +415,8 @@ namespace TrashHunter
             {
                 if (string.IsNullOrEmpty(item.key) || !catalog.TryGetDefinition(item.key, out var definition) ||
                     definition.Price <= 0 || item.expedition <= 0 || item.expedition > data.expedition ||
-                    (data.location == RunLocation.Search && item.expedition == data.expedition) || !stored.Add(item))
+                    (data.location == RunLocation.Search && item.expedition == data.expedition) || !stored.Add(item) ||
+                    !ValidHomeWork(item, catalog[item.key]))
                     return false;
             }
 
@@ -417,6 +476,12 @@ namespace TrashHunter
 
         private static bool Finite(Vector3 value) =>
             float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+
+        private static bool ValidHomeWork(HomeItem item, LootCatalog.Entry entry) =>
+            (item.work & ~(HomeWork.Dirty | HomeWork.Diagnosed | HomeWork.Repaired)) == 0 &&
+            (!item.IsDirty || entry.dirtDiscount > 0) &&
+            (!item.IsDiagnosed || entry.benchCheck is BenchCheck.Working or BenchCheck.LampHinge) &&
+            (!item.IsRepaired || item.IsDiagnosed && entry.benchCheck == BenchCheck.LampHinge);
 
         private bool TryGeneratePile(RunSnapshot snapshot, SearchPile pile)
         {

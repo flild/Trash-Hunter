@@ -11,7 +11,9 @@ namespace TrashHunter
             this.catalog = catalog;
         }
 
-        public SaleOffer Quote(HomeItem item) => new(item, catalog[item.key].Definition);
+        public SaleOffer Quote(HomeItem item) => state.TryGetHomeItem(item, out var stored)
+            ? new SaleOffer(stored, catalog[stored.key])
+            : default;
 
         public bool Present(string questId, string stepId, HomeItem item) =>
             state.Quests.Confirm(questId, stepId, QuestAction.Present, item);
@@ -21,11 +23,11 @@ namespace TrashHunter
 
         public bool Sell(SaleOffer offer)
         {
-            if (!catalog.TryGetDefinition(offer.Item.key ?? string.Empty, out var definition) ||
-                definition.Price != offer.Price)
+            var current = Quote(offer.Item);
+            if (current.Price != offer.Price || current.Item.work != offer.Item.work)
                 return false;
 
-            return state.CompleteSale(offer.Item, definition.Price);
+            return state.CompleteSale(current.Item, current.Price);
         }
     }
 }

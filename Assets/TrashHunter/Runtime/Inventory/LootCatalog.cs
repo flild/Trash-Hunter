@@ -4,6 +4,8 @@ using UnityEngine;
 
 namespace TrashHunter
 {
+    internal enum BenchCheck { None, Working, LampHinge, Specialist }
+
     internal sealed class LootCatalog
     {
         [Serializable]
@@ -14,6 +16,9 @@ namespace TrashHunter
             public int tier;
             public int baseValue;
             public int conditionDiscount;
+            public int dirtDiscount;
+            public BenchCheck benchCheck;
+            public string repairPart;
             public string condition;
             public Vector2Int size;
             public bool legacyLayoutOnly;
